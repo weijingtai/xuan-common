@@ -5,6 +5,8 @@ import '../domain/ai/ai_action.dart';
 import '../domain/ai/ai_config_summary.dart';
 import '../domain/ai/ai_context.dart';
 import '../domain/ai/agent_tool.dart';
+import '../domain/ai/resolved_persona.dart';
+import '../domain/ai/session_summary.dart';
 
 /// AI 服务接口：定义 AI 模块对外提供的所有能力。
 ///
@@ -18,6 +20,10 @@ import '../domain/ai/agent_tool.dart';
 /// - [openChat]: 打开 AI 聊天窗口，可携带业务上下文。
 /// - [analyze]: 后台分析（不打开 UI）。
 /// - [showPersonaSelector]: 弹出 AI 人设选择器。
+///
+/// ### Session 管理
+/// - [createSession] / [resumeChat]: 创建/恢复聊天会话。
+/// - [listSessions] / [archiveSession] / [deleteSession]: 会话生命周期管理。
 ///
 /// ### 数据持久化
 /// - [getSummary] / [watchSummary]: 获取/监听 AI 生成的摘要。
@@ -70,6 +76,50 @@ abstract class AiService {
   Future<String> analyze({
     required AiContext context,
   });
+
+  // ============================================================
+  // Session 管理
+  // ============================================================
+
+  /// 从 UUID 解析出完整的 Persona 运行时配置。
+  ///
+  /// 包括 LLM Provider 信息、API Key、模型 ID、系统提示词等。
+  /// 返回 null 表示 Persona 不存在或配置不完整。
+  Future<ResolvedPersona?> resolvePersona(String personaUuid);
+
+  /// 创建新聊天 Session 并打开聊天界面。
+  ///
+  /// [persona]: 已解析的完整 Persona 配置。
+  /// [initialContext]: 可选的初始上下文（如占测数据）。
+  /// 返回新建的 Session UUID。
+  Future<String> createSession({
+    required BuildContext context,
+    required ResolvedPersona persona,
+    AiContext? initialContext,
+  });
+
+  /// 恢复已有 Session 并打开聊天界面。
+  ///
+  /// [sessionUuid]: 要恢复的 Session 的 UUID。
+  Future<void> resumeChat({
+    required BuildContext context,
+    required String sessionUuid,
+  });
+
+  /// 获取 Session 列表摘要。
+  ///
+  /// [personaUuid]: 可选，按 Persona 过滤。
+  /// [status]: 可选，按状态过滤（active, archived）。
+  Future<List<SessionSummary>> listSessions({
+    String? personaUuid,
+    String? status,
+  });
+
+  /// 归档 Session。
+  Future<void> archiveSession(String sessionUuid);
+
+  /// 删除 Session。
+  Future<void> deleteSession(String sessionUuid);
 
   // ============================================================
   // 数据持久化（AI 生成的摘要/断语）
