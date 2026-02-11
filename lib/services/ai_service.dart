@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../domain/ai/ai_persona.dart';
 import '../domain/ai/ai_action.dart';
 import '../domain/ai/ai_config_summary.dart';
 import '../domain/ai/ai_context.dart';
@@ -16,6 +17,7 @@ import '../domain/ai/agent_tool.dart';
 /// ### 聊天 & 分析
 /// - [openChat]: 打开 AI 聊天窗口，可携带业务上下文。
 /// - [analyze]: 后台分析（不打开 UI）。
+/// - [showPersonaSelector]: 弹出 AI 人设选择器。
 ///
 /// ### 数据持久化
 /// - [getSummary] / [watchSummary]: 获取/监听 AI 生成的摘要。
@@ -39,6 +41,27 @@ abstract class AiService {
   Future<void> openChat({
     required BuildContext context,
     AiContext? initialContext,
+  });
+
+  /// 构建聊天视图 Widget (用于嵌入 Drawer 或其他容器)。
+  ///
+  /// [persona]: 可选，指定聊天使用的人设。
+  Widget buildChatView(
+    BuildContext context, {
+    AiContext? initialContext,
+    AiPersona? persona,
+  });
+
+  /// 弹出 AI 人设选择器。
+  ///
+  /// [context]: Flutter BuildContext，用于显示 Dialog/BottomSheet。
+  /// [requiredSkills]: 可选，仅展示具备指定 Skill ID 的人设。
+  ///
+  /// 返回用户选择的 [AiPersona]，如果取消则返回 null。
+  /// 此操作可能允许用户在界面上新增人设。
+  Future<AiPersona?> showPersonaSelector({
+    required BuildContext context,
+    List<int>? requiredSkills,
   });
 
   /// 仅发送数据给 AI 进行后台分析，不打开界面。
