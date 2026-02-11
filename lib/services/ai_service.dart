@@ -115,6 +115,12 @@ abstract class AiService {
     String? status,
   });
 
+  /// 更新 Session 关联的 Persona (用于 Save As 操作后切换 Session).
+  Future<void> updateSessionPersona({
+    required String sessionUuid,
+    required String personaUuid,
+  });
+
   /// 归档 Session。
   Future<void> archiveSession(String sessionUuid);
 
