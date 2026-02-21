@@ -20,7 +20,7 @@ packages:
   account:
     dependency: "direct main"
     description:
-      path: "../../account"
+      path: "../../xuan-account"
       relative: true
     source: path
     version: "0.0.1"
@@ -990,14 +990,21 @@ packages:
   persistence_core:
     dependency: "direct main"
     description:
-      path: "../../persistence_core"
+      path: "../../xuan-storage/core"
+      relative: true
+    source: path
+    version: "0.0.1"
+  persistence_drift:
+    dependency: "direct overridden"
+    description:
+      path: "../../xuan-storage/drift"
       relative: true
     source: path
     version: "0.0.1"
   persistence_firebase:
     dependency: "direct main"
     description:
-      path: "../../persistence_firebase"
+      path: "../../xuan-storage/firebase"
       relative: true
     source: path
     version: "0.0.1"

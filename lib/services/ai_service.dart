@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import '../domain/ai/ai_chat_event.dart';
 import '../domain/ai/ai_persona.dart';
 import '../domain/ai/ai_action.dart';
 import '../domain/ai/ai_config_summary.dart';
@@ -156,6 +157,16 @@ abstract class AiService {
   ///
   /// 子模块监听此流，实时更新界面上的配置文本。
   Stream<AiConfigSummary> get activeConfig;
+
+  // ============================================================
+  // Chat 事件通道
+  // ============================================================
+
+  /// AI Chat 事件广播流。
+  ///
+  /// 宿主页通过监听此流获取 Chat 中发生的事件（如 Tool 执行结果），
+  /// 实现 Chat → 宿主页的运行时通信。
+  Stream<AiChatEvent> get chatEvents;
 
   // ============================================================
   // Link A: 动态动作注册 (AiAction)

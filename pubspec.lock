@@ -811,16 +811,20 @@ packages:
   persistence_core:
     dependency: "direct main"
     description:
-      path: "../persistence_core"
-      relative: true
-    source: path
+      path: core
+      ref: HEAD
+      resolved-ref: c8671bbc9e4c0cb27941d592dfde3a1cfc794714
+      url: "https://github.com/weijingtai/xuan-storage.git"
+    source: git
     version: "0.0.1"
   persistence_drift:
     dependency: "direct dev"
     description:
-      path: "../persistence_drift"
-      relative: true
-    source: path
+      path: drift
+      ref: HEAD
+      resolved-ref: c8671bbc9e4c0cb27941d592dfde3a1cfc794714
+      url: "https://github.com/weijingtai/xuan-storage.git"
+    source: git
     version: "0.0.1"
   petitparser:
     dependency: transitive
