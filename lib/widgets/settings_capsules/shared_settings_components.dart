@@ -1,0 +1,317 @@
+import 'package:flutter/material.dart';
+import 'dart:math';
+
+class SettingsPrecisionTag extends StatelessWidget {
+  final String label;
+  final Color tagColor;
+  final bool isPillar;
+  final bool isTinyCollapsed;
+
+  const SettingsPrecisionTag({
+    super.key,
+    required this.label,
+    required this.tagColor,
+    this.isPillar = false,
+    this.isTinyCollapsed = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final tagFontSize = isTinyCollapsed ? 13.0 : (isPillar ? 13.0 : 12.0);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      decoration: BoxDecoration(
+        color: isTinyCollapsed
+            ? Colors.transparent
+            : tagColor.withValues(alpha: 0.12),
+        border: Border.all(
+            color: isTinyCollapsed
+                ? Colors.transparent
+                : tagColor.withValues(alpha: 0.5),
+            width: isTinyCollapsed ? 0 : 0.8),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTinyCollapsed ? 0 : (isPillar ? 8 : 6),
+        vertical: isTinyCollapsed ? 0 : 3.0,
+      ),
+      child: AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 400),
+        style: TextStyle(
+          color: tagColor,
+          fontSize: tagFontSize,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+          height: 1.1,
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
+class SettingsOptionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+  final bool isRecommended;
+  final Color vermilion;
+  final Color inkText;
+  final Color paperLight;
+  final Color woodDark;
+  final Color goldLeaf;
+
+  const SettingsOptionCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+    this.isRecommended = false,
+    required this.vermilion,
+    required this.inkText,
+    required this.paperLight,
+    required this.woodDark,
+    required this.goldLeaf,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFFFFCF5) : Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: selected ? goldLeaf : const Color(0xFFEEEEEE),
+            width: selected ? 1.5 : 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: goldLeaf.withValues(alpha: 0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+          child: Row(
+            children: [
+              TaijiRadio(
+                selected: selected,
+                darkColor: selected ? goldLeaf : woodDark,
+                lightColor: Colors.white,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: inkText,
+                          ),
+                        ),
+                        if (isRecommended) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: vermilion.withValues(alpha: 0.1),
+                              border: Border.all(
+                                  color: vermilion.withValues(alpha: 0.4),
+                                  width: 0.8),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                            child: Text(
+                              '推荐',
+                              style: TextStyle(
+                                color: vermilion,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF666666),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TaijiRadio extends StatefulWidget {
+  final bool selected;
+  final Color darkColor;
+  final Color lightColor;
+
+  const TaijiRadio({
+    super.key,
+    required this.selected,
+    required this.darkColor,
+    required this.lightColor,
+  });
+
+  @override
+  State<TaijiRadio> createState() => _TaijiRadioState();
+}
+
+class _TaijiRadioState extends State<TaijiRadio>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 4));
+    if (widget.selected) _controller.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant TaijiRadio oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selected && !oldWidget.selected) {
+      _controller.repeat();
+    } else if (!widget.selected && oldWidget.selected) {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: widget.selected ? widget.darkColor : const Color(0xFFDDDDDD),
+          width: 1,
+        ),
+      ),
+      child: Center(
+        child: RotationTransition(
+          turns: _controller,
+          child: CustomPaint(
+            size: const Size(18, 18),
+            painter: TaijiPainter(
+              darkColor:
+                  widget.selected ? widget.darkColor : const Color(0xFFEEEEEE),
+              lightColor: widget.selected ? widget.lightColor : Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TaijiPainter extends CustomPainter {
+  final Color darkColor;
+  final Color lightColor;
+  TaijiPainter({required this.darkColor, required this.lightColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double radius = size.width / 2;
+    final center = Offset(radius, radius);
+    final paint = Paint()..isAntiAlias = true;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    paint.color = darkColor;
+    canvas.drawArc(rect, pi / 2, pi, true, paint);
+    paint.color = lightColor;
+    canvas.drawArc(rect, -pi / 2, pi, true, paint);
+
+    final innerRadius = radius / 2;
+    paint.color = lightColor;
+    canvas.drawCircle(Offset(radius, radius / 2), innerRadius, paint);
+    paint.color = darkColor;
+    canvas.drawCircle(Offset(radius, radius * 1.5), innerRadius, paint);
+
+    final eyeRadius = radius / 5;
+    paint.color = darkColor;
+    canvas.drawCircle(Offset(radius, radius / 2), eyeRadius, paint);
+    paint.color = lightColor;
+    canvas.drawCircle(Offset(radius, radius * 1.5), eyeRadius, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant TaijiPainter oldDelegate) =>
+      oldDelegate.darkColor != darkColor ||
+      oldDelegate.lightColor != lightColor;
+}
+
+class SettingsActionButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+  final bool isPrimary;
+  final Color woodDark;
+  final Color? goldLeaf;
+
+  const SettingsActionButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.isPrimary = false,
+    required this.woodDark,
+    this.goldLeaf,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        backgroundColor: isPrimary ? woodDark : Colors.transparent,
+        side: BorderSide(color: woodDark, width: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: isPrimary ? (goldLeaf ?? Colors.white) : woodDark,
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
