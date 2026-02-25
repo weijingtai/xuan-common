@@ -2,14 +2,21 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:common/features/datetime_details/jieqi_entry_strategy_store.dart';
 
+enum JieQiEntryCapsuleMode {
+  normal,
+  tiny,
+}
+
 class JieQiEntrySettingsCapsule extends StatefulWidget {
   final void Function(JieQiEntryPrecision p)? onChanged;
   final bool applyOnChange;
+  final JieQiEntryCapsuleMode viewMode;
 
   const JieQiEntrySettingsCapsule({
     super.key,
     this.onChanged,
     this.applyOnChange = true,
+    this.viewMode = JieQiEntryCapsuleMode.normal,
   });
 
   @override
@@ -36,264 +43,342 @@ class _JieQiEntrySettingsCapsuleState extends State<JieQiEntrySettingsCapsule> {
     }
   }
 
+  bool _isHovered = false;
+
   void _toggle() {
     setState(() => _isCollapsed = !_isCollapsed);
   }
 
+  void _onHoverEnter(PointerEvent details) {
+    if (_isTiny && !_isHovered) {
+      setState(() => _isHovered = true);
+    }
+  }
+
+  void _onHoverExit(PointerEvent details) {
+    if (_isTiny && _isHovered) {
+      setState(() => _isHovered = false);
+    }
+  }
+
+  bool get _isTiny => widget.viewMode == JieQiEntryCapsuleMode.tiny;
+
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 600),
-      curve: const Cubic(0.34, 1.56, 0.64, 1),
-      width: _isCollapsed
-          ? 125
-          : 380, // Increased expanded width to 380 to avoid overflows
-      decoration: BoxDecoration(
-        color: _isCollapsed ? woodDark : paperLight,
-        borderRadius: BorderRadius.circular(_isCollapsed ? 25 : 40),
-        border: Border.all(color: woodDark, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(_isCollapsed ? 25 : 40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            GestureDetector(
-              onTap: _toggle,
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: _isCollapsed ? 14 : 18, vertical: 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const NeverScrollableScrollPhysics(),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.ideographic,
-                          children: [
-                            // "交節" animates color/size
-                            AnimatedDefaultTextStyle(
-                              duration: const Duration(milliseconds: 600),
-                              curve: const Cubic(0.34, 1.56, 0.64, 1),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: _isCollapsed
-                                    ? goldLeaf.withOpacity(0.75)
-                                    : woodDark,
-                                fontSize: _isCollapsed ? 14 : 16,
-                                letterSpacing: 0.5,
-                                height: 1.0,
-                              ),
-                              child: const Text('交節'),
-                            ),
-                            // "方案" slides in/out via width animation
-                            // Also animates fontSize in sync with "交節" to keep heights equal
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 500),
-                              curve: Curves.easeInOut,
-                              width: _isCollapsed ? 0 : 34,
-                              clipBehavior: Clip.hardEdge,
-                              decoration: const BoxDecoration(),
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 400),
-                                opacity: _isCollapsed ? 0 : 1,
-                                child: AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 600),
-                                  curve: const Cubic(0.34, 1.56, 0.64, 1),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: woodDark,
-                                    fontSize: _isCollapsed
-                                        ? 14
-                                        : 16, // Synced with "交節"
-                                    letterSpacing: 0.5,
-                                    height: 1.0,
-                                  ),
-                                  child: const Text('方案', softWrap: false),
-                                ),
-                              ),
-                            ),
-                            // Expanded state: dot + Tag
-                            if (!_isCollapsed) ...[
-                              const SizedBox(width: 6),
-                              const Text('·',
-                                  style: TextStyle(
-                                      color: woodDark,
-                                      fontSize: 16,
-                                      height: 1.0,
-                                      fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 6),
-                              _PrecisionTag(
-                                label: _labelShort(_current),
-                                tagColor: woodDark,
-                              ),
-                            ],
-                            // Pillar state: dot + Tag
-                            if (_isCollapsed) ...[
-                              const SizedBox(width: 4),
-                              const Text('·',
-                                  style: TextStyle(
-                                      color: goldLeaf,
-                                      fontSize: 14,
-                                      height: 1.0,
-                                      fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 4),
-                              _PrecisionTag(
-                                label: _labelShort(_current),
-                                tagColor: goldLeaf,
-                                isPillar: true,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 500),
-                      curve: Curves.easeInOut,
-                      width: _isCollapsed ? 0 : 22,
-                      clipBehavior: Clip.hardEdge,
-                      decoration: const BoxDecoration(),
-                      child: AnimatedRotation(
-                        turns: _isCollapsed ? 0 : 0.5,
-                        duration: const Duration(milliseconds: 400),
-                        curve: Curves.easeInOut,
-                        child:
-                            Icon(Icons.expand_more, color: woodDark, size: 18),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+    final isTinyCollapsed = _isTiny && _isCollapsed && !_isHovered;
 
-            // Content sliding expansion
-            AnimatedSize(
-              duration: const Duration(milliseconds: 600),
-              curve: const Cubic(0.34, 1.56, 0.64, 1),
-              alignment: Alignment.topCenter,
-              child: _isCollapsed
-                  ? const SizedBox(width: double.infinity, height: 0)
-                  : SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: Container(
-                        width: 380,
-                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 20),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _OptionCard(
-                              title: '依時辰交節',
-                              subtitle: '傳統子午流注計時',
-                              selected: _current == JieQiEntryPrecision.shichen,
-                              onTap: () => _select(JieQiEntryPrecision.shichen),
-                              vermilion: vermilion,
-                              inkText: inkText,
-                              paperLight: paperLight,
-                              woodDark: woodDark,
-                            ),
-                            _OptionCard(
-                              title: '依分鐘交節',
-                              subtitle: '現代精密曆法演算',
-                              selected: _current == JieQiEntryPrecision.minute,
-                              onTap: () => _select(JieQiEntryPrecision.minute),
-                              isRecommended: true,
-                              vermilion: vermilion,
-                              inkText: inkText,
-                              paperLight: paperLight,
-                              woodDark: woodDark,
-                            ),
-                            _OptionCard(
-                              title: '依秒時交節',
-                              subtitle: '極致天文觀測精度',
-                              selected: _current == JieQiEntryPrecision.second,
-                              onTap: () => _select(JieQiEntryPrecision.second),
-                              vermilion: vermilion,
-                              inkText: inkText,
-                              paperLight: paperLight,
-                              woodDark: woodDark,
-                            ),
-                            const SizedBox(height: 12),
-                            // Dotted separator
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              child: Row(
-                                children: List.generate(
-                                    20,
-                                    (i) => Expanded(
-                                          child: Container(
-                                            margin: const EdgeInsets.symmetric(
-                                                horizontal: 2),
-                                            height: 1,
-                                            color: const Color(0xFFDDDDDD),
-                                          ),
-                                        )),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Action Buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: _ActionButton(
-                                    label: '預覽',
-                                    onPressed: () {},
-                                    woodDark: woodDark,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 1,
-                                  child: _ActionButton(
-                                    label: '對比',
-                                    onPressed: () {},
-                                    woodDark: woodDark,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 2,
-                                  child: _ActionButton(
-                                    label: '確定',
-                                    onPressed: () async {
-                                      await JieQiEntryStrategyStore
-                                          .persistDefault(_current);
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content: Text('交節方案已更新')),
-                                        );
-                                        _toggle(); // Auto-close on confirm
-                                      }
-                                    },
-                                    isPrimary: true,
-                                    woodDark: woodDark,
-                                    goldLeaf: goldLeaf,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+    return MouseRegion(
+      onEnter: _onHoverEnter,
+      onExit: _onHoverExit,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 600),
+        curve: const Cubic(0.34, 1.56, 0.64, 1),
+        width: _isCollapsed
+            ? (isTinyCollapsed ? 64 : 125)
+            : 380, // Increased expanded width to 380 to avoid overflows
+        decoration: BoxDecoration(
+          color: _isCollapsed ? woodDark : paperLight,
+          borderRadius: BorderRadius.circular(
+              _isCollapsed ? (isTinyCollapsed ? 14 : 25) : 40),
+          border: Border.all(color: woodDark, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(
+              _isCollapsed ? (isTinyCollapsed ? 14 : 25) : 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              GestureDetector(
+                onTap: _toggle,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal:
+                          _isCollapsed ? (isTinyCollapsed ? 0 : 14) : 18,
+                      vertical: _isCollapsed
+                          ? (isTinyCollapsed || (_isTiny && _isHovered)
+                              ? 4
+                              : 12)
+                          : 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 600),
+                          curve: Curves.easeInOut,
+                          alignment: _isTiny && _isCollapsed
+                              ? Alignment.center
+                              : Alignment.centerLeft,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const NeverScrollableScrollPhysics(),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.ideographic,
+                              children: [
+                                // "交節" animates color/size
+                                AnimatedSize(
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeInOut,
+                                  alignment: _isTiny && _isCollapsed
+                                      ? Alignment.center
+                                      : Alignment.centerLeft,
+                                  child: isTinyCollapsed
+                                      ? const SizedBox(width: 0)
+                                      : AnimatedDefaultTextStyle(
+                                          duration:
+                                              const Duration(milliseconds: 600),
+                                          curve:
+                                              const Cubic(0.34, 1.56, 0.64, 1),
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: _isCollapsed
+                                                ? goldLeaf.withOpacity(0.75)
+                                                : woodDark,
+                                            fontSize: _isCollapsed ? 14 : 16,
+                                            letterSpacing: 0.5,
+                                          ),
+                                          child:
+                                              const Text('交節', softWrap: false),
+                                        ),
+                                ),
+                                // "方案" slides in/out via width animation
+                                // Also animates fontSize in sync with "交節" to keep heights equal
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeInOut,
+                                  width: _isCollapsed ? 0 : 34,
+                                  clipBehavior: Clip.hardEdge,
+                                  decoration: const BoxDecoration(),
+                                  child: AnimatedOpacity(
+                                    duration: const Duration(milliseconds: 400),
+                                    opacity: _isCollapsed ? 0 : 1,
+                                    child: AnimatedDefaultTextStyle(
+                                      duration:
+                                          const Duration(milliseconds: 600),
+                                      curve: const Cubic(0.34, 1.56, 0.64, 1),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: woodDark,
+                                        fontSize: _isCollapsed
+                                            ? 14
+                                            : 16, // Synced with "交節"
+                                        letterSpacing: 0.5,
+                                        height: 1.0,
+                                      ),
+                                      child: const Text('方案', softWrap: false),
+                                    ),
+                                  ),
+                                ),
+                                // Expanded state: dot + Tag
+                                if (!_isCollapsed) ...[
+                                  const SizedBox(width: 6),
+                                  const Text('·',
+                                      style: TextStyle(
+                                          color: woodDark,
+                                          fontSize: 16,
+                                          height: 1.0,
+                                          fontWeight: FontWeight.bold)),
+                                  const SizedBox(width: 6),
+                                  _PrecisionTag(
+                                    label: _labelShort(_current),
+                                    tagColor: woodDark,
+                                  ),
+                                ],
+                                if (_isCollapsed) ...[
+                                  AnimatedSize(
+                                    duration: const Duration(milliseconds: 500),
+                                    curve: Curves.easeInOut,
+                                    alignment: Alignment.centerLeft,
+                                    child: isTinyCollapsed
+                                        ? const SizedBox(width: 0)
+                                        : const Row(
+                                            children: [
+                                              SizedBox(width: 4),
+                                              Text('·',
+                                                  style: TextStyle(
+                                                      color: goldLeaf,
+                                                      fontSize: 14,
+                                                      height: 1.0,
+                                                      fontWeight:
+                                                          FontWeight.bold)),
+                                              SizedBox(width: 4),
+                                            ],
+                                          ),
+                                  ),
+                                  _PrecisionTag(
+                                    label: _labelShort(_current),
+                                    tagColor: goldLeaf,
+                                    isPillar: true,
+                                    isTinyCollapsed: isTinyCollapsed,
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.easeInOut,
+                        width: _isCollapsed ? 0 : 22,
+                        clipBehavior: Clip.hardEdge,
+                        decoration: const BoxDecoration(),
+                        child: AnimatedRotation(
+                          turns: _isCollapsed ? 0 : 0.5,
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeInOut,
+                          child: Icon(Icons.expand_more,
+                              color: woodDark, size: 18),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Content sliding expansion
+              AnimatedSize(
+                duration: const Duration(milliseconds: 600),
+                curve: const Cubic(0.34, 1.56, 0.64, 1),
+                alignment: Alignment.topCenter,
+                child: _isCollapsed
+                    ? const SizedBox(width: double.infinity, height: 0)
+                    : SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: Container(
+                          width: 380,
+                          padding: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _OptionCard(
+                                title: '按时辰交节',
+                                subtitle: '两小时一段；与子时日界有关。',
+                                selected:
+                                    _current == JieQiEntryPrecision.shichen,
+                                onTap: () =>
+                                    _select(JieQiEntryPrecision.shichen),
+                                vermilion: vermilion,
+                                inkText: inkText,
+                                paperLight: paperLight,
+                                woodDark: woodDark,
+                              ),
+                              _OptionCard(
+                                title: '按小时交节',
+                                subtitle: '',
+                                selected: _current == JieQiEntryPrecision.hour,
+                                onTap: () => _select(JieQiEntryPrecision.hour),
+                                vermilion: vermilion,
+                                inkText: inkText,
+                                paperLight: paperLight,
+                                woodDark: woodDark,
+                              ),
+                              _OptionCard(
+                                title: '按分钟交节',
+                                subtitle: '现代科学计算，精确到分钟。',
+                                selected:
+                                    _current == JieQiEntryPrecision.minute,
+                                onTap: () =>
+                                    _select(JieQiEntryPrecision.minute),
+                                isRecommended: true,
+                                vermilion: vermilion,
+                                inkText: inkText,
+                                paperLight: paperLight,
+                                woodDark: woodDark,
+                              ),
+                              _OptionCard(
+                                title: '按秒交节',
+                                subtitle: '最严格判定，精确到秒。',
+                                selected:
+                                    _current == JieQiEntryPrecision.second,
+                                onTap: () =>
+                                    _select(JieQiEntryPrecision.second),
+                                vermilion: vermilion,
+                                inkText: inkText,
+                                paperLight: paperLight,
+                                woodDark: woodDark,
+                              ),
+                              const SizedBox(height: 12),
+                              // Dotted separator
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: Row(
+                                  children: List.generate(
+                                      20,
+                                      (i) => Expanded(
+                                            child: Container(
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 2),
+                                              height: 1,
+                                              color: const Color(0xFFDDDDDD),
+                                            ),
+                                          )),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // Action Buttons
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 1,
+                                    child: _ActionButton(
+                                      label: '预览',
+                                      onPressed: () {},
+                                      woodDark: woodDark,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    flex: 1,
+                                    child: _ActionButton(
+                                      label: '对比',
+                                      onPressed: () {},
+                                      woodDark: woodDark,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    flex: 2,
+                                    child: _ActionButton(
+                                      label: '确定',
+                                      onPressed: () async {
+                                        await JieQiEntryStrategyStore
+                                            .persistDefault(_current);
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text('交节方案已更新')),
+                                          );
+                                          _toggle(); // Auto-close on confirm
+                                        }
+                                      },
+                                      isPrimary: true,
+                                      woodDark: woodDark,
+                                      goldLeaf: goldLeaf,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -311,41 +396,49 @@ class _PrecisionTag extends StatelessWidget {
   final String label;
   final Color tagColor;
   final bool isPillar;
+  final bool isTinyCollapsed;
 
   const _PrecisionTag({
     required this.label,
     required this.tagColor,
     this.isPillar = false,
+    this.isTinyCollapsed = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final tagFontSize = isPillar ? 13.0 : 12.0;
-    // Use Baseline so this widget participates in the parent Row's
-    // CrossAxisAlignment.baseline layout.
-    return Baseline(
-      baseline: tagFontSize, // approximate baseline offset
-      baselineType: TextBaseline.ideographic,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isPillar ? 8 : 6,
-          vertical: 1,
+    final tagFontSize = isTinyCollapsed ? 15.0 : (isPillar ? 13.0 : 12.0);
+
+    // We wrap the decorated container around a centered Row.
+    // By providing a Row, the text inside will inherently project
+    // its baseline up to the parent Row, making standard textBaseline alignment work
+    // flawlessly across different font sizes, without needing a fake fake Baseline widget!
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      decoration: BoxDecoration(
+        color:
+            isTinyCollapsed ? Colors.transparent : tagColor.withOpacity(0.12),
+        border: Border.all(
+            color: isTinyCollapsed
+                ? Colors.transparent
+                : tagColor.withOpacity(0.5),
+            width: isTinyCollapsed ? 0 : 0.8),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTinyCollapsed ? 0 : (isPillar ? 8 : 6),
+        vertical: isTinyCollapsed ? 0 : 3.0,
+      ),
+      child: AnimatedDefaultTextStyle(
+        duration: const Duration(milliseconds: 400),
+        style: TextStyle(
+          color: tagColor,
+          fontSize: tagFontSize,
+          fontWeight: FontWeight.bold,
+          letterSpacing: isTinyCollapsed ? 1.0 : 0.5,
+          height: 1.0,
         ),
-        decoration: BoxDecoration(
-          color: tagColor.withOpacity(0.12),
-          border: Border.all(color: tagColor.withOpacity(0.5), width: 0.8),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: tagColor,
-            fontSize: tagFontSize,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-            height: 1.0,
-          ),
-        ),
+        child: Text(label),
       ),
     );
   }
@@ -437,7 +530,7 @@ class _OptionCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(3),
                             ),
                             child: Text(
-                              '首選',
+                              '推荐',
                               style: TextStyle(
                                 color: vermilion,
                                 fontSize: 9,
@@ -448,13 +541,14 @@ class _OptionCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF666666),
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF666666),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

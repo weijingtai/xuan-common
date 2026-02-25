@@ -21,7 +21,24 @@ class SettingsCapsuleDemo extends StatelessWidget {
         elevation: 0,
         foregroundColor: const Color(0xFF2A1B15),
       ),
-      body: const Center(child: JieQiEntrySettingsCapsule()),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Normal Mode:'),
+            const SizedBox(height: 8),
+            const JieQiEntrySettingsCapsule(
+              viewMode: JieQiEntryCapsuleMode.normal,
+            ),
+            const SizedBox(height: 32),
+            const Text('Tiny Mode (Smaller Height):'),
+            const SizedBox(height: 8),
+            const JieQiEntrySettingsCapsule(
+              viewMode: JieQiEntryCapsuleMode.tiny,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
