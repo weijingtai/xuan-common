@@ -75,6 +75,7 @@ class _NewSeekerUiDemoBody extends StatefulWidget {
 class _NewSeekerUiDemoBodyState extends State<_NewSeekerUiDemoBody> {
   DateTimeDetailsBundle? _bundle;
   bool _isLoading = true;
+  bool _showTags = true;
 
   @override
   void initState() {
@@ -230,95 +231,126 @@ class _NewSeekerUiDemoBodyState extends State<_NewSeekerUiDemoBody> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Card(
-                    elevation: 0,
-                    color: Theme.of(context).cardColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: Theme.of(context).dividerColor.withAlpha(20),
-                        width: 1,
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            '大运树状列表 (Tree List Demo)',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                  // Tree List Constrained Width matching the right-side capsule cards
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 440),
+                      child: Card(
+                        elevation: 0,
+                        color: Theme.of(context).cardColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: Theme.of(context).dividerColor.withAlpha(20),
+                            width: 1,
                           ),
-                          const SizedBox(height: 16),
-                          Builder(
-                            builder: (context) {
-                              const liuNianList = [
-                                JiaZi.JIA_CHEN,
-                                JiaZi.YI_SI,
-                                JiaZi.BING_WU,
-                                JiaZi.DING_WEI,
-                                JiaZi.WU_SHEN,
-                                JiaZi.JI_YOU,
-                                JiaZi.GENG_XU,
-                                JiaZi.XIN_HAI,
-                                JiaZi.REN_ZI,
-                                JiaZi.GUI_CHOU,
-                              ];
-                              const liuYueMock = [
-                                JiaZi.BING_YIN,
-                                JiaZi.DING_MAO,
-                                JiaZi.WU_CHEN,
-                                JiaZi.JI_SI,
-                                JiaZi.GENG_WU,
-                                JiaZi.XIN_WEI,
-                                JiaZi.REN_SHEN,
-                                JiaZi.GUI_YOU,
-                                JiaZi.JIA_XU,
-                                JiaZi.YI_HAI,
-                                JiaZi.BING_ZI,
-                                JiaZi.DING_CHOU,
-                              ];
-                              return YunLiuTreeList(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                nodes: [
-                                  YunLiuNode(
-                                    title: '甲辰大运',
-                                    type: YunLiuNodeType.daYun,
-                                    customHeader: DaYunTreeTileHeader(
-                                      daYunGanZhi: JiaZi.JIA_CHEN,
-                                      ganGod: EnumTenGods.ZhenCai,
-                                      hiddenGans: const [
-                                        (
-                                          gan: TianGan.WU,
-                                          hiddenGods: EnumTenGods.ZhenCai,
-                                        ),
-                                        (
-                                          gan: TianGan.YI,
-                                          hiddenGods: EnumTenGods.ZhengGuan,
-                                        ),
-                                        (
-                                          gan: TianGan.BING,
-                                          hiddenGods: EnumTenGods.PanYin,
-                                        ),
-                                      ],
-                                      startYear: 2024,
-                                      startAge: 28,
-                                      yearsCount: 10,
-                                      index: 1,
-                                      liuNianList: liuNianList,
-                                      theme: YunLiuTreeTileTheme.daYun(),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    '大运树状列表 (100年全周期预览)',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
                                     ),
+                                  ),
+                                  Row(
                                     children: [
-                                      for (var i = 0; i < 10; i++)
-                                        YunLiuNode(
-                                          title: '202${4 + i} 甲辰年',
+                                      const Text(
+                                        '显示标签',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                      Transform.scale(
+                                        scale: 0.7,
+                                        child: Switch(
+                                          value: _showTags,
+                                          activeColor: const Color(
+                                            0xFFA62C2B,
+                                          ), // Vermilion
+                                          onChanged: (val) {
+                                            setState(() => _showTags = val);
+                                          },
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Builder(
+                                builder: (context) {
+                                  // Simplified Mock Generation for 10 DaYun periods
+                                  final nodes = List.generate(10, (d) {
+                                    final startYear = 2024 + (d * 10);
+                                    final startAge = 28 + (d * 10);
+                                    final jiaZi =
+                                        JiaZi.values[(JiaZi.JIA_CHEN.index +
+                                                d * 10) %
+                                            60];
+
+                                    // Generate 10 Liu Nian for each DaYun
+                                    final liuNianItems = List.generate(10, (i) {
+                                      return JiaZi.values[(jiaZi.index + i) %
+                                          60];
+                                    });
+
+                                    // 12 Months mock
+                                    final liuYueMock = List.generate(12, (j) {
+                                      return JiaZi
+                                          .values[(JiaZi.BING_YIN.index + j) %
+                                          60];
+                                    });
+
+                                    return YunLiuNode(
+                                      title: '${jiaZi.name}大运',
+                                      type: YunLiuNodeType.daYun,
+                                      customHeader: DaYunTreeTileHeader(
+                                        daYunGanZhi: jiaZi,
+                                        ganGod: EnumTenGods.ZhenCai,
+                                        hiddenGans: const [
+                                          (
+                                            gan: TianGan.WU,
+                                            hiddenGods: EnumTenGods.ZhenCai,
+                                          ),
+                                          (
+                                            gan: TianGan.YI,
+                                            hiddenGods: EnumTenGods.ZhengGuan,
+                                          ),
+                                          (
+                                            gan: TianGan.BING,
+                                            hiddenGods: EnumTenGods.PanYin,
+                                          ),
+                                        ],
+                                        startYear: startYear,
+                                        startAge: startAge,
+                                        yearsCount: 10,
+                                        index: d + 1,
+                                        liuNianList: liuNianItems,
+                                        theme: YunLiuTreeTileTheme.daYun(),
+                                        showTags: true,
+                                        showSubLabels: _showTags,
+                                      ),
+                                      children: List.generate(10, (i) {
+                                        final y = startYear + i;
+                                        final lnJiaZi = liuNianItems[i];
+                                        return YunLiuNode(
+                                          title: '$y ${lnJiaZi.name}年',
                                           type: YunLiuNodeType.liuNian,
-                                          customHeader: YunLiuPillarHeader(
-                                            jiaZi: liuNianList[i],
+                                          customHeader: LiuNianTreeTileHeader(
+                                            year: y,
+                                            age: startAge + i,
+                                            jiaZi: lnJiaZi,
+                                            liuYueList: liuYueMock,
+                                            theme:
+                                                YunLiuTreeTileTheme.liuNian(),
+                                            showSubLabels: _showTags,
                                             ganGod: EnumTenGods.ZhenCai,
                                             hiddenGans: const [
                                               (
@@ -335,71 +367,60 @@ class _NewSeekerUiDemoBodyState extends State<_NewSeekerUiDemoBody> {
                                                 hiddenGods: EnumTenGods.PanYin,
                                               ),
                                             ],
-                                            label: '202${4 + i}',
-                                            theme:
-                                                YunLiuTreeTileTheme.liuNian(),
-                                            content: LiuNianHeaderRightContent(
-                                              year: 2024 + i,
-                                              age: 28 + i,
-                                              liuYueList: liuYueMock,
-                                              theme:
-                                                  YunLiuTreeTileTheme.liuNian(),
-                                            ),
                                           ),
-                                          children: [
-                                            for (var j = 0; j < 12; j++)
-                                              YunLiuNode(
-                                                title:
-                                                    '${j + 1}月 ${liuYueMock[j].name}',
-                                                type: YunLiuNodeType.liuYue,
-                                                customHeader: YunLiuPillarHeader(
-                                                  jiaZi: liuYueMock[j],
-                                                  label: (j < 10)
-                                                      ? '${j + 1}月'
-                                                      : (j == 10)
-                                                      ? '冬月'
-                                                      : '腊月',
-                                                  ganGod: EnumTenGods.BiJian,
-                                                  hiddenGans: const [
-                                                    (
-                                                      gan: TianGan.JIA,
-                                                      hiddenGods:
-                                                          EnumTenGods.BiJian,
-                                                    ),
-                                                    (
-                                                      gan: TianGan.BING,
-                                                      hiddenGods:
-                                                          EnumTenGods.ShiShen,
-                                                    ),
-                                                    (
-                                                      gan: TianGan.WU,
-                                                      hiddenGods:
-                                                          EnumTenGods.PanGuan,
-                                                    ),
-                                                  ],
-                                                  theme:
-                                                      YunLiuTreeTileTheme.liuYue(),
-                                                  content: LiuYueHeaderRightContent(
-                                                    monthName: (j < 10)
-                                                        ? '${j + 1}月'
-                                                        : (j == 10)
-                                                        ? '冬月'
-                                                        : '腊月',
-                                                    description: '本月运势概览...',
-                                                    theme:
-                                                        YunLiuTreeTileTheme.liuYue(),
+                                          children: List.generate(12, (j) {
+                                            return YunLiuNode(
+                                              title:
+                                                  '${j + 1}月 ${liuYueMock[j].name}',
+                                              type: YunLiuNodeType.liuYue,
+                                              customHeader: LiuYueTreeTileHeader(
+                                                jiaZi: liuYueMock[j],
+                                                monthName: (j < 10)
+                                                    ? '${j + 1}月'
+                                                    : (j == 10)
+                                                    ? '冬月'
+                                                    : '腊月',
+                                                description: '本月运势概览...',
+                                                theme:
+                                                    YunLiuTreeTileTheme.liuYue(),
+                                                showSubLabels: _showTags,
+                                                ganGod: EnumTenGods.BiJian,
+                                                hiddenGans: const [
+                                                  (
+                                                    gan: TianGan.JIA,
+                                                    hiddenGods:
+                                                        EnumTenGods.BiJian,
                                                   ),
-                                                ),
+                                                  (
+                                                    gan: TianGan.BING,
+                                                    hiddenGods:
+                                                        EnumTenGods.ShiShen,
+                                                  ),
+                                                  (
+                                                    gan: TianGan.WU,
+                                                    hiddenGods:
+                                                        EnumTenGods.PanGuan,
+                                                  ),
+                                                ],
                                               ),
-                                          ],
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              );
-                            },
+                                            );
+                                          }),
+                                        );
+                                      }),
+                                    );
+                                  });
+
+                                  return YunLiuTreeList(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    nodes: nodes,
+                                  );
+                                },
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),

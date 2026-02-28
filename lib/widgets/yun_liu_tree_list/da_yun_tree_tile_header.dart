@@ -24,6 +24,12 @@ class YunLiuPillarHeader extends StatelessWidget {
   /// Optional: Custom theme for the header.
   final YunLiuTreeTileTheme? theme;
 
+  /// Optional: Whether to show the top-left Tag (badge).
+  final bool showTags;
+
+  /// Optional: Whether to show the sub-labels (e.g. chip footers).
+  final bool showSubLabels;
+
   const YunLiuPillarHeader({
     super.key,
     required this.jiaZi,
@@ -32,20 +38,32 @@ class YunLiuPillarHeader extends StatelessWidget {
     required this.label,
     required this.content,
     this.theme,
+    this.showTags = true,
+    this.showSubLabels = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final effectiveTheme = theme ?? YunLiuTreeTileTheme.light();
 
-    return IntrinsicHeight(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 104),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Left: Pillar cell ──
-            SizedBox(
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 112),
+      child: Stack(
+        children: [
+          // ── Right: Custom content (Drives the height) ──
+          // Padding left = 106 (pillar) + 16 (separator space)
+          Padding(
+            padding: const EdgeInsets.only(left: 122),
+            child: Padding(
+              padding: const EdgeInsets.only(right: 8, top: 10, bottom: 10),
+              child: content,
+            ),
+          ),
+
+          // ── Left: Pillar cell (Stretches to match height) ──
+          Positioned.fill(
+            right: null,
+            child: SizedBox(
               width: 106,
               child: _PillarCell(
                 jiaZi: jiaZi,
@@ -53,12 +71,18 @@ class YunLiuPillarHeader extends StatelessWidget {
                 hiddenGans: hiddenGans,
                 label: label,
                 theme: effectiveTheme,
+                showTags: showTags,
+                showSubLabels: showSubLabels,
               ),
             ),
+          ),
 
-            // ── Vertical separator: fading gradient line ──
-            Padding(
-              padding: const EdgeInsets.only(top: 12, bottom: 12, right: 16),
+          // ── Vertical separator (Stretches to match height) ──
+          Positioned.fill(
+            left: 106 + 7,
+            right: null,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 12),
               child: Container(
                 width: 1.5,
                 decoration: BoxDecoration(
@@ -76,16 +100,8 @@ class YunLiuPillarHeader extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Right: Custom content ──
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8, top: 10, bottom: 10),
-                child: content,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -98,6 +114,7 @@ class DaYunHeaderRightContent extends StatelessWidget {
   final int yearsCount;
   final List<JiaZi>? liuNianList;
   final YunLiuTreeTileTheme? theme;
+  final bool showSubLabels;
 
   const DaYunHeaderRightContent({
     super.key,
@@ -106,6 +123,7 @@ class DaYunHeaderRightContent extends StatelessWidget {
     required this.yearsCount,
     this.liuNianList,
     this.theme,
+    this.showSubLabels = true,
   });
 
   @override
@@ -116,6 +134,7 @@ class DaYunHeaderRightContent extends StatelessWidget {
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Year range + duration tag
@@ -156,23 +175,19 @@ class DaYunHeaderRightContent extends StatelessWidget {
         const SizedBox(height: 4),
 
         // Liu Nian chips row
-        if (liuNianList != null && liuNianList!.isNotEmpty)
-          SizedBox(
-            height: 38,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: liuNianList!.length,
-              physics: const BouncingScrollPhysics(),
-              separatorBuilder: (_, __) => const SizedBox(width: 6),
-              itemBuilder: (context, i) {
-                final year = startYear + i;
-                return _GanZhiChip(
-                  jiaZi: liuNianList![i],
-                  label: '$year',
-                  theme: effectiveTheme,
-                );
-              },
-            ),
+        if (liuNianList != null && liuNianList!.isNotEmpty && showSubLabels)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: List.generate(liuNianList!.length, (i) {
+              final year = startYear + i;
+              return _GanZhiChip(
+                jiaZi: liuNianList![i],
+                label: '$year',
+                theme: effectiveTheme,
+                showLabel: showSubLabels,
+              );
+            }),
           ),
       ],
     );
@@ -185,6 +200,7 @@ class LiuNianHeaderRightContent extends StatelessWidget {
   final int age;
   final List<JiaZi> liuYueList;
   final YunLiuTreeTileTheme? theme;
+  final bool showSubLabels;
 
   const LiuNianHeaderRightContent({
     super.key,
@@ -192,6 +208,7 @@ class LiuNianHeaderRightContent extends StatelessWidget {
     required this.age,
     required this.liuYueList,
     this.theme,
+    this.showSubLabels = true,
   });
 
   static const _chineseMonths = [
@@ -214,6 +231,7 @@ class LiuNianHeaderRightContent extends StatelessWidget {
     final effectiveTheme = theme ?? YunLiuTreeTileTheme.light();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Year + Age info
@@ -252,17 +270,12 @@ class LiuNianHeaderRightContent extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
-
         // 12 Months chips row
-        SizedBox(
-          height: 38,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: liuYueList.length,
-            physics: const BouncingScrollPhysics(),
-            separatorBuilder: (_, __) => const SizedBox(width: 6),
-            itemBuilder: (context, i) {
+        if (showSubLabels)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: List.generate(liuYueList.length, (i) {
               final monthLabel = (i >= 0 && i < _chineseMonths.length)
                   ? _chineseMonths[i]
                   : '${i + 1}月';
@@ -270,10 +283,10 @@ class LiuNianHeaderRightContent extends StatelessWidget {
                 jiaZi: liuYueList[i],
                 label: monthLabel,
                 theme: effectiveTheme,
+                showLabel: showSubLabels,
               );
-            },
+            }),
           ),
-        ),
       ],
     );
   }
@@ -284,12 +297,14 @@ class LiuYueHeaderRightContent extends StatelessWidget {
   final String monthName;
   final String? description;
   final YunLiuTreeTileTheme? theme;
+  final bool showDescription;
 
   const LiuYueHeaderRightContent({
     super.key,
     required this.monthName,
     this.description,
     this.theme,
+    this.showDescription = true,
   });
 
   @override
@@ -297,13 +312,14 @@ class LiuYueHeaderRightContent extends StatelessWidget {
     final effectiveTheme = theme ?? YunLiuTreeTileTheme.light();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           monthName,
           style: effectiveTheme.chineseMonthTextStyle,
         ),
-        if (description != null) ...[
+        if (description != null && showDescription) ...[
           const SizedBox(height: 4),
           Text(
             description!,
@@ -327,6 +343,8 @@ class DaYunTreeTileHeader extends StatelessWidget {
   final String? label;
   final List<JiaZi>? liuNianList;
   final YunLiuTreeTileTheme? theme;
+  final bool showTags;
+  final bool showSubLabels;
 
   const DaYunTreeTileHeader({
     super.key,
@@ -340,6 +358,8 @@ class DaYunTreeTileHeader extends StatelessWidget {
     this.label,
     this.liuNianList,
     this.theme,
+    this.showTags = true,
+    this.showSubLabels = true,
   });
 
   static const _chineseOrdinals = [
@@ -371,12 +391,100 @@ class DaYunTreeTileHeader extends StatelessWidget {
       hiddenGans: hiddenGans,
       label: effectiveLabel,
       theme: theme,
+      showTags: showTags,
+      showSubLabels: showSubLabels,
       content: DaYunHeaderRightContent(
         startYear: startYear,
         startAge: startAge,
         yearsCount: yearsCount,
         liuNianList: liuNianList,
         theme: theme,
+        showSubLabels: showSubLabels,
+      ),
+    );
+  }
+}
+
+/// Helper to wrap the original Liu Nian functionality into the new unified header.
+class LiuNianTreeTileHeader extends StatelessWidget {
+  final int year;
+  final int age;
+  final JiaZi jiaZi;
+  final List<JiaZi> liuYueList;
+  final YunLiuTreeTileTheme? theme;
+  final bool showSubLabels;
+  final EnumTenGods? ganGod;
+  final List<({TianGan gan, EnumTenGods hiddenGods})>? hiddenGans;
+
+  const LiuNianTreeTileHeader({
+    super.key,
+    required this.year,
+    required this.age,
+    required this.jiaZi,
+    required this.liuYueList,
+    this.theme,
+    this.showSubLabels = true,
+    this.ganGod,
+    this.hiddenGans,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return YunLiuPillarHeader(
+      jiaZi: jiaZi,
+      ganGod: ganGod,
+      hiddenGans: hiddenGans,
+      label: '$year',
+      theme: theme,
+      showTags: true,
+      showSubLabels: showSubLabels,
+      content: LiuNianHeaderRightContent(
+        year: year,
+        age: age,
+        liuYueList: liuYueList,
+        theme: theme,
+        showSubLabels: showSubLabels,
+      ),
+    );
+  }
+}
+
+/// Helper to wrap the original Liu Yue functionality into the new unified header.
+class LiuYueTreeTileHeader extends StatelessWidget {
+  final JiaZi jiaZi;
+  final String monthName;
+  final String? description;
+  final YunLiuTreeTileTheme? theme;
+  final bool showSubLabels;
+  final EnumTenGods? ganGod;
+  final List<({TianGan gan, EnumTenGods hiddenGods})>? hiddenGans;
+
+  const LiuYueTreeTileHeader({
+    super.key,
+    required this.jiaZi,
+    required this.monthName,
+    this.description,
+    this.theme,
+    this.showSubLabels = true,
+    this.ganGod,
+    this.hiddenGans,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return YunLiuPillarHeader(
+      jiaZi: jiaZi,
+      ganGod: ganGod,
+      hiddenGans: hiddenGans,
+      label: monthName,
+      theme: theme,
+      showTags: true,
+      showSubLabels: showSubLabels,
+      content: LiuYueHeaderRightContent(
+        monthName: monthName,
+        description: description,
+        theme: theme,
+        showDescription: showSubLabels,
       ),
     );
   }
@@ -392,6 +500,8 @@ class _PillarCell extends StatelessWidget {
   final List<({TianGan gan, EnumTenGods hiddenGods})>? hiddenGans;
   final String label;
   final YunLiuTreeTileTheme theme;
+  final bool showTags;
+  final bool showSubLabels;
 
   const _PillarCell({
     required this.jiaZi,
@@ -399,6 +509,8 @@ class _PillarCell extends StatelessWidget {
     this.hiddenGans,
     required this.label,
     required this.theme,
+    this.showTags = true,
+    this.showSubLabels = true,
   });
 
   @override
@@ -503,36 +615,37 @@ class _PillarCell extends StatelessWidget {
         ),
 
         // ── Top-left badge (flush with corner) ──
-        Positioned(
-          top: 0,
-          left: 0,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: theme.pillarBadgeBackground,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(theme.borderRadius),
-                bottomRight: Radius.circular(theme.borderRadius),
+        if (showTags)
+          Positioned(
+            top: 0,
+            left: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: theme.pillarBadgeBackground,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(theme.borderRadius),
+                  bottomRight: Radius.circular(theme.borderRadius),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.pillarBadgeShadow,
+                    blurRadius: 10,
+                    offset: const Offset(2, 2),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withAlpha(50),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.pillarBadgeShadow,
-                  blurRadius: 10,
-                  offset: const Offset(2, 2),
-                ),
-                BoxShadow(
-                  color: Colors.black.withAlpha(50),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Text(
-              label,
-              style: theme.pillarLabelTextStyle,
+              child: Text(
+                label,
+                style: theme.pillarLabelTextStyle,
+              ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -543,11 +656,13 @@ class _GanZhiChip extends StatelessWidget {
   final JiaZi jiaZi;
   final String label;
   final YunLiuTreeTileTheme theme;
+  final bool showLabel;
 
   const _GanZhiChip({
     required this.jiaZi,
     required this.label,
     required this.theme,
+    this.showLabel = true,
   });
 
   @override
@@ -574,16 +689,17 @@ class _GanZhiChip extends StatelessWidget {
             ),
           ),
           // Footer label (black bg)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 1),
-            color: theme.chipLabelBackground,
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: theme.chipFooterLabelStyle,
+          if (showLabel)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 1),
+              color: theme.chipLabelBackground,
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: theme.chipFooterLabelStyle,
+              ),
             ),
-          ),
         ],
       ),
     );
