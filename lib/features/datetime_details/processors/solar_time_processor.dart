@@ -23,9 +23,14 @@ class SolarTimeProcessor {
 
     // 平太阳时计算 - 使用专业算法
     if (location != null) {
+      final double? longitude = location.coordinates?.longitude;
+      if (longitude == null) {
+        throw ArgumentError('Location coordinates are missing');
+      }
+
       meanSolarDatetime = _calculateMeanSolarTimeAdvanced(
         standardDateTime,
-        location.address!.coordinates.longitude,
+        longitude,
         timezoneStr,
       );
 

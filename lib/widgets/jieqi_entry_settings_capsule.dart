@@ -94,6 +94,7 @@ class _JieQiEntrySettingsCapsuleState extends State<JieQiEntrySettingsCapsule> {
       onSelect: _onSelect,
       onConfirm: _onConfirm,
       colorScheme: _colors,
+      collapsedWidth: 150,
       viewMode: widget.viewMode == JieQiEntryCapsuleMode.tiny
           ? CapsuleViewMode.tiny
           : CapsuleViewMode.normal,

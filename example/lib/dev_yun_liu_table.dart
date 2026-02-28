@@ -48,9 +48,9 @@ class _DevYunLiuTableState extends State<DevYunLiuTable> {
           child: TabBarView(
             physics: const PageScrollPhysics(),
             children: [
-              _buildDaYunLiuNianPage(),
-              _buildDaYunLiuNianTinyPage(),
-              _buildYearMonthPage(),
+              SingleChildScrollView(child: _buildDaYunLiuNianPage()),
+              SingleChildScrollView(child: _buildDaYunLiuNianTinyPage()),
+              SingleChildScrollView(child: _buildYearMonthPage()),
             ],
           ),
         ),

@@ -26,28 +26,18 @@ class _DaYunLiuNianTableDemoWidgetState
   Widget build(BuildContext context) {
     final data = DaYunLiuNianTableViewData.demo(yearsPerDaYun: _yearsPerDaYun);
 
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: DaYunLiuNianTableWidget(
-            data: data,
-            scale: widget.scale,
-            fitHeight: widget.fitHeight,
-          ),
-        ),
-        Positioned(
-          right: 14,
-          bottom: 14,
-          child: _YearsPerDaYunToggle(
-            selectedYears: _yearsPerDaYun,
-            onChanged: (v) {
-              setState(() {
-                _yearsPerDaYun = v;
-              });
-            },
-          ),
-        ),
-      ],
+    return DaYunLiuNianTableWidget(
+      data: data,
+      scale: widget.scale,
+      fitHeight: widget.fitHeight,
+      cornerWidget: _YearsPerDaYunToggle(
+        selectedYears: _yearsPerDaYun,
+        onChanged: (v) {
+          setState(() {
+            _yearsPerDaYun = v;
+          });
+        },
+      ),
     );
   }
 }
@@ -72,10 +62,16 @@ class _DaYunLiuNianTinyTableDemoWidgetState
 
     return Stack(
       children: [
-        Positioned.fill(
-          child: DaYunLiuNianTinyTableWidget(
-            data: data,
-            fitHeight: widget.fitHeight,
+        DaYunLiuNianTinyTableWidget(
+          data: data,
+          fitHeight: widget.fitHeight,
+          cornerWidget: _YearsPerDaYunToggle(
+            selectedYears: _yearsPerDaYun,
+            onChanged: (v) {
+              setState(() {
+                _yearsPerDaYun = v;
+              });
+            },
           ),
         ),
         Positioned(
@@ -95,18 +91,6 @@ class _DaYunLiuNianTinyTableDemoWidgetState
                 height: 1,
               ),
             ),
-          ),
-        ),
-        Positioned(
-          right: 14,
-          bottom: 14,
-          child: _YearsPerDaYunToggle(
-            selectedYears: _yearsPerDaYun,
-            onChanged: (v) {
-              setState(() {
-                _yearsPerDaYun = v;
-              });
-            },
           ),
         ),
       ],
@@ -130,7 +114,7 @@ class _YearsPerDaYunToggle extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.92),
           borderRadius: BorderRadius.circular(12),
@@ -144,21 +128,18 @@ class _YearsPerDaYunToggle extends StatelessWidget {
           ],
         ),
         child: ToggleButtons(
+          direction: Axis.vertical,
           isSelected: [is9, !is9],
           onPressed: (index) {
             onChanged(index == 0 ? 9 : 10);
           },
           borderRadius: BorderRadius.circular(10),
-          constraints: const BoxConstraints(minHeight: 32, minWidth: 52),
+          constraints: const BoxConstraints(minHeight: 40, minWidth: 40),
           children: const [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Text('9年'),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Text('10年'),
-            ),
+            Text('9年',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            Text('10年',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
@@ -172,6 +153,7 @@ class DaYunLiuNianTableWidget extends StatelessWidget {
   final bool fitHeight;
   final double outerPadding;
   final double cardPadding;
+  final Widget? cornerWidget;
 
   const DaYunLiuNianTableWidget({
     super.key,
@@ -180,6 +162,7 @@ class DaYunLiuNianTableWidget extends StatelessWidget {
     this.fitHeight = true,
     this.outerPadding = 20,
     this.cardPadding = 20,
+    this.cornerWidget,
   });
 
   DaYunLiuNianTableWidget.demo({
@@ -188,6 +171,7 @@ class DaYunLiuNianTableWidget extends StatelessWidget {
     this.fitHeight = true,
     this.outerPadding = 20,
     this.cardPadding = 20,
+    this.cornerWidget,
   }) : data = DaYunLiuNianTableViewData.demo();
 
   static const Color _paper = InkTheme.paperSoft;
@@ -216,7 +200,6 @@ class DaYunLiuNianTableWidget extends StatelessWidget {
                 double.infinity,
               )
             : double.infinity;
-
         final baseMatrixH = _estimateMatrixHeight(rowCount: rowCount);
         final fitScale = availableMatrixH.isFinite && baseMatrixH > 0
             ? (availableMatrixH / baseMatrixH).clamp(0.2, 1.0)
@@ -225,35 +208,45 @@ class DaYunLiuNianTableWidget extends StatelessWidget {
         const fitSafety = 0.975;
         final safeFitScale = (fitScale * fitSafety).clamp(0.2, 1.0);
 
-        final effectiveScale = fitHeight
-            ? (scale < safeFitScale ? scale : safeFitScale)
-            : scale;
+        // 计算原尺寸下表格需要的总宽度
+        final columnCount = data.columns.length;
+        final rawSidebarW = _sidebarW;
+        final rawDayunW = _dayunW;
+        final rawGap = _gap;
+        final rawTotalW = rawSidebarW +
+            rawGap +
+            (columnCount * rawDayunW) +
+            ((columnCount - 1) * rawGap);
 
-        return ColoredBox(
-          color: InkTheme.backgroundMuted,
-          child: Padding(
-            padding: EdgeInsets.all(outerPad),
-            child: Container(
-              padding: EdgeInsets.all(cardPad),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.15),
-                    blurRadius: 40,
-                    offset: const Offset(0, 15),
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: _buildMatrix(
-                  layoutScale: effectiveScale,
-                  textScale: effectiveScale < scale
-                      ? (effectiveScale * 1.18).clamp(effectiveScale, scale)
-                      : effectiveScale,
-                ),
+        // 可用宽度
+        final availableWidth = constraints.maxWidth.isFinite
+            ? (constraints.maxWidth - cardPad * 2)
+            : rawTotalW;
+
+        // 根据可用宽度计算缩放比例
+        final fitWidthScale =
+            rawTotalW > 0 ? (availableWidth / rawTotalW) : 1.0;
+        final finalScale = fitWidthScale;
+
+        // 最终应用的有效缩放（结合高度和宽度）
+        double effectiveScale = finalScale;
+        if (fitHeight && constraints.maxHeight.isFinite) {
+          if (finalScale > safeFitScale) {
+            effectiveScale = safeFitScale;
+          }
+        }
+
+        return Container(
+          padding: EdgeInsets.all(cardPad),
+          width: double.infinity,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: availableWidth),
+            child: Center(
+              child: _buildMatrix(
+                layoutScale: effectiveScale,
+                textScale: effectiveScale < scale
+                    ? (effectiveScale * 1.18).clamp(effectiveScale, scale)
+                    : effectiveScale,
               ),
             ),
           ),
@@ -272,85 +265,112 @@ class DaYunLiuNianTableWidget extends StatelessWidget {
     required double textScale,
   }) {
     final rowCount = data.rowSidebars.length;
+    final columnCount = data.columns.length;
+
     final gap = _gap * layoutScale;
     final sidebarW = _sidebarW * layoutScale;
     final dayunW = _dayunW * layoutScale;
-    final columnCount = data.columns.length;
+
     final totalW =
         sidebarW + gap + (columnCount * dayunW) + ((columnCount - 1) * gap);
 
-    return SizedBox(
-      width: totalW,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Row(
-              children: [
-                SizedBox(width: sidebarW + gap),
-                for (var c = 0; c < columnCount; c++) ...[
-                  Container(
-                    width: dayunW,
-                    color: c.isEven
-                        ? Colors.transparent
-                        : _gold.withOpacity(0.12),
-                  ),
-                  if (c != columnCount - 1) SizedBox(width: gap),
-                ],
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      alignment: Alignment
+          .center, // Center the matrix if container is wider than totalW
+      child: SizedBox(
+        width: totalW,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Row(
                 children: [
-                  SizedBox(width: sidebarW),
-                  SizedBox(width: gap),
-                  for (var c = 0; c < data.columns.length; c++) ...[
-                    _DaYunHeaderCell(
-                      data: data.columns[c].header,
-                      layoutScale: layoutScale,
-                      textScale: textScale,
+                  SizedBox(width: sidebarW + gap),
+                  for (var c = 0; c < columnCount; c++) ...[
+                    Container(
+                      width: dayunW,
+                      color: c.isEven
+                          ? Colors.transparent
+                          : _gold.withOpacity(0.12),
                     ),
-                    if (c != data.columns.length - 1) SizedBox(width: gap),
+                    if (c != columnCount - 1) SizedBox(width: gap),
                   ],
                 ],
               ),
-              SizedBox(height: gap),
-              for (var r = 0; r < rowCount; r++) ...[
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _IndexSidebar(
-                      text: data.rowSidebars[r],
-                      layoutScale: layoutScale,
-                      textScale: textScale,
+                    SizedBox(
+                      width: sidebarW + gap,
+                      // 移除 UnconstrainedBox，给 cornerWidget 这里一个不会被强制拉升到无穷大的固定包裹
+                      child: cornerWidget != null
+                          ? Align(
+                              alignment: Alignment.topLeft,
+                              child: Transform.scale(
+                                scale: layoutScale,
+                                alignment: Alignment.topLeft,
+                                child: SizedBox(
+                                  // 这里给个合理限定的高度/宽度，防止内部 _YearsPerDaYunToggle 向外溢出或向父级报 infinite size
+                                  width: (sidebarW + gap) / layoutScale,
+                                  height: DaYunLiuNianTableWidget
+                                      ._yearCellH, // 大约这个高度就可以包住 toggle
+                                  child: Align(
+                                    alignment: Alignment.topLeft,
+                                    child: cornerWidget,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : null,
                     ),
-                    SizedBox(width: gap),
                     for (var c = 0; c < data.columns.length; c++) ...[
-                      SizedBox(
-                        width: dayunW,
-                        height:
-                            DaYunLiuNianTableWidget._yearCellH * layoutScale,
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: _YearCell(
-                            data: data.columns[c].years[r],
-                            layoutScale: layoutScale,
-                            textScale: textScale,
-                          ),
-                        ),
+                      _DaYunHeaderCell(
+                        data: data.columns[c].header,
+                        layoutScale: layoutScale,
+                        textScale: textScale,
                       ),
                       if (c != data.columns.length - 1) SizedBox(width: gap),
                     ],
                   ],
                 ),
                 SizedBox(height: gap),
+                for (var r = 0; r < rowCount; r++) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _IndexSidebar(
+                        text: data.rowSidebars[r],
+                        layoutScale: layoutScale,
+                        textScale: textScale,
+                      ),
+                      SizedBox(width: gap),
+                      for (var c = 0; c < data.columns.length; c++) ...[
+                        SizedBox(
+                          width: dayunW,
+                          height:
+                              DaYunLiuNianTableWidget._yearCellH * layoutScale,
+                          child: Align(
+                            alignment: Alignment.center,
+                            child: _YearCell(
+                              data: data.columns[c].years[r],
+                              layoutScale: layoutScale,
+                              textScale: textScale,
+                            ),
+                          ),
+                        ),
+                        if (c != data.columns.length - 1) SizedBox(width: gap),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: gap),
+                ],
               ],
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -360,18 +380,21 @@ class DaYunLiuNianTinyTableWidget extends StatelessWidget {
   final DaYunLiuNianTableViewData data;
   final double scale;
   final bool fitHeight;
+  final Widget? cornerWidget;
 
   const DaYunLiuNianTinyTableWidget({
     super.key,
     required this.data,
     this.scale = 0.52,
     this.fitHeight = true,
+    this.cornerWidget,
   });
 
   DaYunLiuNianTinyTableWidget.demo({
     super.key,
     this.scale = 0.52,
     this.fitHeight = true,
+    this.cornerWidget,
   }) : data = DaYunLiuNianTableViewData.demo();
 
   @override
@@ -382,6 +405,7 @@ class DaYunLiuNianTinyTableWidget extends StatelessWidget {
       fitHeight: fitHeight,
       outerPadding: 8,
       cardPadding: 8,
+      cornerWidget: cornerWidget,
     );
   }
 }
@@ -501,9 +525,8 @@ class DaYunLiuNianTableViewData {
     }
 
     final rowSidebars = List<String>.generate(yearsPerDaYun, (i) {
-      final idx = i < yearIndexZhUpper.length
-          ? yearIndexZhUpper[i]
-          : '${i + 1}';
+      final idx =
+          i < yearIndexZhUpper.length ? yearIndexZhUpper[i] : '${i + 1}';
       return '年·$idx';
     });
 

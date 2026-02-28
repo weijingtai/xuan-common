@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中式节气物候 Widget</title>
+    <style>
+        :root {
+            /* 方案一：文人风格变量 */
+            --s1-bg: #fdfaf2;
+            --s1-ink: #2c2c2c;
+            --s1-gold: #c5a059;
+            /* 方案二：宫廷风格变量 */
+            --s2-bg: #1a1a1a;
+            --s2-gold: #d4af37;
+            --s2-red: #a62c2b;
+            --s2-paper: #f0e6d2;
+        }
+
+        body {
+            background-color: #e5e0d4;
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: "STKaiti", "KaiTi", "Microsoft YaHei", serif;
+        }
+
+        /* --- 通用：太极选中 Icon --- */
+        .taiji-icon {
+            width: 18px;
+            height: 18px;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            margin-right: 12px;
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fff;
+            flex-shrink: 0;
+        }
+
+        input[type="radio"]:checked+.option-card .taiji-icon {
+            transform: rotate(180deg);
+            background: linear-gradient(to bottom, var(--ink-color) 50%, #fff 50%);
+            border-color: var(--ink-color);
+        }
+
+        input[type="radio"]:checked+.option-card .taiji-icon::before,
+        input[type="radio"]:checked+.option-card .taiji-icon::after {
+            content: "";
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        input[type="radio"]:checked+.option-card .taiji-icon::before {
+            top: 3px;
+            background: #fff;
+        }
+
+        input[type="radio"]:checked+.option-card .taiji-icon::after {
+            bottom: 3px;
+            background: var(--ink-color);
+        }
+
+        /* --- 风格一：素雅宣纸 --- */
+        #style1 {
+            --ink-color: var(--s1-ink);
+        }
+
+        .scholar-card {
+            width: 340px;
+            height: 260px;
+            background: var(--s1-bg);
+            border: 1px solid #d1c7a7;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scholar-card.collapsed {
+            width: 130px;
+            height: 32px;
+            border-radius: 30px;
+            background: var(--s1-bg);
+            border: 1px solid var(--s1-gold);
+        }
+
+        /* --- 风格二：玄色描金 --- */
+        #style2 {
+            --ink-color: #000;
+        }
+
+        .palace-card {
+            width: 340px;
+            height: 260px;
+            background: var(--s2-paper);
+            border: 4px solid var(--s2-bg);
+            outline: 1px solid var(--s2-gold);
+            outline-offset: -3px;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .palace-card.collapsed {
+            width: 110px;
+            height: 34px;
+            background: var(--s2-bg);
+            border-radius: 4px;
+            outline-color: var(--s2-red);
+        }
+
+        /* --- 内部公共样式 --- */
+        .header {
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-bottom: 1px dashed #ddd;
+            transition: all 0.3s;
+        }
+
+        .collapsed .header {
+            border-bottom: none;
+        }
+
+        .header b {
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .collapsed .header b {
+            font-size: 0.8rem;
+        }
+
+        .collapsed .full-title {
+            display: none;
+        }
+
+        .short-title {
+            display: none;
+        }
+
+        .collapsed .short-title {
+            display: inline;
+        }
+
+        .content {
+            padding: 10px;
+            transition: opacity 0.3s;
+        }
+
+        .collapsed .content {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .option-card {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        input[type="radio"]:checked+.option-card {
+            border-color: var(--s1-gold);
+            background: #fff;
+        }
+
+        .label-text b {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .label-text span {
+            font-size: 0.75rem;
+            color: #777;
+            line-height: 1.2;
+            display: block;
+        }
+
+        .palace-card .header b {
+            color: var(--s2-bg);
+        }
+
+        .palace-card.collapsed .header b {
+            color: var(--s2-gold);
+        }
+
+        .palace-card .option-card {
+            background: rgba(0, 0, 0, 0.03);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .palace-card input[type="radio"]:checked+.option-card {
+            border: 1px solid var(--s2-red);
+            background: rgba(166, 44, 43, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="scholar-card" id="style1">
+        <div class="header" onclick="toggle('style1')">
+            <b class="full-title">排盤設置：節氣與物候</b>
+            <b class="short-title" id="title1">節氣 · 定氣</b>
+        </div>
+        <div class="content">
+            <label>
+                <input type="radio" name="solar1" value="平氣" onchange="update('style1', '平氣')">
+                <div class="option-card">
+                    <div class="taiji-icon"></div>
+                    <div class="label-text">
+                        <b>平氣法 + 傳統固定物候</b>
+                        <span>節氣恆定間隔；物候按 n×5 天固定劃分。</span>
+                    </div>
+                </div>
+            </label>
+            <label>
+                <input type="radio" name="solar1" value="定氣" checked onchange="update('style1', '定氣')">
+                <div class="option-card">
+                    <div class="taiji-icon"></div>
+                    <div class="label-text">
+                        <b>定氣法 + 現代精準物候</b>
+                        <span>節氣依黃經；物候依交節起點動態劃分。</span>
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <div class="palace-card" id="style2">
+        <div class="header" onclick="toggle('style2')">
+            <b class="full-title">節氣物候聯動</b>
+            <b class="short-title" id="title2">節氣 · 定氣</b>
+        </div>
+        <div class="content">
+            <label>
+                <input type="radio" name="solar2" value="平氣" onchange="update('style2', '平氣')">
+                <div class="option-card">
+                    <div class="taiji-icon"></div>
+                    <div class="label-text">
+                        <b>平氣法 · 傳統</b>
+                        <span>遵循古法恆定間隔</span>
+                    </div>
+                </div>
+            </label>
+            <label>
+                <input type="radio" name="solar2" value="定氣" checked onchange="update('style2', '定氣')">
+                <div class="option-card">
+                    <div class="taiji-icon"></div>
+                    <div class="label-text">
+                        <b>定氣法 · 現代</b>
+                        <span>依黃經精準釐定</span>
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        function toggle(id) {
+            document.getElementById(id).classList.toggle('collapsed');
+        }
+
+        function update(id, val) {
+            const titleId = id === 'style1' ? 'title1' : 'title2';
+            document.getElementById(titleId).innerText = `節氣 · ${val}`;
+            // 选中后自动收起
+            setTimeout(() => {
+                document.getElementById(id).classList.add('collapsed');
+            }, 400);
+        }
+    </script>
+</body>
+
+</html>

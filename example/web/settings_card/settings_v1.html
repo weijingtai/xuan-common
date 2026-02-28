@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>排盘法要设置 - 古籍墨韵版</title>
+    <style>
+        /* --- 全局设计变量 (Design Tokens) --- */
+        :root {
+            --paper-bg: #f4f0e6;
+            /* 宣纸底色 */
+            --ink-black: #2c2c2c;
+            /* 水墨黑 */
+            --stamp-red: #af3029;
+            /* 朱砂红 */
+            --border-line: #3d3d3d;
+            /* 墨线色 */
+            --annotation: #665f55;
+            /* 夹注色 */
+            --font-main: "Kaiti", "STKaiti", "楷体", serif;
+            --font-serif: "Source Han Serif SC", "SimSun", "宋体", serif;
+        }
+
+        /* --- 基础布局 --- */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background-color: #d1c7b7;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 20px;
+            font-family: var(--font-main);
+            color: var(--ink-black);
+            line-height: 1.6;
+        }
+
+        /* --- 宣纸容器 (Xuan Paper Container) --- */
+        .paper-canvas {
+            background-color: var(--paper-bg);
+            /* 使用内联SVG生成纤维纹理，确保单文件可用 */
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+            width: 100%;
+            max-width: 700px;
+            padding: 60px 50px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+            position: relative;
+            border: 1px solid #dcd3c1;
+        }
+
+        /* 古籍边框修饰 */
+        .paper-canvas::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 1px solid var(--border-line);
+            pointer-events: none;
+        }
+
+        /* --- 标题系统 --- */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .header-title {
+            font-size: 32px;
+            margin: 0;
+            display: inline-block;
+            padding: 0 20px;
+            background: var(--paper-bg);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-line);
+            z-index: 0;
+        }
+
+        /* --- 模块容器 (Section) --- */
+        .ink-section {
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .section-hd {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 2px solid var(--ink-black);
+            margin-bottom: 25px;
+            padding-bottom: 5px;
+        }
+
+        .section-hd h2 {
+            font-size: 20px;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .set-default {
+            font-size: 14px;
+            color: var(--stamp-red);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* --- 选项列表 (Option Group) --- */
+        .option-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        /* 隐藏原生Radio */
+        .option-item input[type="radio"] {
+            display: none;
+        }
+
+        /* 自定义朱砂印章 (Stamp Checkbox) */
+        .stamp-box {
+            width: 20px;
+            height: 20px;
+            border: 1.5px solid var(--ink-black);
+            margin-right: 15px;
+            margin-top: 4px;
+            flex-shrink: 0;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        /* 选中状态：模拟朱砂盖章 */
+        .option-item input:checked+.stamp-box {
+            background-color: var(--stamp-red);
+            border-color: var(--stamp-red);
+            transform: rotate(-5deg) scale(1.1);
+            /* 模拟手动盖章的不规则感 */
+        }
+
+        .option-item input:checked+.stamp-box::after {
+            content: "正";
+            /* 印章阳文 */
+            color: var(--paper-bg);
+            font-size: 12px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+        }
+
+        /* 文字内容排版 */
+        .option-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .option-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--ink-black);
+        }
+
+        .option-desc {
+            font-family: var(--font-serif);
+            font-size: 15px;
+            color: var(--annotation);
+            margin-top: 5px;
+        }
+
+        .tag-recommend {
+            color: var(--stamp-red);
+            font-size: 14px;
+            margin-left: 8px;
+            border: 1px solid var(--stamp-red);
+            padding: 0 4px;
+            vertical-align: middle;
+        }
+
+        /* --- 操作区 (Footer) --- */
+        .action-area {
+            margin-top: 50px;
+            text-align: right;
+            border-top: 1px dashed var(--border-line);
+            padding-top: 30px;
+        }
+
+        .btn-confirm {
+            background-color: var(--stamp-red);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-family: var(--font-main);
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px var(--ink-black);
+            transition: all 0.1s;
+        }
+
+        .btn-confirm:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px var(--ink-black);
+        }
+
+        /* 响应式优化 */
+        @media (max-width: 600px) {
+            .paper-canvas {
+                padding: 40px 20px;
+            }
+
+            .option-label {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="paper-canvas">
+        <header>
+            <div class="header-line"></div>
+            <h1 class="header-title">排盘法要设置</h1>
+        </header>
+
+        <main>
+            <section class="ink-section">
+                <div class="section-hd">
+                    <h2>排盘设置：交节方案</h2>
+                    <a href="#" class="set-default">设为默认</a>
+                </div>
+
+                <label class="option-item">
+                    <input type="radio" name="scheme" value="1">
+                    <div class="stamp-box"></div>
+                    <div class="option-content">
+                        <span class="option-label">按时辰交节</span>
+                        <span class="option-desc">两小时一段；与子时日界有关。</span>
+                    </div>
+                </label>
+
+                <label class="option-item">
+                    <input type="radio" name="scheme" value="2" checked>
+                    <div class="stamp-box"></div>
+                    <div class="option-content">
+                        <span class="option-label">按分钟交节 <span class="tag-recommend">宜</span></span>
+                        <span class="option-desc">现代科学计算，精确到分钟。</span>
+                    </div>
+                </label>
+            </section>
+
+            <section class="ink-section">
+                <div class="section-hd">
+                    <h2>排盘设置：节气与物候</h2>
+                    <a href="#" class="set-default">设为默认</a>
+                </div>
+
+                <label class="option-item">
+                    <input type="radio" name="solar" value="1">
+                    <div class="stamp-box"></div>
+                    <div class="option-content">
+                        <span class="option-label">平气法 + 传统固定物候</span>
+                        <span class="option-desc">节气恒定间隔；物候按 n×5 天固定划分。</span>
+                    </div>
+                </label>
+
+                <label class="option-item">
+                    <input type="radio" name="solar" value="2" checked>
+                    <div class="stamp-box"></div>
+                    <div class="option-content">
+                        <span class="option-label">定气法 + 现代精准物候</span>
+                        <span class="option-desc">节气依黄经计算；物候按 n×5 天动态划分。</span>
+                    </div>
+                </label>
+            </section>
+
+            <div class="action-area">
+                <button class="btn-confirm">依此落定</button>
+            </div>
+        </main>
+    </div>
+
+    <div class="traditional-panel">
+        <div class="header">
+            <span class="icon-sundial"></span>
+            <h2>曆法設置：交節方案</h2>
+            <span class="set-default">定為常制</span>
+        </div>
+
+        <div class="options-list">
+            <div class="option item-recommended">
+                <div class="radio-seal selected"></div>
+                <div class="text-content">
+                    <h3>按分鐘交節 <span class="tag">【推崇】</span></h3>
+                    <p>依當代曆象精算，釐定至分。</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

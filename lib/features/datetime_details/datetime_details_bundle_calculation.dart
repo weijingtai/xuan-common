@@ -101,7 +101,6 @@ class DateTimeDetailsBundleCalculation {
     params.validate();
 
     try {
-      // 使用全局运行期策略覆盖配置中的子时策略（开发阶段默认行为）
       config = config.copyWith(ziStrategy: ZiStrategyStore.current);
       // 1. 基础时区处理 - 获取UTC时间和ChineseDateInfo
       final timezoneData = await TimezoneProcessor.process(
@@ -150,7 +149,9 @@ class DateTimeDetailsBundleCalculation {
         utcDatetime: timezoneData.utcDateTime,
         timezoneStr: params.timezoneStr,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Calculation Error Details: $e');
+      print('Stack Trace: $stackTrace');
       throw BirthDateTimeCalculationException(
         '计算出生时间详情时发生错误: ${e.toString()}',
         originalError: e,

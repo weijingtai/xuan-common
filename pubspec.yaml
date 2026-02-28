@@ -106,9 +106,9 @@ flutter:
       fonts:
         - asset: fonts/NotoSansSC-Regular.ttf
   assets:
-    - ../assets/dataset/
-    - ../assets/dataset/geo/
-    - ../assets/sql/
+    - assets/dataset/
+    - assets/dataset/geo/
+    - assets/sql/
     - assets/colors/zhongguose.pb
     - assets/colors/forbidden_city.pb
     - assets/templates/
