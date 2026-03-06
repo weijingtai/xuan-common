@@ -47,6 +47,78 @@ typedef DaYunDisplayData = ({
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Theme Configuration
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Centralized style parameters for the YunLiu card component.
+class YunLiuCardThemeData {
+  /// The active/selected brand color (defaults to a dark green).
+  final Color activeColor;
+
+  /// The active marker brand color specifically for 'Today' (defaults to cinnabar red).
+  final Color todayColor;
+
+  /// Fallback fonts for traditional Chinese & GanZhi (Serif).
+  final List<String> serifFonts;
+
+  /// Fallback fonts for generic numbers & modern typography (Sans-serif).
+  final List<String> sansFonts;
+
+  /// Width of the large top-level DaYun horizontal cards.
+  final double daYunCardWidth;
+
+  /// Fixed height of the List containing DaYun cards.
+  final double daYunListHeight;
+
+  const YunLiuCardThemeData({
+    required this.activeColor,
+    required this.todayColor,
+    required this.serifFonts,
+    required this.sansFonts,
+    required this.daYunCardWidth,
+    required this.daYunListHeight,
+  });
+
+  /// The standard authentic theme used in the application.
+  factory YunLiuCardThemeData.fallback() {
+    return const YunLiuCardThemeData(
+      activeColor: Color(0xFF2E5A3C),
+      todayColor: InkTheme.cinnabar,
+      serifFonts: [
+        'STKaiti',
+        'KaiTi',
+        'Noto Serif SC',
+        'Source Han Serif SC',
+        'serif',
+      ],
+      sansFonts: ['sans-serif'],
+      daYunCardWidth: 420.0,
+      daYunListHeight: 220.0,
+    );
+  }
+}
+
+/// An [InheritedWidget] to inject [YunLiuCardThemeData] seamlessly down the tree.
+class YunLiuCardTheme extends InheritedWidget {
+  final YunLiuCardThemeData data;
+
+  const YunLiuCardTheme({
+    super.key,
+    required this.data,
+    required super.child,
+  });
+
+  static YunLiuCardThemeData of(BuildContext context) {
+    final widget =
+        context.dependOnInheritedWidgetOfExactType<YunLiuCardTheme>();
+    return widget?.data ?? YunLiuCardThemeData.fallback();
+  }
+
+  @override
+  bool updateShouldNotify(YunLiuCardTheme oldWidget) => data != oldWidget.data;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main Widget
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -71,6 +143,9 @@ class YunLiuListTileCardWidget extends StatefulWidget {
   /// A user-selected month name — matching LiuYue chips will show a "选" tag.
   final String? selectedMonthName;
 
+  /// Global custom theme configuration. Will fall back to default if null.
+  final YunLiuCardThemeData? theme;
+
   const YunLiuListTileCardWidget({
     super.key,
     required this.daYunList,
@@ -78,6 +153,7 @@ class YunLiuListTileCardWidget extends StatefulWidget {
     this.todayMonthName,
     this.selectedYear,
     this.selectedMonthName,
+    this.theme,
   });
 
   @override
@@ -90,11 +166,105 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
   int? _selectedLiuNianIdx;
   int? _selectedLiuYueIdx;
   int? _selectedLiuRiDay;
+  int? _selectedLiuShiIdx;
+
+  // View settings
+  bool _isGlobalExpanded = true;
+  bool _isHorizontalView = true;
+  bool _isMiniMode = false;
+
+  // Local expand states: key is tier, value is set of expanded indices
+  // For simplicity, we just use a bool for the whole widget or we could track per card.
+  // The global toggle will force all these to true/false.
+  // We will pass the global state down as default unless overridden locally.
+  final Map<int, bool> _localDaYunExpanded = {};
+  final Map<int, bool> _localLiuNianExpanded = {};
+  final Map<int, bool> _localLiuYueExpanded = {};
+  final Map<int, bool> _localLiuRiExpanded = {};
+
+  final ScrollController _daYunScrollCtrl = ScrollController();
+  final ScrollController _liuNianScrollCtrl = ScrollController();
+  final ScrollController _liuYueScrollCtrl = ScrollController();
+  final ScrollController _liuRiScrollCtrl = ScrollController();
+  final ScrollController _liuShiScrollCtrl = ScrollController();
+
+  void _toggleGlobalExpanded() {
+    setState(() {
+      _isGlobalExpanded = !_isGlobalExpanded;
+      _localDaYunExpanded.clear();
+      _localLiuNianExpanded.clear();
+      _localLiuYueExpanded.clear();
+      _localLiuRiExpanded.clear();
+    });
+  }
+
+  void _toggleViewDirection() {
+    setState(() {
+      _isHorizontalView = !_isHorizontalView;
+    });
+  }
+
+  void _toggleMiniMode() {
+    setState(() {
+      _isMiniMode = !_isMiniMode;
+    });
+  }
+
+  bool _isDaYunExpanded(int idx) =>
+      _localDaYunExpanded[idx] ?? _isGlobalExpanded;
+  bool _isLiuNianExpanded(int idx) =>
+      _localLiuNianExpanded[idx] ?? _isGlobalExpanded;
+  bool _isLiuYueExpanded(int idx) =>
+      _localLiuYueExpanded[idx] ?? _isGlobalExpanded;
+  bool _isLiuRiExpanded(int idx) =>
+      _localLiuRiExpanded[idx] ?? _isGlobalExpanded;
 
   @override
   void initState() {
     super.initState();
     _syncWithSelectedDate();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final theme = widget.theme ?? YunLiuCardThemeData.fallback();
+      _scrollToCenter(
+          _daYunScrollCtrl, _selectedDaYunIdx, theme.daYunCardWidth);
+      if (_selectedLiuNianIdx != null) {
+        _scrollToCenter(
+            _liuNianScrollCtrl, _selectedLiuNianIdx!, theme.daYunCardWidth);
+      }
+      if (_selectedLiuYueIdx != null) {
+        _scrollToCenter(
+            _liuYueScrollCtrl, _selectedLiuYueIdx!, theme.daYunCardWidth);
+      }
+      if (_selectedLiuRiDay != null) {
+        _scrollToCenter(
+            _liuRiScrollCtrl, _selectedLiuRiDay! - 1, theme.daYunCardWidth);
+      }
+      if (_selectedLiuShiIdx != null) {
+        _scrollToCenter(
+            _liuShiScrollCtrl, _selectedLiuShiIdx!, theme.daYunCardWidth);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _daYunScrollCtrl.dispose();
+    _liuNianScrollCtrl.dispose();
+    _liuYueScrollCtrl.dispose();
+    _liuRiScrollCtrl.dispose();
+    _liuShiScrollCtrl.dispose();
+    super.dispose();
+  }
+
+  void _scrollToCenter(ScrollController ctrl, int index, double itemWidth) {
+    if (!ctrl.hasClients) return;
+    final offset = index * (itemWidth + 14.0); // 14.0 is separator width
+    ctrl.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _syncWithSelectedDate() {
@@ -125,19 +295,15 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     }
   }
 
-  static const _serif = [
-    'STKaiti',
-    'KaiTi',
-    'Noto Serif SC',
-    'Source Han Serif SC',
-    'serif',
-  ];
-  static const _sans = ['sans-serif'];
-
-  // ── Tier label (e.g. "大运", "流年 · 甲戌大运") ──
-  Widget _buildTierLabel(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 20, right: 20, top: 12, bottom: 6),
+  // ── Tier label ──
+  Widget _buildTierLabel(String text, YunLiuCardThemeData theme) {
+    return Container(
+      width: _isHorizontalView ? (theme.daYunCardWidth + 50) : double.infinity,
+      padding: EdgeInsets.only(
+          left: _isHorizontalView ? 25 : 20,
+          right: _isHorizontalView ? 25 : 20,
+          top: 12,
+          bottom: 6),
       child: Row(
         children: [
           Text(
@@ -146,13 +312,115 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
               fontSize: 11,
               color: InkTheme.textMuted,
               letterSpacing: 2,
-              fontFamilyFallback: _sans,
+              fontFamilyFallback: theme.sansFonts,
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Container(height: 1, color: InkTheme.borderLight),
           ),
+        ],
+      ),
+    );
+  }
+
+  // Global controls row
+  Widget _buildGlobalControls(YunLiuCardThemeData theme) {
+    return Container(
+      width: _isHorizontalView ? (theme.daYunCardWidth + 50) : double.infinity,
+      padding: EdgeInsets.only(
+          left: _isHorizontalView ? 25 : 20,
+          right: _isHorizontalView ? 25 : 20,
+          top: 10,
+          bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          TextButton.icon(
+            onPressed: _toggleGlobalExpanded,
+            icon: Icon(
+              _isGlobalExpanded ? Icons.unfold_less : Icons.unfold_more,
+              size: 16,
+              color: InkTheme.inkMuted,
+            ),
+            label: Text(
+              _isGlobalExpanded ? '全部收起' : '全部展开',
+              style: TextStyle(fontSize: 12, color: InkTheme.inkMuted),
+            ),
+          ),
+          const SizedBox(width: 12),
+          TextButton.icon(
+            onPressed: _toggleViewDirection,
+            icon: Icon(
+              _isHorizontalView
+                  ? Icons.view_agenda_outlined
+                  : Icons.view_carousel_outlined,
+              size: 16,
+              color: InkTheme.inkMuted,
+            ),
+            label: Text(
+              _isHorizontalView ? '切换竖向' : '切换横向',
+              style: TextStyle(fontSize: 12, color: InkTheme.inkMuted),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _toggleMiniMode,
+            icon: Icon(
+              _isMiniMode ? Icons.zoom_in : Icons.zoom_out_map,
+              size: 16,
+              color: InkTheme.inkMuted,
+            ),
+            label: Text(
+              _isMiniMode ? '全展大' : '全缩小',
+              style: TextStyle(fontSize: 12, color: InkTheme.inkMuted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTierRow({
+    required String title,
+    double? horizontalHeight,
+    required Widget child,
+    required YunLiuCardThemeData theme,
+    required Axis scrollDirection,
+    required int itemCount,
+    required Widget Function(BuildContext, int) builder,
+  }) {
+    final fixedWidth = theme.daYunCardWidth + 50;
+    return SizedBox(
+      width: fixedWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildTierLabel(title, theme),
+          if (scrollDirection == Axis.horizontal)
+            SizedBox(
+              width: fixedWidth,
+              height: horizontalHeight,
+              child: ListView.separated(
+                controller: child is ListView ? child.controller : null,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                itemCount: itemCount,
+                separatorBuilder: (_, __) => const SizedBox(width: 14),
+                itemBuilder: builder,
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25),
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: itemCount,
+                separatorBuilder: (_, __) => const SizedBox(height: 14),
+                itemBuilder: builder,
+              ),
+            ),
         ],
       ),
     );
@@ -172,104 +440,309 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
             ? selectedLiuNian.liuyue[_selectedLiuYueIdx!]
             : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // ── Tier 1: DaYun ──
-        _buildTierLabel('大运'),
-        SizedBox(
-          height: 220,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: daYunList.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
-            itemBuilder: (context, idx) {
-              final dy = daYunList[idx];
-              final isSelected = idx == _selectedDaYunIdx;
-              return _DaYunTile(
-                data: dy,
-                index: idx,
-                isSelected: isSelected,
-                selectedLiuNianIdx: isSelected ? _selectedLiuNianIdx : null,
-                todayYear: widget.todayYear,
-                onTileTap: () {
-                  setState(() {
-                    _selectedDaYunIdx = idx;
-                    _selectedLiuNianIdx = null;
-                    _selectedLiuYueIdx = null;
-                    _selectedLiuRiDay = null;
-                  });
+    final theme = widget.theme ?? YunLiuCardThemeData.fallback();
+
+    return YunLiuCardTheme(
+        data: theme,
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildGlobalControls(theme),
+              // ── Tier 1: DaYun ──
+              _buildTierRow(
+                title: '大运',
+                horizontalHeight:
+                    _isGlobalExpanded ? 260 : 130, // Approximate height changes
+                theme: theme,
+                scrollDirection:
+                    _isHorizontalView ? Axis.horizontal : Axis.vertical,
+                itemCount: daYunList.length,
+                child:
+                    ListView(controller: _daYunScrollCtrl), // Pass controller
+                builder: (context, idx) {
+                  final dy = daYunList[idx];
+                  final isSelected = idx == _selectedDaYunIdx;
+                  return _DaYunTile(
+                    data: dy,
+                    index: idx,
+                    isSelected: isSelected,
+                    selectedLiuNianIdx: isSelected ? _selectedLiuNianIdx : null,
+                    todayYear: widget.todayYear,
+                    isMini: _isMiniMode,
+                    isExpanded: _isDaYunExpanded(idx),
+                    onToggleExpand: () {
+                      setState(() {
+                        _localDaYunExpanded[idx] = !_isDaYunExpanded(idx);
+                      });
+                    },
+                    onTileTap: () {
+                      setState(() {
+                        _selectedDaYunIdx = idx;
+                        _selectedLiuNianIdx = null;
+                        _selectedLiuYueIdx = null;
+                        _selectedLiuRiDay = null;
+                        _selectedLiuShiIdx = null;
+                      });
+                      if (_isHorizontalView) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollToCenter(
+                              _daYunScrollCtrl, idx, theme.daYunCardWidth);
+                        });
+                      }
+                    },
+                    onLiuNianTap: (lnIdx) {
+                      setState(() {
+                        _selectedDaYunIdx = idx;
+                        _selectedLiuNianIdx = lnIdx;
+                        _selectedLiuYueIdx = null;
+                        _selectedLiuRiDay = null;
+                        _selectedLiuShiIdx = null;
+                      });
+                      if (_isHorizontalView) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _scrollToCenter(
+                              _daYunScrollCtrl, idx, theme.daYunCardWidth);
+                          _scrollToCenter(
+                              _liuNianScrollCtrl, lnIdx, theme.daYunCardWidth);
+                        });
+                      }
+                    },
+                  );
                 },
-                onLiuNianTap: (lnIdx) {
-                  setState(() {
-                    _selectedDaYunIdx = idx;
-                    _selectedLiuNianIdx = lnIdx;
-                    _selectedLiuYueIdx = null;
-                    _selectedLiuRiDay = null;
-                  });
-                },
-              );
-            },
-          ),
-        ),
+              ),
 
-        // ── Tier 2: LiuNian Detail ──
-        if (selectedLiuNian != null) ...[
-          _buildTierLabel('流年 · ${selectedDaYun.pillar.name}大运'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _LiuNianDetailTile(
-              data: selectedLiuNian,
-              selectedLiuYueIdx: _selectedLiuYueIdx,
-              todayMonthName: widget.todayMonthName,
-              onLiuYueTap: (lyIdx) {
-                setState(() {
-                  _selectedLiuYueIdx = lyIdx;
-                  _selectedLiuRiDay = null;
-                });
-              },
-            ),
-          ),
-        ],
+              // ── Tier 2: LiuNian Detail ──
+              if (_selectedLiuNianIdx != null)
+                _buildTierRow(
+                  title: '流年 · ${selectedDaYun.pillar.name}大运',
+                  horizontalHeight: _isGlobalExpanded ? 260 : 130,
+                  theme: theme,
+                  scrollDirection:
+                      _isHorizontalView ? Axis.horizontal : Axis.vertical,
+                  itemCount: selectedDaYun.liunian.length,
+                  child: ListView(controller: _liuNianScrollCtrl),
+                  builder: (context, lnIdx) {
+                    final ln = selectedDaYun.liunian[lnIdx];
+                    final isSelected = lnIdx == _selectedLiuNianIdx;
+                    return _LiuNianDetailTile(
+                      data: ln,
+                      isSelected: isSelected,
+                      selectedLiuYueIdx: isSelected ? _selectedLiuYueIdx : null,
+                      todayMonthName: widget.todayMonthName,
+                      isMini: _isMiniMode,
+                      isExpanded: _isLiuNianExpanded(lnIdx),
+                      onToggleExpand: () {
+                        setState(() {
+                          _localLiuNianExpanded[lnIdx] =
+                              !_isLiuNianExpanded(lnIdx);
+                        });
+                      },
+                      onTileTap: () {
+                        setState(() {
+                          _selectedLiuNianIdx = lnIdx;
+                          _selectedLiuYueIdx = null;
+                          _selectedLiuRiDay = null;
+                          _selectedLiuShiIdx = null;
+                        });
+                        if (_isHorizontalView) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToCenter(_liuNianScrollCtrl, lnIdx,
+                                theme.daYunCardWidth);
+                          });
+                        }
+                      },
+                      onLiuYueTap: (lyIdx) {
+                        setState(() {
+                          _selectedLiuNianIdx = lnIdx;
+                          _selectedLiuYueIdx = lyIdx;
+                          _selectedLiuRiDay = null;
+                          _selectedLiuShiIdx = null;
+                        });
+                        if (_isHorizontalView) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToCenter(_liuNianScrollCtrl, lnIdx,
+                                theme.daYunCardWidth);
+                            _scrollToCenter(
+                                _liuYueScrollCtrl, lyIdx, theme.daYunCardWidth);
+                          });
+                        }
+                      },
+                    );
+                  },
+                ),
 
-        // ── Tier 3: LiuYue Detail ──
-        if (selectedLiuYue != null) ...[
-          _buildTierLabel('流月 · ${selectedLiuNian!.year}年'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _LiuYueDetailTile(
-              data: selectedLiuYue,
-              year: selectedLiuNian.year,
-              selectedDay: _selectedLiuRiDay,
-              onDaySelected: (day) {
-                setState(() {
-                  _selectedLiuRiDay = day;
-                });
-              },
-            ),
-          ),
-        ],
+              // ── Tier 3: LiuYue Detail ──
+              if (_selectedLiuYueIdx != null && selectedLiuNian != null)
+                _buildTierRow(
+                  title: '流月 · ${selectedLiuNian.year}年',
+                  horizontalHeight: _isGlobalExpanded ? 500 : 130,
+                  theme: theme,
+                  scrollDirection:
+                      _isHorizontalView ? Axis.horizontal : Axis.vertical,
+                  itemCount: selectedLiuNian.liuyue.length,
+                  child: ListView(controller: _liuYueScrollCtrl),
+                  builder: (context, lyIdx) {
+                    final ly = selectedLiuNian.liuyue[lyIdx];
+                    final isSelected = lyIdx == _selectedLiuYueIdx;
+                    return _LiuYueDetailTile(
+                      data: ly,
+                      year: selectedLiuNian.year,
+                      isSelected: isSelected,
+                      selectedDay: isSelected ? _selectedLiuRiDay : null,
+                      isMini: _isMiniMode,
+                      isExpanded: _isLiuYueExpanded(lyIdx),
+                      onToggleExpand: () {
+                        setState(() {
+                          _localLiuYueExpanded[lyIdx] =
+                              !_isLiuYueExpanded(lyIdx);
+                        });
+                      },
+                      onTileTap: () {
+                        setState(() {
+                          _selectedLiuYueIdx = lyIdx;
+                          _selectedLiuRiDay = null;
+                          _selectedLiuShiIdx = null;
+                        });
+                        if (_isHorizontalView) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToCenter(
+                                _liuYueScrollCtrl, lyIdx, theme.daYunCardWidth);
+                          });
+                        }
+                      },
+                      onDaySelected: (day) {
+                        setState(() {
+                          _selectedLiuYueIdx = lyIdx;
+                          _selectedLiuRiDay = day;
+                          _selectedLiuShiIdx = null;
+                        });
+                        if (_isHorizontalView) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToCenter(
+                                _liuYueScrollCtrl, lyIdx, theme.daYunCardWidth);
+                            _scrollToCenter(_liuRiScrollCtrl, day - 1,
+                                theme.daYunCardWidth);
+                          });
+                        }
+                      },
+                    );
+                  },
+                ),
 
-        // ── Tier 4: LiuRi Detail ──
-        if (_selectedLiuRiDay != null &&
-            selectedLiuYue != null &&
-            selectedLiuNian != null) ...[
-          _buildTierLabel(
-              '流日 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月$_selectedLiuRiDay日'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _LiuRiDetailTile(
-              year: selectedLiuNian.year,
-              month: selectedLiuYue.gregorianMonth,
-              day: _selectedLiuRiDay!,
-            ),
-          ),
-        ],
+              // ── Tier 4: LiuRi Detail ──
+              if (_selectedLiuRiDay != null &&
+                  selectedLiuYue != null &&
+                  selectedLiuNian != null)
+                Builder(builder: (context) {
+                  final dt = DateTime(selectedLiuNian.year,
+                      selectedLiuYue.gregorianMonth + 1, 0);
+                  final daysInMonth = dt.day;
+                  return _buildTierRow(
+                    title:
+                        '流日 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月',
+                    horizontalHeight: _isGlobalExpanded ? 260 : 130,
+                    theme: theme,
+                    scrollDirection:
+                        _isHorizontalView ? Axis.horizontal : Axis.vertical,
+                    itemCount: daysInMonth,
+                    child: ListView(controller: _liuRiScrollCtrl),
+                    builder: (context, idx) {
+                      final day = idx + 1;
+                      final isSelected = day == _selectedLiuRiDay;
+                      return _LiuRiDetailTile(
+                        year: selectedLiuNian.year,
+                        month: selectedLiuYue.gregorianMonth,
+                        day: day,
+                        isSelected: isSelected,
+                        selectedLiuShiIdx:
+                            isSelected ? _selectedLiuShiIdx : null,
+                        isExpanded: _isLiuRiExpanded(idx),
+                        isMini: _isMiniMode,
+                        onToggleExpand: () {
+                          setState(() {
+                            _localLiuRiExpanded[idx] = !_isLiuRiExpanded(idx);
+                          });
+                        },
+                        onTileTap: () {
+                          setState(() {
+                            _selectedLiuRiDay = day;
+                            _selectedLiuShiIdx = null;
+                          });
+                          if (_isHorizontalView) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _scrollToCenter(
+                                  _liuRiScrollCtrl, idx, theme.daYunCardWidth);
+                            });
+                          }
+                        },
+                        onLiuShiTap: (shiIdx) {
+                          setState(() {
+                            _selectedLiuRiDay = day;
+                            _selectedLiuShiIdx = shiIdx;
+                          });
+                          if (_isHorizontalView) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _scrollToCenter(
+                                  _liuRiScrollCtrl, idx, theme.daYunCardWidth);
+                              _scrollToCenter(_liuShiScrollCtrl, shiIdx,
+                                  theme.daYunCardWidth);
+                            });
+                          }
+                        },
+                      );
+                    },
+                  );
+                }),
 
-        const SizedBox(height: 16),
-      ],
-    );
+              // ── Tier 5: LiuShi Detail ──
+              if (_selectedLiuShiIdx != null &&
+                  _selectedLiuRiDay != null &&
+                  selectedLiuYue != null &&
+                  selectedLiuNian != null)
+                Builder(builder: (context) {
+                  return _buildTierRow(
+                    title:
+                        '流时 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月$_selectedLiuRiDay日',
+                    horizontalHeight:
+                        120, // LiuShi tile doesn't have an expand state
+                    theme: theme,
+                    scrollDirection:
+                        _isHorizontalView ? Axis.horizontal : Axis.vertical,
+                    itemCount: 12, // 12 Chinese hours
+                    child: ListView(controller: _liuShiScrollCtrl),
+                    builder: (context, shiIdx) {
+                      final isSelected = shiIdx == _selectedLiuShiIdx;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedLiuShiIdx = shiIdx;
+                          });
+                          if (_isHorizontalView) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              _scrollToCenter(_liuShiScrollCtrl, shiIdx,
+                                  theme.daYunCardWidth);
+                            });
+                          }
+                        },
+                        child: _LiuShiDetailTile(
+                          year: selectedLiuNian.year,
+                          month: selectedLiuYue.gregorianMonth,
+                          day: _selectedLiuRiDay!,
+                          shiIdx: shiIdx,
+                          isSelected: isSelected,
+                          isMini: _isMiniMode,
+                        ),
+                      );
+                    },
+                  );
+                }),
+
+              const SizedBox(height: 16),
+            ],
+          ),
+        ));
   }
 }
 
@@ -286,6 +759,9 @@ class _YunLiuPillarCard extends StatelessWidget {
   final String topCornerTag;
   final bool isSelected;
   final Widget? content;
+  final bool isExpanded;
+  final VoidCallback? onToggleExpand;
+  final bool isMini;
 
   const _YunLiuPillarCard({
     required this.gan,
@@ -296,16 +772,25 @@ class _YunLiuPillarCard extends StatelessWidget {
     required this.topCornerTag,
     this.isSelected = true,
     this.content,
+    this.isExpanded = true,
+    this.onToggleExpand,
+    this.isMini = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = YunLiuCardTheme.of(context);
+    final double ganZhiSize = isMini ? 26 : 44;
+    final double tenGodSize = isMini ? 11 : 18;
+    final double hiddenStemSize = isMini ? 10 : 14;
+    final double vertPad = isMini ? 5 : 12;
+    final double separatorH = isMini ? 44 : 80;
     return Stack(
       children: [
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: 420,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          width: theme.daYunCardWidth,
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: vertPad),
           decoration: BoxDecoration(
             color: InkTheme.paperSoft,
             borderRadius: BorderRadius.circular(8),
@@ -337,33 +822,31 @@ class _YunLiuPillarCard extends StatelessWidget {
                     children: [
                       Text(
                         gan,
-                        style: const TextStyle(
-                          fontSize: 44,
+                        style: TextStyle(
+                          fontSize: ganZhiSize,
                           fontWeight: FontWeight.w900,
                           color: InkTheme.ink,
                           height: 1.05,
-                          fontFamilyFallback:
-                              _YunLiuListTileCardWidgetState._serif,
+                          fontFamilyFallback: theme.serifFonts,
                         ),
                       ),
                       Text(
                         zhi,
-                        style: const TextStyle(
-                          fontSize: 44,
+                        style: TextStyle(
+                          fontSize: ganZhiSize,
                           fontWeight: FontWeight.w900,
                           color: InkTheme.ink,
                           height: 1.05,
-                          fontFamilyFallback:
-                              _YunLiuListTileCardWidgetState._serif,
+                          fontFamilyFallback: theme.serifFonts,
                         ),
                       ),
                     ],
                   ),
                   // Separator
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
                     width: 2,
-                    height: 80,
+                    height: separatorH,
                     color: InkTheme.cinnabar,
                   ),
                   // Right: Info
@@ -372,20 +855,36 @@ class _YunLiuPillarCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Ten god title
-                        Text(
-                          tenGod,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: InkTheme.inkMuted,
-                            fontFamilyFallback:
-                                _YunLiuListTileCardWidgetState._serif,
-                          ),
+                        // Row 1: TenGod + expand toggle
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              tenGod,
+                              style: TextStyle(
+                                fontSize: tenGodSize,
+                                fontWeight: FontWeight.w600,
+                                color: InkTheme.inkMuted,
+                                fontFamilyFallback: theme.serifFonts,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (content != null && onToggleExpand != null)
+                              GestureDetector(
+                                onTap: onToggleExpand,
+                                child: Icon(
+                                  isExpanded
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                  size: isMini ? 16 : 20,
+                                  color: InkTheme.inkMuted,
+                                ),
+                              ),
+                          ],
                         ),
-                        const SizedBox(height: 6),
-                        // Hidden stems
-                        if (hiddenGans.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        // Row 2: Hidden stems
+                        if (hiddenGans.isNotEmpty)
                           Wrap(
                             spacing: 6,
                             runSpacing: 4,
@@ -400,9 +899,8 @@ class _YunLiuPillarCard extends StatelessWidget {
                                 child: RichText(
                                   text: TextSpan(
                                     style: TextStyle(
-                                      fontSize: 14,
-                                      fontFamilyFallback:
-                                          _YunLiuListTileCardWidgetState._serif,
+                                      fontSize: hiddenStemSize,
+                                      fontFamilyFallback: theme.serifFonts,
                                     ),
                                     children: [
                                       TextSpan(
@@ -425,15 +923,12 @@ class _YunLiuPillarCard extends StatelessWidget {
                               );
                             }).toList(),
                           ),
-                          const SizedBox(height: 8),
-                        ] else ...[
-                          const SizedBox(height: 4),
-                        ],
-                        // Bottom text range
+                        const SizedBox(height: 4),
+                        // Row 3: Year / age
                         Text(
                           bottomText,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: isMini ? 10 : 12,
                             color: InkTheme.textMuted,
                             fontFamilyFallback: const ['sans-serif'],
                           ),
@@ -443,10 +938,20 @@ class _YunLiuPillarCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (content != null) ...[
-                const SizedBox(height: 12),
-                content!,
-              ],
+              // Expandable content with smooth AnimatedSize
+              AnimatedSize(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                alignment: Alignment.topCenter,
+                child: content != null && isExpanded
+                    ? ClipRect(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: content!,
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ],
           ),
         ),
@@ -490,6 +995,9 @@ class _DaYunTile extends StatelessWidget {
   final VoidCallback onTileTap;
   final ValueChanged<int> onLiuNianTap;
   final int? todayYear;
+  final bool isExpanded;
+  final VoidCallback onToggleExpand;
+  final bool isMini;
 
   static const _chineseOrdinals = [
     '一',
@@ -512,6 +1020,9 @@ class _DaYunTile extends StatelessWidget {
     required this.onTileTap,
     required this.onLiuNianTap,
     this.todayYear,
+    required this.isExpanded,
+    required this.onToggleExpand,
+    this.isMini = false,
   });
 
   @override
@@ -534,6 +1045,9 @@ class _DaYunTile extends StatelessWidget {
             '${data.startAge}~${data.startAge + data.yearsCount}岁',
         topCornerTag: badgeLabel,
         isSelected: isSelected,
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
+        isMini: isMini,
         content: _buildLiuNianGrid(),
       ),
     );
@@ -580,33 +1094,48 @@ class _DaYunTile extends StatelessWidget {
 
 class _LiuNianDetailTile extends StatelessWidget {
   final LiuNianDisplayData data;
+  final bool isSelected;
   final int? selectedLiuYueIdx;
+  final VoidCallback onTileTap;
   final ValueChanged<int> onLiuYueTap;
   final String? todayMonthName;
+  final bool isExpanded;
+  final VoidCallback onToggleExpand;
+  final bool isMini;
 
   const _LiuNianDetailTile({
     required this.data,
+    required this.isSelected,
     required this.selectedLiuYueIdx,
+    required this.onTileTap,
     required this.onLiuYueTap,
     this.todayMonthName,
+    required this.isExpanded,
+    required this.onToggleExpand,
+    this.isMini = false,
   });
 
   @override
   Widget build(BuildContext context) {
     final badgeLabel = '流年 · ${data.pillar.name}';
 
-    return _YunLiuPillarCard(
-      gan: data.pillar.gan.name,
-      zhi: data.pillar.zhi.name,
-      tenGod: data.ganGod.name,
-      hiddenGans: data.hiddenGans
-          .map((h) => (gan: h.gan.name, hiddenGod: h.hiddenGods.name))
-          .toList(),
-      bottomText: '${data.year}年 · ${data.age}岁',
-      topCornerTag: badgeLabel,
-      isSelected:
-          false, // LiuNian tile doesn't have a selected state itself in the list
-      content: _buildLiuYueGrid(),
+    return GestureDetector(
+      onTap: onTileTap,
+      child: _YunLiuPillarCard(
+        gan: data.pillar.gan.name,
+        zhi: data.pillar.zhi.name,
+        tenGod: data.ganGod.name,
+        hiddenGans: data.hiddenGans
+            .map((h) => (gan: h.gan.name, hiddenGod: h.hiddenGods.name))
+            .toList(),
+        bottomText: '${data.year}年 · ${data.age}岁',
+        topCornerTag: badgeLabel,
+        isSelected: isSelected,
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
+        isMini: isMini,
+        content: _buildLiuYueGrid(),
+      ),
     );
   }
 
@@ -658,14 +1187,24 @@ class _LiuNianDetailTile extends StatelessWidget {
 class _LiuYueDetailTile extends StatelessWidget {
   final LiuYueDisplayData data;
   final int year;
+  final bool isSelected;
   final int? selectedDay;
+  final VoidCallback onTileTap;
   final ValueChanged<int> onDaySelected;
+  final bool isExpanded;
+  final VoidCallback onToggleExpand;
+  final bool isMini;
 
   const _LiuYueDetailTile({
     required this.data,
     required this.year,
+    required this.isSelected,
     required this.selectedDay,
+    required this.onTileTap,
     required this.onDaySelected,
+    required this.isExpanded,
+    required this.onToggleExpand,
+    this.isMini = false,
   });
 
   @override
@@ -674,20 +1213,26 @@ class _LiuYueDetailTile extends StatelessWidget {
     final gan = data.ganZhi.isNotEmpty ? data.ganZhi[0] : '';
     final zhi = data.ganZhi.length > 1 ? data.ganZhi[1] : '';
 
-    return _YunLiuPillarCard(
-      gan: gan,
-      zhi: zhi,
-      tenGod: data.tenGodName,
-      hiddenGans:
-          data.hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
-      bottomText: '${year}年 · ${data.monthName}',
-      topCornerTag: badgeLabel,
-      isSelected: false,
-      content: _LiuRiCalendarGrid(
-        year: year,
-        month: data.gregorianMonth,
-        selectedDay: selectedDay,
-        onDaySelected: onDaySelected,
+    return GestureDetector(
+      onTap: onTileTap,
+      child: _YunLiuPillarCard(
+        gan: gan,
+        zhi: zhi,
+        tenGod: data.tenGodName,
+        hiddenGans:
+            data.hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
+        bottomText: '$year年 · ${data.monthName}',
+        topCornerTag: badgeLabel,
+        isSelected: isSelected,
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
+        isMini: isMini,
+        content: _LiuRiCalendarGrid(
+          year: year,
+          month: data.gregorianMonth,
+          selectedDay: selectedDay,
+          onDaySelected: onDaySelected,
+        ),
       ),
     );
   }
@@ -701,12 +1246,48 @@ class _LiuRiDetailTile extends StatelessWidget {
   final int year;
   final int month;
   final int day;
+  final bool isSelected;
+  final int? selectedLiuShiIdx;
+  final VoidCallback onTileTap;
+  final ValueChanged<int> onLiuShiTap;
+  final bool isExpanded;
+  final VoidCallback onToggleExpand;
+  final bool isMini;
 
   const _LiuRiDetailTile({
     required this.year,
     required this.month,
     required this.day,
+    required this.isSelected,
+    required this.selectedLiuShiIdx,
+    required this.onTileTap,
+    required this.onLiuShiTap,
+    required this.isExpanded,
+    required this.onToggleExpand,
+    this.isMini = false,
   });
+
+  // Calculate the first hour Gan based on Day Gan rule: "甲己还加甲，乙庚丙作初..."
+  static String _getFirstHourGan(String dayGan) {
+    const gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    int dIdx = gan.indexOf(dayGan);
+    if (dIdx < 0) return '甲';
+    // Rules: 甲己->甲, 乙庚->丙, 丙辛->戊, 丁壬->庚, 戊癸->壬
+    final mapping = [0, 2, 4, 6, 8, 0, 2, 4, 6, 8];
+    return gan[mapping[dIdx]];
+  }
+
+  static String _getHourGanZhi(String dayGan, int hourIdx) {
+    const gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+    const zhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+    String firstGan = _getFirstHourGan(dayGan);
+    int startGanIdx = gan.indexOf(firstGan);
+
+    String hGan = gan[(startGanIdx + hourIdx) % 10];
+    String hZhi = zhi[hourIdx];
+    return '$hGan$hZhi';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -720,14 +1301,160 @@ class _LiuRiDetailTile extends StatelessWidget {
     final tenGodName = _LiuRiCalendarGrid.tenGodForDay(dt).tenGod;
     final hidden = _LiuRiCalendarGrid.hiddenTriplesForDay(dt);
 
+    return GestureDetector(
+      onTap: onTileTap,
+      child: _YunLiuPillarCard(
+        gan: gan,
+        zhi: zhi,
+        tenGod: tenGodName,
+        hiddenGans:
+            hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
+        bottomText: '$year年$month月$day日',
+        topCornerTag: isToday ? '流日 · 今日' : '流日',
+        isSelected: isToday || isSelected,
+        isExpanded: isExpanded,
+        onToggleExpand: onToggleExpand,
+        isMini: isMini,
+        content: _buildLiuShiGrid(gan),
+      ),
+    );
+  }
+
+  Widget _buildLiuShiGrid(String dayGan) {
+    const zhiTime = [
+      '23-01',
+      '01-03',
+      '03-05',
+      '05-07',
+      '07-09',
+      '09-11',
+      '11-13',
+      '13-15',
+      '15-17',
+      '17-19',
+      '19-21',
+      '21-23'
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 6,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+        childAspectRatio: 1.4,
+      ),
+      itemCount: 12,
+      itemBuilder: (context, i) {
+        final isActive = selectedLiuShiIdx == i;
+        final hourGz = _getHourGanZhi(dayGan, i);
+        // Mock gods for hour
+        final fakeGod =
+            _LiuRiCalendarGrid.tenGodForDay(DateTime(year, month, day, i))
+                .shortName;
+        final fakeHiddenGod = _LiuRiCalendarGrid.hiddenTriplesForDay(
+                    DateTime(year, month, day, i))
+                .isNotEmpty
+            ? _LiuRiCalendarGrid.hiddenTriplesForDay(
+                    DateTime(year, month, day, i))
+                .first
+                .tenGod
+            : '';
+
+        // Map fakeHiddenGod full name to short name
+        final shortNames = {
+          '正财': '财',
+          '偏财': '才',
+          '正印': '印',
+          '偏印': '枭',
+          '食神': '食',
+          '伤官': '伤',
+          '正官': '官',
+          '偏官': '杀',
+          '比肩': '比',
+          '劫财': '劫'
+        };
+        final shortFakeHiddenGod = shortNames[fakeHiddenGod] ?? '';
+
+        return _IndexChip(
+          gz: hourGz,
+          ganGodShort: fakeGod,
+          firstHiddenGodShort: shortFakeHiddenGod,
+          label: zhiTime[i],
+          isActive: isActive,
+          activeBorderColor: const Color(0xFF2E5A3C),
+          activeBackgroundColor: const Color(0xFF2E5A3C).withAlpha(13),
+          ganGodColor: const Color(0xFF2E5A3C),
+          hiddenGodColor: InkTheme.textMuted,
+          onTap: () => onLiuShiTap(i),
+        );
+      },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LiuShi Detail Tile (Tier 5 card)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _LiuShiDetailTile extends StatelessWidget {
+  final int year;
+  final int month;
+  final int day;
+  final int shiIdx;
+  final bool isSelected;
+  final bool isMini;
+
+  const _LiuShiDetailTile({
+    required this.year,
+    required this.month,
+    required this.day,
+    required this.shiIdx,
+    required this.isSelected,
+    this.isMini = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dt = DateTime(year, month, day);
+    final dayGanZhi = _LiuRiCalendarGrid.ganZhiForDay(dt);
+    final dayGan = dayGanZhi.isNotEmpty ? dayGanZhi[0] : '甲';
+
+    final shiGanZhi = _LiuRiDetailTile._getHourGanZhi(dayGan, shiIdx);
+    final gan = shiGanZhi.isNotEmpty ? shiGanZhi[0] : '';
+    final shiZhi = shiGanZhi.length > 1 ? shiGanZhi[1] : '';
+
+    final tenGodName =
+        _LiuRiCalendarGrid.tenGodForDay(DateTime(year, month, day, shiIdx))
+            .tenGod;
+    final hidden = _LiuRiCalendarGrid.hiddenTriplesForDay(
+        DateTime(year, month, day, shiIdx));
+
+    const zhiTime = [
+      '23-01',
+      '01-03',
+      '03-05',
+      '05-07',
+      '07-09',
+      '09-11',
+      '11-13',
+      '13-15',
+      '15-17',
+      '17-19',
+      '19-21',
+      '21-23'
+    ];
+
     return _YunLiuPillarCard(
       gan: gan,
-      zhi: zhi,
+      zhi: shiZhi,
       tenGod: tenGodName,
       hiddenGans: hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
-      bottomText: '${year}年${month}月${day}日',
-      topCornerTag: isToday ? '流日 · 今日' : '流日',
-      isSelected: isToday,
+      bottomText: '$year年$month月$day日 ${zhiTime[shiIdx]}时',
+      topCornerTag: '流时',
+      isSelected: isSelected,
+      isMini: isMini,
       content: null,
     );
   }
@@ -768,6 +1495,8 @@ class _IndexChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = YunLiuCardTheme.of(context);
+
     // Determine tag text & color
     final String? tagText;
     final Color tagColor;
@@ -827,12 +1556,12 @@ class _IndexChip extends StatelessWidget {
                   ),
                   Text(
                     gz,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: InkTheme.ink,
                       height: 1.0,
-                      fontFamilyFallback: _YunLiuListTileCardWidgetState._serif,
+                      fontFamilyFallback: theme.serifFonts,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -860,7 +1589,7 @@ class _IndexChip extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: ganGodColor,
                       height: 1.0,
-                      fontFamilyFallback: _YunLiuListTileCardWidgetState._serif,
+                      fontFamilyFallback: theme.serifFonts,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -871,7 +1600,7 @@ class _IndexChip extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: hiddenGodColor,
                       height: 1.0,
-                      fontFamilyFallback: _YunLiuListTileCardWidgetState._serif,
+                      fontFamilyFallback: theme.serifFonts,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -1139,13 +1868,12 @@ class _LiuDayMiniCell extends StatelessWidget {
     required this.onTap,
   });
 
-  static const _darkGreen = Color(0xFF2E5A3C);
-  static const _serifFonts = ['ZCOOL XiaoWei', 'Noto Serif SC', 'serif'];
-
   @override
   Widget build(BuildContext context) {
+    final theme = YunLiuCardTheme.of(context);
+
     final showActive = isToday || isSelected;
-    final accent = isToday ? InkTheme.cinnabar : _darkGreen;
+    final accent = isToday ? theme.todayColor : theme.activeColor;
 
     // ── Colors ──────────────────────────────────────────
     final borderColor = showActive ? accent : InkTheme.ink.withAlpha(40);
@@ -1204,7 +1932,7 @@ class _LiuDayMiniCell extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                           color: gzColor,
                           height: 1.0,
-                          fontFamilyFallback: _serifFonts,
+                          fontFamilyFallback: theme.serifFonts,
                         ),
                       ),
                       Text(
@@ -1214,7 +1942,7 @@ class _LiuDayMiniCell extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                           color: gzColor,
                           height: 1.0,
-                          fontFamilyFallback: _serifFonts,
+                          fontFamilyFallback: theme.serifFonts,
                         ),
                       ),
                     ],
@@ -1238,7 +1966,7 @@ class _LiuDayMiniCell extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: godColor,
                           height: 1.0,
-                          fontFamilyFallback: _serifFonts,
+                          fontFamilyFallback: theme.serifFonts,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -1257,7 +1985,7 @@ class _LiuDayMiniCell extends StatelessWidget {
                                 fontWeight: FontWeight.w600,
                                 color: godColor,
                                 height: 1,
-                                fontFamilyFallback: _serifFonts,
+                                fontFamilyFallback: theme.serifFonts,
                               ),
                             ),
                           ],
@@ -1275,19 +2003,20 @@ class _LiuDayMiniCell extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 4, vertical: 2),
                       decoration: BoxDecoration(
-                        color: _darkGreen.withAlpha(20),
+                        color: theme.activeColor.withAlpha(20),
                         border: Border.all(
-                            color: _darkGreen.withAlpha(100), width: 0.5),
+                            color: theme.activeColor.withAlpha(100),
+                            width: 0.5),
                         borderRadius: BorderRadius.circular(2),
                       ),
                       child: Text(
                         jieQiName!,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: _darkGreen,
+                          color: theme.activeColor,
                           height: 1.1,
-                          fontFamilyFallback: _serifFonts,
+                          fontFamilyFallback: theme.serifFonts,
                         ),
                       ),
                     ),
@@ -1301,7 +2030,7 @@ class _LiuDayMiniCell extends StatelessWidget {
                     height: 14,
                     decoration: BoxDecoration(
                         color: showActive
-                            ? (isToday ? InkTheme.cinnabar : _darkGreen)
+                            ? (isToday ? theme.todayColor : theme.activeColor)
                             : Colors.transparent,
                         borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(6),
