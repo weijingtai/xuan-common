@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'vertical_pillar_card_demo.dart';
+import 'yun_liu_demo_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const VerticalPillarCardDemo(),
+      home: const YunLiuDemoPage(),
     );
   }
 }

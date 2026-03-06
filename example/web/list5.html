@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --paper-bg: #fdfaf5;
+            --ink: #2a2a2a;
+            --cinnabar: #a61b1b;
+            --gold: #b28f5c;
+            --line: #e8e4db;
+        }
+
+        body {
+            background: #eee;
+            padding: 20px;
+            font-family: serif;
+        }
+
+        /* 卡片容器 */
+        .expansion-card {
+            width: 100%;
+            max-width: 460px;
+            background: var(--paper-bg);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 顶部：大运简述区 (沿用上一版) */
+        .card-header {
+            display: flex;
+            padding: 20px;
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(to bottom, #fff, var(--paper-bg));
+        }
+
+        .header-left {
+            border-right: 1px solid var(--line);
+            padding-right: 15px;
+            text-align: center;
+        }
+
+        .dayun-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--ink);
+            writing-mode: vertical-rl;
+        }
+
+        .header-main {
+            padding-left: 15px;
+            flex-grow: 1;
+        }
+
+        .range-info {
+            font-family: "Georgia", serif;
+            font-size: 18px;
+            color: var(--ink);
+            margin-bottom: 5px;
+        }
+
+        .age-info {
+            color: var(--gold);
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
+        /* 核心改进：流年网格区 */
+        .annual-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            /* 5列 */
+            gap: 10px;
+            padding: 20px;
+            background: #fff;
+        }
+
+        .annual-item {
+            border: 1px solid var(--line);
+            padding: 10px 5px;
+            text-align: center;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .annual-item:hover {
+            border-color: var(--cinnabar);
+            background: rgba(166, 27, 27, 0.02);
+        }
+
+        /* 小字十神（新增） */
+        .annual-god {
+            font-size: 10px;
+            color: var(--cinnabar);
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            transform: scale(0.8);
+        }
+
+        .annual-ganzhi {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--ink);
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .annual-year {
+            font-size: 11px;
+            color: #999;
+            font-family: sans-serif;
+            border-top: 1px solid #f0f0f0;
+            padding-top: 2px;
+        }
+
+        /* 底部装饰 */
+        .card-footer {
+            height: 6px;
+            background: repeating-linear-gradient(45deg, var(--line), var(--line) 5px, transparent 5px, transparent 10px);
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="expansion-card">
+        <div class="card-header">
+            <div class="header-left">
+                <div style="font-size: 10px; color: var(--cinnabar); margin-bottom: 5px;">大运四</div>
+                <div class="dayun-title">甲戌</div>
+            </div>
+            <div class="header-main">
+                <div class="range-info">2054 — 2063</div>
+                <div class="age-info">五十八岁 至 六十八岁</div>
+                <div style="margin-top: 10px;">
+                    <span
+                        style="font-size: 12px; color: var(--cinnabar); border: 1px solid var(--cinnabar); padding: 0 4px;">正财格</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="annual-grid">
+            <div class="annual-item">
+                <span class="annual-god">才</span>
+                <span class="annual-ganzhi">甲戌</span>
+                <div class="annual-year">2054</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">财</span>
+                <span class="annual-ganzhi">乙亥</span>
+                <div class="annual-year">2055</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">官</span>
+                <span class="annual-ganzhi">丙子</span>
+                <div class="annual-year">2056</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">杀</span>
+                <span class="annual-ganzhi">丁丑</span>
+                <div class="annual-year">2057</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">印</span>
+                <span class="annual-ganzhi">戊寅</span>
+                <div class="annual-year">2058</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">枭</span>
+                <span class="annual-ganzhi">己卯</span>
+                <div class="annual-year">2059</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">劫</span>
+                <span class="annual-ganzhi">庚辰</span>
+                <div class="annual-year">2060</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">比</span>
+                <span class="annual-ganzhi">辛巳</span>
+                <div class="annual-year">2061</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">伤</span>
+                <span class="annual-ganzhi">壬午</span>
+                <div class="annual-year">2062</div>
+            </div>
+            <div class="annual-item">
+                <span class="annual-god">食</span>
+                <span class="annual-ganzhi">癸未</span>
+                <div class="annual-year">2063</div>
+            </div>
+        </div>
+
+        <div class="card-footer"></div>
+    </div>
+
+</body>
+
+</html>

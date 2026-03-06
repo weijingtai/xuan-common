@@ -7,7 +7,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:common/pages/four_zhu_edit_page.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -221,9 +220,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
           useMaterial3: true,
         ),
-        // home: const AuthGate(),
-        // home: const DevYunLiuTable(),
-        home: const NewSeekerUiDemo(),
+        home: const AuthGate(),
       ),
     );
   }
@@ -247,7 +244,7 @@ class AuthGate extends StatelessWidget {
         final scopeUid = active.activeAppUserId;
         if (scopeUid == null || scopeUid.isEmpty) return const AuthPage();
 
-        return _SyncShell(scopeUid: scopeUid, child: const FourZhuEditPage());
+        return _SyncShell(scopeUid: scopeUid, child: const NewSeekerUiDemo());
       },
     );
   }

@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大运流年 · 卡片式设计稿</title>
+    <style>
+        :root {
+            --ink: #1a1a1a;
+            --ink-soft: #666;
+            --cinnabar: #a61b1b;
+            --cinnabar-wash: rgba(166, 27, 27, 0.05);
+            --paper: #fdfaf5;
+            --paper-alt: #f5f2ec;
+            --gold: #b28f5c;
+            --gold-wash: rgba(178, 143, 92, 0.10);
+            --border: #e5e1d8;
+            --border-light: #edebe6;
+            --sub: #999;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f0ede5;
+            padding: 24px;
+            font-family: "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* ========================================
+           大运卡片 · 主容器
+           ======================================== */
+        .dayun-card {
+            width: 100%;
+            max-width: 520px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .dayun-card.active {
+            border-color: var(--cinnabar);
+            box-shadow: 0 8px 30px rgba(166, 27, 27, 0.08);
+        }
+
+        /* ========================================
+           卡片内部：flex 左右布局
+           ======================================== */
+        .card-body {
+            display: flex;
+            padding: 20px 16px;
+        }
+
+        /* 左侧：大运立柱 */
+        .dayun-pillar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 16px;
+            border-right: 2px solid var(--cinnabar);
+            min-width: 68px;
+            flex-shrink: 0;
+        }
+
+        .dayun-index {
+            font-size: 10px;
+            color: var(--cinnabar);
+            border: 1px solid var(--cinnabar);
+            padding: 1px 5px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .dayun-card.active .dayun-index {
+            background: var(--cinnabar);
+            color: #fff;
+        }
+
+        .dayun-ganzhi {
+            font-size: 34px;
+            line-height: 1.15;
+            font-weight: 900;
+            color: var(--ink);
+            writing-mode: vertical-rl;
+            letter-spacing: 5px;
+        }
+
+        /* 右侧：内容区 */
+        .card-main {
+            flex: 1;
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        /* ========================================
+           Header
+           ======================================== */
+        .dayun-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .dayun-god {
+            font-size: 17px;
+            font-weight: bold;
+            color: var(--cinnabar);
+        }
+
+        .dayun-time {
+            font-size: 12px;
+            color: var(--sub);
+            font-family: "Georgia", sans-serif;
+            text-align: right;
+            line-height: 1.5;
+        }
+
+        /* 大运藏干 */
+        .dayun-hidden-stems {
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-bottom: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .dayun-stem-tag {
+            background: var(--paper-alt);
+            padding: 1px 5px;
+            border-radius: 2px;
+            font-size: 11px;
+        }
+
+        .dayun-stem-tag b {
+            color: var(--gold);
+            margin-right: 1px;
+            font-weight: 600;
+        }
+
+        /* ========================================
+           分隔线
+           ======================================== */
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: radial-gradient(circle, var(--border) 1px, transparent 1px);
+            background-size: 5px 1px;
+            margin-bottom: 14px;
+        }
+
+        /* ========================================
+           流年网格：5列自适应
+           ======================================== */
+        .liunian-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+
+        /* ========================================
+           流年单元格
+           ======================================== */
+        .liunian-cell {
+            display: flex;
+            flex-direction: column;
+            padding: 6px 4px 5px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+            cursor: default;
+            min-height: 0;
+        }
+
+        .liunian-cell:hover {
+            background: var(--cinnabar-wash);
+            border-color: var(--border);
+        }
+
+        /* 当前流年 */
+        .liunian-cell.current {
+            background: var(--cinnabar-wash);
+            border-color: var(--cinnabar);
+            position: relative;
+        }
+
+        .liunian-cell.current::after {
+            content: "今";
+            position: absolute;
+            top: -5px;
+            right: -4px;
+            font-size: 8px;
+            color: #fff;
+            background: var(--cinnabar);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* --- 时间标签行：年份 + 年龄 --- */
+        .cell-time {
+            font-size: 9px;
+            color: var(--gold);
+            font-family: sans-serif;
+            margin-bottom: 3px;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        /* --- 核心行：干支 + 天干十神 --- */
+        .cell-main {
+            display: flex;
+            align-items: baseline;
+            gap: 2px;
+            margin-bottom: 4px;
+        }
+
+        .cell-ganzhi {
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--ink);
+            line-height: 1.15;
+        }
+
+        .cell-god {
+            font-size: 9px;
+            color: var(--cinnabar);
+            background: var(--cinnabar-wash);
+            padding: 0 2px;
+            border-radius: 2px;
+            font-weight: 600;
+            transform: translateY(-1px);
+            white-space: nowrap;
+        }
+
+        /* --- 藏干十神区 --- */
+        .cell-hidden {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            /* 固定最小高度，保证各列对齐 */
+            min-height: 36px;
+        }
+
+        .hidden-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 9px;
+            color: var(--ink-soft);
+            background: var(--paper-alt);
+            padding: 0 3px;
+            border-radius: 1px;
+            line-height: 1.5;
+        }
+
+        .hidden-row b {
+            color: var(--ink);
+            font-weight: 500;
+        }
+
+        .hidden-row .god-label {
+            color: var(--sub);
+            font-size: 8.5px;
+        }
+
+        /* ========================================
+           卡片底部装饰
+           ======================================== */
+        .card-footer {
+            height: 4px;
+            background: linear-gradient(90deg,
+                    var(--cinnabar) 0%,
+                    var(--gold) 50%,
+                    var(--cinnabar) 100%);
+            opacity: 0.35;
+        }
+
+        /* ========================================
+           页面标题
+           ======================================== */
+        .page-title {
+            font-size: 14px;
+            color: var(--sub);
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-title">大运流年 · 卡片式方案 v2</div>
+
+    <!-- ========== 大运卡片 1：当前大运 ========== -->
+    <div class="dayun-card active">
+        <div class="card-body">
+            <div class="dayun-pillar">
+                <span class="dayun-index">大运四</span>
+                <span class="dayun-ganzhi">甲戌</span>
+            </div>
+
+            <div class="card-main">
+                <div class="dayun-header">
+                    <span class="dayun-god">正财</span>
+                    <span class="dayun-time">2054 – 2063<br>58岁 – 68岁</span>
+                </div>
+
+                <div class="dayun-hidden-stems">
+                    <span class="dayun-stem-tag"><b>戊</b>正财</span>
+                    <span class="dayun-stem-tag"><b>辛</b>伤官</span>
+                    <span class="dayun-stem-tag"><b>丁</b>劫财</span>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="liunian-grid">
+                    <!-- 流年1 -->
+                    <div class="liunian-cell current">
+                        <div class="cell-time">2054 · 58岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">甲戌</span>
+                            <span class="cell-god">财</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正财</span></div>
+                            <div class="hidden-row"><b>辛</b><span class="god-label">伤官</span></div>
+                            <div class="hidden-row"><b>丁</b><span class="god-label">劫财</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年2 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2055 · 59岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">乙亥</span>
+                            <span class="cell-god">才</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>壬</b><span class="god-label">偏印</span></div>
+                            <div class="hidden-row"><b>甲</b><span class="god-label">偏财</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年3 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2056 · 60岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">丙子</span>
+                            <span class="cell-god">官</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>癸</b><span class="god-label">正印</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年4 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2057 · 61岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">丁丑</span>
+                            <span class="cell-god">杀</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>己</b><span class="god-label">偏财</span></div>
+                            <div class="hidden-row"><b>癸</b><span class="god-label">正印</span></div>
+                            <div class="hidden-row"><b>辛</b><span class="god-label">伤官</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年5 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2058 · 62岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">戊寅</span>
+                            <span class="cell-god">印</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>甲</b><span class="god-label">偏财</span></div>
+                            <div class="hidden-row"><b>丙</b><span class="god-label">正官</span></div>
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正印</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年6 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2059 · 63岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">己卯</span>
+                            <span class="cell-god">枭</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>乙</b><span class="god-label">偏财</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年7 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2060 · 64岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">庚辰</span>
+                            <span class="cell-god">劫</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正印</span></div>
+                            <div class="hidden-row"><b>乙</b><span class="god-label">偏财</span></div>
+                            <div class="hidden-row"><b>癸</b><span class="god-label">正印</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年8 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2061 · 65岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">辛巳</span>
+                            <span class="cell-god">比</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>丙</b><span class="god-label">正官</span></div>
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正印</span></div>
+                            <div class="hidden-row"><b>庚</b><span class="god-label">劫财</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年9 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2062 · 66岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">壬午</span>
+                            <span class="cell-god">伤</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>丁</b><span class="god-label">七杀</span></div>
+                            <div class="hidden-row"><b>己</b><span class="god-label">偏印</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 流年10 -->
+                    <div class="liunian-cell">
+                        <div class="cell-time">2063 · 67岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">癸未</span>
+                            <span class="cell-god">食</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>己</b><span class="god-label">偏印</span></div>
+                            <div class="hidden-row"><b>丁</b><span class="god-label">七杀</span></div>
+                            <div class="hidden-row"><b>乙</b><span class="god-label">偏财</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer"></div>
+    </div>
+
+    <!-- ========== 大运卡片 2 ========== -->
+    <div class="dayun-card">
+        <div class="card-body">
+            <div class="dayun-pillar">
+                <span class="dayun-index">大运五</span>
+                <span class="dayun-ganzhi">乙亥</span>
+            </div>
+
+            <div class="card-main">
+                <div class="dayun-header">
+                    <span class="dayun-god">偏财</span>
+                    <span class="dayun-time">2064 – 2073<br>68岁 – 78岁</span>
+                </div>
+
+                <div class="dayun-hidden-stems">
+                    <span class="dayun-stem-tag"><b>壬</b>偏印</span>
+                    <span class="dayun-stem-tag"><b>甲</b>偏财</span>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="liunian-grid">
+                    <div class="liunian-cell">
+                        <div class="cell-time">2064 · 68岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">甲申</span>
+                            <span class="cell-god">才</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>庚</b><span class="god-label">劫财</span></div>
+                            <div class="hidden-row"><b>壬</b><span class="god-label">偏印</span></div>
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正印</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2065 · 69岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">乙酉</span>
+                            <span class="cell-god">财</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>辛</b><span class="god-label">比肩</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2066 · 70岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">丙戌</span>
+                            <span class="cell-god">官</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正印</span></div>
+                            <div class="hidden-row"><b>辛</b><span class="god-label">比肩</span></div>
+                            <div class="hidden-row"><b>丁</b><span class="god-label">七杀</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2067 · 71岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">丁亥</span>
+                            <span class="cell-god">杀</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>壬</b><span class="god-label">偏印</span></div>
+                            <div class="hidden-row"><b>甲</b><span class="god-label">偏财</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2068 · 72岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">戊子</span>
+                            <span class="cell-god">印</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>癸</b><span class="god-label">正印</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2069 · 73岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">己丑</span>
+                            <span class="cell-god">枭</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>己</b><span class="god-label">偏印</span></div>
+                            <div class="hidden-row"><b>癸</b><span class="god-label">正印</span></div>
+                            <div class="hidden-row"><b>辛</b><span class="god-label">比肩</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2070 · 74岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">庚寅</span>
+                            <span class="cell-god">劫</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>甲</b><span class="god-label">偏财</span></div>
+                            <div class="hidden-row"><b>丙</b><span class="god-label">正官</span></div>
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正印</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2071 · 75岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">辛卯</span>
+                            <span class="cell-god">比</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>乙</b><span class="god-label">偏财</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2072 · 76岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">壬辰</span>
+                            <span class="cell-god">伤</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正印</span></div>
+                            <div class="hidden-row"><b>乙</b><span class="god-label">偏财</span></div>
+                            <div class="hidden-row"><b>癸</b><span class="god-label">正印</span></div>
+                        </div>
+                    </div>
+                    <div class="liunian-cell">
+                        <div class="cell-time">2073 · 77岁</div>
+                        <div class="cell-main">
+                            <span class="cell-ganzhi">癸巳</span>
+                            <span class="cell-god">食</span>
+                        </div>
+                        <div class="cell-hidden">
+                            <div class="hidden-row"><b>丙</b><span class="god-label">正官</span></div>
+                            <div class="hidden-row"><b>戊</b><span class="god-label">正印</span></div>
+                            <div class="hidden-row"><b>庚</b><span class="god-label">劫财</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer"></div>
+    </div>
+
+</body>
+
+</html>
