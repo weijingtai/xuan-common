@@ -1,8 +1,8 @@
+import 'dart:ui' show lerpDouble;
 import 'package:common/enums.dart';
-import 'package:common/features/datetime_details/input_info_params.dart';
 import 'package:common/features/liu_yun/themes/ink_theme.dart';
-import 'package:common/helpers/solar_lunar_datetime_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:tyme/tyme.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Data types
@@ -45,6 +45,48 @@ typedef DaYunDisplayData = ({
   int yearsCount,
   List<LiuNianDisplayData> liunian,
 });
+
+class LiuRiDisplayData {
+  final int gregorianYear;
+  final int gregorianMonth;
+  final int gregorianDay;
+  final String ganZhi;
+  final String tenGodName;
+  final List<({String gan, String tenGod})> hidden;
+  final String? jieQiName;
+  final String lunarText;
+  final bool isToday;
+
+  const LiuRiDisplayData({
+    required this.gregorianYear,
+    required this.gregorianMonth,
+    required this.gregorianDay,
+    required this.ganZhi,
+    required this.tenGodName,
+    required this.hidden,
+    this.jieQiName,
+    required this.lunarText,
+    required this.isToday,
+  });
+}
+
+class LiuShiDisplayData {
+  final int shiIdx;
+  final String zhiTime;
+  final String ganZhi;
+  final String tenGodName;
+  final List<({String gan, String tenGod})> hidden;
+  final String? jieQiName;
+
+  const LiuShiDisplayData({
+    required this.shiIdx,
+    required this.zhiTime,
+    required this.ganZhi,
+    required this.tenGodName,
+    required this.hidden,
+    this.jieQiName,
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Theme Configuration
@@ -131,29 +173,24 @@ class YunLiuCardTheme extends InheritedWidget {
 class YunLiuListTileCardWidget extends StatefulWidget {
   final List<DaYunDisplayData> daYunList;
 
-  /// The year of "today" — matching LiuNian chips will show a "今" tag.
-  final int? todayYear;
+  // Initial selection indices (0-indexed)
+  final int initialSelectedDaYunIndex;
+  final int initialSelectedLiuNianIndex;
+  final int initialSelectedLiuYueIndex;
 
-  /// The month name of "today" — matching LiuYue chips will show a "今" tag.
-  final String? todayMonthName;
-
-  /// A user-selected year — matching LiuNian chips will show a "选" tag.
-  final int? selectedYear;
-
-  /// A user-selected month name — matching LiuYue chips will show a "选" tag.
-  final String? selectedMonthName;
-
-  /// Global custom theme configuration. Will fall back to default if null.
-  final YunLiuCardThemeData? theme;
+  // External delegates for fetching deep data
+  final List<LiuRiDisplayData> Function(int year, int month) fetchLiuRiData;
+  final List<LiuShiDisplayData> Function(int year, int month, int day)
+      fetchLiuShiData;
 
   const YunLiuListTileCardWidget({
     super.key,
     required this.daYunList,
-    this.todayYear,
-    this.todayMonthName,
-    this.selectedYear,
-    this.selectedMonthName,
-    this.theme,
+    this.initialSelectedDaYunIndex = 0,
+    this.initialSelectedLiuNianIndex = 0,
+    this.initialSelectedLiuYueIndex = 0,
+    required this.fetchLiuRiData,
+    required this.fetchLiuShiData,
   });
 
   @override
@@ -225,7 +262,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     _syncWithSelectedDate();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final theme = widget.theme ?? YunLiuCardThemeData.fallback();
+      final theme = YunLiuCardTheme.of(context); // Get theme from context
       _scrollToCenter(
           _daYunScrollCtrl, _selectedDaYunIdx, theme.daYunCardWidth);
       if (_selectedLiuNianIdx != null) {
@@ -268,8 +305,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
   }
 
   void _syncWithSelectedDate() {
-    final targetYear = widget.todayYear ?? widget.selectedYear;
-    if (targetYear == null) return;
+    final targetYear = DateTime.now().year; // Use current year as target
 
     for (int i = 0; i < widget.daYunList.length; i++) {
       final dy = widget.daYunList[i];
@@ -279,14 +315,21 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
           _selectedDaYunIdx = i;
           _selectedLiuNianIdx = j;
 
-          // Sync monthly selection if applicable
-          final targetMonth = widget.todayMonthName ?? widget.selectedMonthName;
-          if (targetMonth != null) {
-            for (int k = 0; k < ln.liuyue.length; k++) {
-              if (ln.liuyue[k].monthName == targetMonth) {
-                _selectedLiuYueIdx = k;
-                break;
-              }
+          // Sync monthly selection
+          final lyList = ln.liuyue;
+          if (lyList.isNotEmpty) {
+            final targetMonth = DateTime.now().month;
+            final initialYueIdx = _selectedLiuYueIdx ??
+                lyList.indexWhere((m) => m.gregorianMonth == targetMonth);
+            if (initialYueIdx != -1) {
+              _selectedLiuYueIdx = initialYueIdx;
+
+              // If initializing "today", drill down to today's day and hour automatically.
+              final now = DateTime.now();
+              _selectedLiuRiDay = now.day;
+              int hourIdx = (now.hour + 1) ~/ 2;
+              if (hourIdx >= 12) hourIdx = 0;
+              _selectedLiuShiIdx = hourIdx;
             }
           }
           return;
@@ -327,14 +370,10 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
   // Global controls row
   Widget _buildGlobalControls(YunLiuCardThemeData theme) {
     return Container(
-      width: _isHorizontalView ? (theme.daYunCardWidth + 50) : double.infinity,
-      padding: EdgeInsets.only(
-          left: _isHorizontalView ? 25 : 20,
-          right: _isHorizontalView ? 25 : 20,
-          top: 10,
-          bottom: 10),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           TextButton.icon(
             onPressed: _toggleGlobalExpanded,
@@ -390,15 +429,21 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     required int itemCount,
     required Widget Function(BuildContext, int) builder,
   }) {
-    final fixedWidth = theme.daYunCardWidth + 50;
-    return SizedBox(
+    final targetCardWidth =
+        _isMiniMode ? (theme.daYunCardWidth * 0.75) : theme.daYunCardWidth;
+    final fixedWidth = targetCardWidth + 50;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
       width: fixedWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildTierLabel(title, theme),
           if (scrollDirection == Axis.horizontal)
-            SizedBox(
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
               width: fixedWidth,
               height: horizontalHeight,
               child: ListView.separated(
@@ -426,6 +471,37 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     );
   }
 
+  // Helper to determine horizontal height for a tier row
+  double _getTierHeight(int tier) {
+    bool hasExpanded = false;
+    if (tier == 1) {
+      hasExpanded = widget.daYunList.asMap().keys.any(_isDaYunExpanded);
+    } else if (tier == 2) {
+      final dy = widget.daYunList[_selectedDaYunIdx];
+      hasExpanded = dy.liunian.asMap().keys.any(_isLiuNianExpanded);
+    } else if (tier == 3) {
+      final ln =
+          widget.daYunList[_selectedDaYunIdx].liunian[_selectedLiuNianIdx!];
+      hasExpanded = ln.liuyue.asMap().keys.any(_isLiuYueExpanded);
+    } else if (tier == 4) {
+      final ln =
+          widget.daYunList[_selectedDaYunIdx].liunian[_selectedLiuNianIdx!];
+      final ly = ln.liuyue[_selectedLiuYueIdx!];
+      final days = DateTime(ln.year, ly.gregorianMonth + 1, 0).day;
+      hasExpanded = List.generate(days, (i) => i).any(_isLiuRiExpanded);
+    }
+
+    if (_isMiniMode) {
+      if (tier == 5) return 85;
+      if (tier == 3) return hasExpanded ? 400 : 85;
+      return hasExpanded ? 200 : 85;
+    } else {
+      if (tier == 5) return 130;
+      if (tier == 3) return hasExpanded ? 500 : 130;
+      return hasExpanded ? 260 : 130;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final daYunList = widget.daYunList;
@@ -440,7 +516,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
             ? selectedLiuNian.liuyue[_selectedLiuYueIdx!]
             : null;
 
-    final theme = widget.theme ?? YunLiuCardThemeData.fallback();
+    final theme = YunLiuCardThemeData.fallback();
 
     return YunLiuCardTheme(
         data: theme,
@@ -453,8 +529,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
               // ── Tier 1: DaYun ──
               _buildTierRow(
                 title: '大运',
-                horizontalHeight:
-                    _isGlobalExpanded ? 260 : 130, // Approximate height changes
+                horizontalHeight: _getTierHeight(1),
                 theme: theme,
                 scrollDirection:
                     _isHorizontalView ? Axis.horizontal : Axis.vertical,
@@ -469,7 +544,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                     index: idx,
                     isSelected: isSelected,
                     selectedLiuNianIdx: isSelected ? _selectedLiuNianIdx : null,
-                    todayYear: widget.todayYear,
                     isMini: _isMiniMode,
                     isExpanded: _isDaYunExpanded(idx),
                     onToggleExpand: () {
@@ -480,8 +554,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                     onTileTap: () {
                       setState(() {
                         _selectedDaYunIdx = idx;
-                        _selectedLiuNianIdx = null;
-                        _selectedLiuYueIdx = null;
+                        _selectedLiuNianIdx = 0; // Auto-select first LiuNian
+                        _selectedLiuYueIdx = 0; // Auto-select first LiuYue
                         _selectedLiuRiDay = null;
                         _selectedLiuShiIdx = null;
                       });
@@ -496,7 +570,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       setState(() {
                         _selectedDaYunIdx = idx;
                         _selectedLiuNianIdx = lnIdx;
-                        _selectedLiuYueIdx = null;
+                        _selectedLiuYueIdx = 0; // Auto-select first LiuYue
                         _selectedLiuRiDay = null;
                         _selectedLiuShiIdx = null;
                       });
@@ -517,7 +591,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
               if (_selectedLiuNianIdx != null)
                 _buildTierRow(
                   title: '流年 · ${selectedDaYun.pillar.name}大运',
-                  horizontalHeight: _isGlobalExpanded ? 260 : 130,
+                  horizontalHeight: _getTierHeight(2),
                   theme: theme,
                   scrollDirection:
                       _isHorizontalView ? Axis.horizontal : Axis.vertical,
@@ -530,7 +604,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       data: ln,
                       isSelected: isSelected,
                       selectedLiuYueIdx: isSelected ? _selectedLiuYueIdx : null,
-                      todayMonthName: widget.todayMonthName,
                       isMini: _isMiniMode,
                       isExpanded: _isLiuNianExpanded(lnIdx),
                       onToggleExpand: () {
@@ -542,7 +615,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       onTileTap: () {
                         setState(() {
                           _selectedLiuNianIdx = lnIdx;
-                          _selectedLiuYueIdx = null;
+                          _selectedLiuYueIdx = 0; // Auto-select first LiuYue
                           _selectedLiuRiDay = null;
                           _selectedLiuShiIdx = null;
                         });
@@ -557,7 +630,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                         setState(() {
                           _selectedLiuNianIdx = lnIdx;
                           _selectedLiuYueIdx = lyIdx;
-                          _selectedLiuRiDay = null;
+                          _selectedLiuRiDay = 1; // Auto-select first day
                           _selectedLiuShiIdx = null;
                         });
                         if (_isHorizontalView) {
@@ -577,7 +650,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
               if (_selectedLiuYueIdx != null && selectedLiuNian != null)
                 _buildTierRow(
                   title: '流月 · ${selectedLiuNian.year}年',
-                  horizontalHeight: _isGlobalExpanded ? 500 : 130,
+                  horizontalHeight: _getTierHeight(3),
                   theme: theme,
                   scrollDirection:
                       _isHorizontalView ? Axis.horizontal : Axis.vertical,
@@ -592,6 +665,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       isSelected: isSelected,
                       selectedDay: isSelected ? _selectedLiuRiDay : null,
                       isMini: _isMiniMode,
+                      fetchLiuRiData: widget.fetchLiuRiData,
+                      fetchLiuShiData: widget.fetchLiuShiData,
                       isExpanded: _isLiuYueExpanded(lyIdx),
                       onToggleExpand: () {
                         setState(() {
@@ -602,7 +677,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       onTileTap: () {
                         setState(() {
                           _selectedLiuYueIdx = lyIdx;
-                          _selectedLiuRiDay = null;
+                          _selectedLiuRiDay = 1; // Auto-select first day
                           _selectedLiuShiIdx = null;
                         });
                         if (_isHorizontalView) {
@@ -616,7 +691,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                         setState(() {
                           _selectedLiuYueIdx = lyIdx;
                           _selectedLiuRiDay = day;
-                          _selectedLiuShiIdx = null;
+                          _selectedLiuShiIdx = 0; // Auto-select first shi
                         });
                         if (_isHorizontalView) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -642,7 +717,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                   return _buildTierRow(
                     title:
                         '流日 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月',
-                    horizontalHeight: _isGlobalExpanded ? 260 : 130,
+                    horizontalHeight: _getTierHeight(4),
                     theme: theme,
                     scrollDirection:
                         _isHorizontalView ? Axis.horizontal : Axis.vertical,
@@ -660,6 +735,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                             isSelected ? _selectedLiuShiIdx : null,
                         isExpanded: _isLiuRiExpanded(idx),
                         isMini: _isMiniMode,
+                        fetchLiuRiData: widget.fetchLiuRiData,
+                        fetchLiuShiData: widget.fetchLiuShiData,
                         onToggleExpand: () {
                           setState(() {
                             _localLiuRiExpanded[idx] = !_isLiuRiExpanded(idx);
@@ -668,7 +745,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                         onTileTap: () {
                           setState(() {
                             _selectedLiuRiDay = day;
-                            _selectedLiuShiIdx = null;
+                            _selectedLiuShiIdx = 0; // Auto-select first shi
                           });
                           if (_isHorizontalView) {
                             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -705,8 +782,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                   return _buildTierRow(
                     title:
                         '流时 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月$_selectedLiuRiDay日',
-                    horizontalHeight:
-                        120, // LiuShi tile doesn't have an expand state
+                    horizontalHeight: _getTierHeight(5),
                     theme: theme,
                     scrollDirection:
                         _isHorizontalView ? Axis.horizontal : Axis.vertical,
@@ -733,6 +809,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                           shiIdx: shiIdx,
                           isSelected: isSelected,
                           isMini: _isMiniMode,
+                          fetchLiuShiData: widget.fetchLiuShiData,
                         ),
                       );
                     },
@@ -762,6 +839,7 @@ class _YunLiuPillarCard extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback? onToggleExpand;
   final bool isMini;
+  final String? jieQiTag;
 
   const _YunLiuPillarCard({
     required this.gan,
@@ -775,214 +853,257 @@ class _YunLiuPillarCard extends StatelessWidget {
     this.isExpanded = true,
     this.onToggleExpand,
     this.isMini = false,
+    this.jieQiTag,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = YunLiuCardTheme.of(context);
-    final double ganZhiSize = isMini ? 26 : 44;
-    final double tenGodSize = isMini ? 11 : 18;
-    final double hiddenStemSize = isMini ? 10 : 14;
-    final double vertPad = isMini ? 5 : 12;
-    final double separatorH = isMini ? 44 : 80;
-    return Stack(
-      children: [
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: theme.daYunCardWidth,
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: vertPad),
-          decoration: BoxDecoration(
-            color: InkTheme.paperSoft,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isSelected ? InkTheme.cinnabar : InkTheme.borderLight,
-              width: 1,
-            ),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: InkTheme.cinnabar.withAlpha(25),
-                      blurRadius: 24,
-                      offset: const Offset(0, 6),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Header: Pillar + Info ──
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Left: GanZhi pillar (Huge)
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        gan,
-                        style: TextStyle(
-                          fontSize: ganZhiSize,
-                          fontWeight: FontWeight.w900,
-                          color: InkTheme.ink,
-                          height: 1.05,
-                          fontFamilyFallback: theme.serifFonts,
+    // t=0 → full size, t=1 → mini — animated by TweenAnimationBuilder
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: isMini ? 1.0 : 0.0),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      builder: (context, t, _) {
+        final ganZhiSize = lerpDouble(44, 26, t)!;
+        final tenGodSize = lerpDouble(18, 11, t)!;
+        final hiddenStemSize = lerpDouble(14, 10, t)!;
+        final vertPad = lerpDouble(12, 5, t)!;
+        final separatorH = lerpDouble(80, 44, t)!;
+        final bottomFontSize = lerpDouble(12, 10, t)!;
+        final iconSize = lerpDouble(20, 16, t)!;
+        final cardWidth =
+            lerpDouble(theme.daYunCardWidth, theme.daYunCardWidth * 0.75, t)!;
+        return Stack(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: cardWidth,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: vertPad),
+              decoration: BoxDecoration(
+                color: InkTheme.paperSoft,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isSelected ? InkTheme.cinnabar : InkTheme.borderLight,
+                  width: 1,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: InkTheme.cinnabar.withAlpha(25),
+                          blurRadius: 24,
+                          offset: const Offset(0, 6),
                         ),
+                      ]
+                    : [],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Header: Pillar + Info ──
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Left: GanZhi pillar (Huge)
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            gan,
+                            style: TextStyle(
+                              fontSize: ganZhiSize,
+                              fontWeight: FontWeight.w900,
+                              color: InkTheme.ink,
+                              height: 1.05,
+                              fontFamilyFallback: theme.serifFonts,
+                            ),
+                          ),
+                          Text(
+                            zhi,
+                            style: TextStyle(
+                              fontSize: ganZhiSize,
+                              fontWeight: FontWeight.w900,
+                              color: InkTheme.ink,
+                              height: 1.05,
+                              fontFamilyFallback: theme.serifFonts,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        zhi,
-                        style: TextStyle(
-                          fontSize: ganZhiSize,
-                          fontWeight: FontWeight.w900,
-                          color: InkTheme.ink,
-                          height: 1.05,
-                          fontFamilyFallback: theme.serifFonts,
+                      // Separator
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        width: 2,
+                        height: separatorH,
+                        color: InkTheme.cinnabar,
+                      ),
+                      // Right: Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Row 1: TenGod + expand toggle
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  tenGod,
+                                  style: TextStyle(
+                                    fontSize: tenGodSize,
+                                    fontWeight: FontWeight.w600,
+                                    color: InkTheme.inkMuted,
+                                    fontFamilyFallback: theme.serifFonts,
+                                  ),
+                                ),
+                                const Spacer(),
+                                if (content != null && onToggleExpand != null)
+                                  GestureDetector(
+                                    onTap: onToggleExpand,
+                                    child: AnimatedRotation(
+                                      turns: isExpanded ? 0.0 : 0.5,
+                                      duration:
+                                          const Duration(milliseconds: 250),
+                                      curve: Curves.easeInOut,
+                                      child: Icon(
+                                        Icons.keyboard_arrow_up,
+                                        size: iconSize,
+                                        color: InkTheme.inkMuted,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            // Row 2: Hidden stems
+                            if (hiddenGans.isNotEmpty)
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 4,
+                                children: hiddenGans.map((h) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: InkTheme.paperAlt,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: RichText(
+                                      text: TextSpan(
+                                        style: TextStyle(
+                                          fontSize: hiddenStemSize,
+                                          fontFamilyFallback: theme.serifFonts,
+                                        ),
+                                        children: [
+                                          TextSpan(
+                                            text: h.gan,
+                                            style: TextStyle(
+                                              color: InkTheme.gold,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const TextSpan(text: " "),
+                                          TextSpan(
+                                            text: h.hiddenGod,
+                                            style: TextStyle(
+                                              color: InkTheme.inkDeep,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            const SizedBox(height: 4),
+                            // Row 3: Year / age
+                            Text(
+                              bottomText,
+                              style: TextStyle(
+                                fontSize: bottomFontSize,
+                                color: InkTheme.textMuted,
+                                fontFamilyFallback: const ['sans-serif'],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  // Separator
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    width: 2,
-                    height: separatorH,
-                    color: InkTheme.cinnabar,
-                  ),
-                  // Right: Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Row 1: TenGod + expand toggle
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              tenGod,
-                              style: TextStyle(
-                                fontSize: tenGodSize,
-                                fontWeight: FontWeight.w600,
-                                color: InkTheme.inkMuted,
-                                fontFamilyFallback: theme.serifFonts,
-                              ),
+                  // Expandable content with smooth AnimatedSize
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    alignment: Alignment.topCenter,
+                    child: content != null && isExpanded
+                        ? ClipRect(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: content!,
                             ),
-                            const Spacer(),
-                            if (content != null && onToggleExpand != null)
-                              GestureDetector(
-                                onTap: onToggleExpand,
-                                child: Icon(
-                                  isExpanded
-                                      ? Icons.keyboard_arrow_up
-                                      : Icons.keyboard_arrow_down,
-                                  size: isMini ? 16 : 20,
-                                  color: InkTheme.inkMuted,
-                                ),
-                              ),
-                          ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (jieQiTag != null)
+                    Container(
+                      margin: const EdgeInsets.only(top: 4, right: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2E5A3C),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        jieQiTag!,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                        const SizedBox(height: 2),
-                        // Row 2: Hidden stems
-                        if (hiddenGans.isNotEmpty)
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 4,
-                            children: hiddenGans.map((h) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: InkTheme.paperAlt,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: RichText(
-                                  text: TextSpan(
-                                    style: TextStyle(
-                                      fontSize: hiddenStemSize,
-                                      fontFamilyFallback: theme.serifFonts,
-                                    ),
-                                    children: [
-                                      TextSpan(
-                                        text: h.gan,
-                                        style: TextStyle(
-                                          color: InkTheme.gold,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const TextSpan(text: " "),
-                                      TextSpan(
-                                        text: h.hiddenGod,
-                                        style: TextStyle(
-                                          color: InkTheme.inkDeep,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        const SizedBox(height: 4),
-                        // Row 3: Year / age
-                        Text(
-                          bottomText,
-                          style: TextStyle(
-                            fontSize: isMini ? 10 : 12,
-                            color: InkTheme.textMuted,
-                            fontFamilyFallback: const ['sans-serif'],
-                          ),
-                        ),
-                      ],
+                      ),
+                    ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color:
+                          isSelected ? InkTheme.cinnabar : InkTheme.paperSoft,
+                      border: Border.all(
+                        color: InkTheme.cinnabar,
+                        width: 0.5,
+                      ),
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(8),
+                        bottomLeft: Radius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      topCornerTag,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.white : InkTheme.cinnabar,
+                        fontFamilyFallback: const ['sans-serif'],
+                      ),
                     ),
                   ),
                 ],
               ),
-              // Expandable content with smooth AnimatedSize
-              AnimatedSize(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                alignment: Alignment.topCenter,
-                child: content != null && isExpanded
-                    ? ClipRect(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 10),
-                          child: content!,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          top: 0,
-          right: 0,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: isSelected ? InkTheme.cinnabar : InkTheme.paperSoft,
-              border: Border.all(
-                color: InkTheme.cinnabar,
-                width: 0.5,
-              ),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(8),
-                bottomLeft: Radius.circular(8),
-              ),
             ),
-            child: Text(
-              topCornerTag,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : InkTheme.cinnabar,
-                fontFamilyFallback: const ['sans-serif'],
-              ),
-            ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 }
@@ -994,7 +1115,6 @@ class _DaYunTile extends StatelessWidget {
   final int? selectedLiuNianIdx;
   final VoidCallback onTileTap;
   final ValueChanged<int> onLiuNianTap;
-  final int? todayYear;
   final bool isExpanded;
   final VoidCallback onToggleExpand;
   final bool isMini;
@@ -1019,7 +1139,6 @@ class _DaYunTile extends StatelessWidget {
     required this.selectedLiuNianIdx,
     required this.onTileTap,
     required this.onLiuNianTap,
-    this.todayYear,
     required this.isExpanded,
     required this.onToggleExpand,
     this.isMini = false,
@@ -1056,13 +1175,15 @@ class _DaYunTile extends StatelessWidget {
   Widget _buildLiuNianGrid() {
     final items = data.liunian;
     return GridView.builder(
+      padding: const EdgeInsets.all(6),
+      clipBehavior: Clip.none,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 5,
         mainAxisSpacing: 4,
         crossAxisSpacing: 4,
-        childAspectRatio: 1.8,
+        childAspectRatio: 1.7,
       ),
       itemCount: items.length,
       itemBuilder: (context, i) {
@@ -1076,11 +1197,12 @@ class _DaYunTile extends StatelessWidget {
               : '',
           label: '${ln.year}',
           isActive: isActive,
-          isToday: todayYear != null && ln.year == todayYear,
+          isToday: ln.year == DateTime.now().year,
           activeBorderColor: const Color(0xFF2E5A3C),
           activeBackgroundColor: const Color(0xFF2E5A3C).withAlpha(13),
           ganGodColor: const Color(0xFF2E5A3C),
           hiddenGodColor: InkTheme.gold,
+          isMini: isMini,
           onTap: () => onLiuNianTap(i),
         );
       },
@@ -1098,7 +1220,6 @@ class _LiuNianDetailTile extends StatelessWidget {
   final int? selectedLiuYueIdx;
   final VoidCallback onTileTap;
   final ValueChanged<int> onLiuYueTap;
-  final String? todayMonthName;
   final bool isExpanded;
   final VoidCallback onToggleExpand;
   final bool isMini;
@@ -1109,7 +1230,6 @@ class _LiuNianDetailTile extends StatelessWidget {
     required this.selectedLiuYueIdx,
     required this.onTileTap,
     required this.onLiuYueTap,
-    this.todayMonthName,
     required this.isExpanded,
     required this.onToggleExpand,
     this.isMini = false,
@@ -1142,18 +1262,21 @@ class _LiuNianDetailTile extends StatelessWidget {
   Widget _buildLiuYueGrid() {
     final items = data.liuyue;
     return GridView.builder(
+      padding: const EdgeInsets.all(6),
+      clipBehavior: Clip.none,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 6,
         mainAxisSpacing: 4,
         crossAxisSpacing: 4,
-        childAspectRatio: 1.4,
+        childAspectRatio: 1.3,
       ),
       itemCount: items.length,
       itemBuilder: (context, i) {
         final ly = items[i];
         final isActive = selectedLiuYueIdx == i;
+
         return _IndexChip(
           gz: ly.ganZhi,
           ganGodShort: EnumTenGods.values
@@ -1168,11 +1291,12 @@ class _LiuNianDetailTile extends StatelessWidget {
               : '',
           label: ly.monthName,
           isActive: isActive,
-          isToday: todayMonthName != null && ly.monthName == todayMonthName,
+          isToday: ly.gregorianMonth == DateTime.now().month,
           activeBorderColor: const Color(0xFF2E5A3C),
           activeBackgroundColor: const Color(0xFF2E5A3C).withAlpha(13),
           ganGodColor: const Color(0xFF2E5A3C),
           hiddenGodColor: InkTheme.textMuted,
+          isMini: isMini,
           onTap: () => onLiuYueTap(i),
         );
       },
@@ -1194,6 +1318,9 @@ class _LiuYueDetailTile extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onToggleExpand;
   final bool isMini;
+  final List<LiuRiDisplayData> Function(int year, int month)? fetchLiuRiData;
+  final List<LiuShiDisplayData> Function(int year, int month, int day)?
+      fetchLiuShiData;
 
   const _LiuYueDetailTile({
     required this.data,
@@ -1205,6 +1332,8 @@ class _LiuYueDetailTile extends StatelessWidget {
     required this.isExpanded,
     required this.onToggleExpand,
     this.isMini = false,
+    this.fetchLiuRiData,
+    this.fetchLiuShiData,
   });
 
   @override
@@ -1212,6 +1341,12 @@ class _LiuYueDetailTile extends StatelessWidget {
     final badgeLabel = '流月 · ${data.monthName}';
     final gan = data.ganZhi.isNotEmpty ? data.ganZhi[0] : '';
     final zhi = data.ganZhi.length > 1 ? data.ganZhi[1] : '';
+
+    final lunarDay =
+        SolarDay.fromYmd(year, data.gregorianMonth, 15).getLunarDay();
+    final lunarYearName = lunarDay.getLunarMonth().getLunarYear().getName();
+    final lunarMonthName = lunarDay.getLunarMonth().getName();
+    final lunarText = lunarYearName.replaceFirst('农历', '农历 ') + lunarMonthName;
 
     return GestureDetector(
       onTap: onTileTap,
@@ -1221,7 +1356,7 @@ class _LiuYueDetailTile extends StatelessWidget {
         tenGod: data.tenGodName,
         hiddenGans:
             data.hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
-        bottomText: '$year年 · ${data.monthName}',
+        bottomText: '$year年 · ${data.monthName} · $lunarText',
         topCornerTag: badgeLabel,
         isSelected: isSelected,
         isExpanded: isExpanded,
@@ -1232,6 +1367,7 @@ class _LiuYueDetailTile extends StatelessWidget {
           month: data.gregorianMonth,
           selectedDay: selectedDay,
           onDaySelected: onDaySelected,
+          fetchLiuRiData: fetchLiuRiData,
         ),
       ),
     );
@@ -1253,6 +1389,9 @@ class _LiuRiDetailTile extends StatelessWidget {
   final bool isExpanded;
   final VoidCallback onToggleExpand;
   final bool isMini;
+  final List<LiuRiDisplayData> Function(int year, int month)? fetchLiuRiData;
+  final List<LiuShiDisplayData> Function(int year, int month, int day)?
+      fetchLiuShiData;
 
   const _LiuRiDetailTile({
     required this.year,
@@ -1265,53 +1404,32 @@ class _LiuRiDetailTile extends StatelessWidget {
     required this.isExpanded,
     required this.onToggleExpand,
     this.isMini = false,
+    this.fetchLiuRiData,
+    this.fetchLiuShiData,
   });
-
-  // Calculate the first hour Gan based on Day Gan rule: "甲己还加甲，乙庚丙作初..."
-  static String _getFirstHourGan(String dayGan) {
-    const gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
-    int dIdx = gan.indexOf(dayGan);
-    if (dIdx < 0) return '甲';
-    // Rules: 甲己->甲, 乙庚->丙, 丙辛->戊, 丁壬->庚, 戊癸->壬
-    final mapping = [0, 2, 4, 6, 8, 0, 2, 4, 6, 8];
-    return gan[mapping[dIdx]];
-  }
-
-  static String _getHourGanZhi(String dayGan, int hourIdx) {
-    const gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
-    const zhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-
-    String firstGan = _getFirstHourGan(dayGan);
-    int startGanIdx = gan.indexOf(firstGan);
-
-    String hGan = gan[(startGanIdx + hourIdx) % 10];
-    String hZhi = zhi[hourIdx];
-    return '$hGan$hZhi';
-  }
 
   @override
   Widget build(BuildContext context) {
-    final dt = DateTime(year, month, day);
-    final isToday = dt.year == DateTime.now().year &&
-        dt.month == DateTime.now().month &&
-        dt.day == DateTime.now().day;
-    final ganZhi = _LiuRiCalendarGrid.ganZhiForDay(dt);
-    final gan = ganZhi.isNotEmpty ? ganZhi[0] : '';
-    final zhi = ganZhi.length > 1 ? ganZhi[1] : '';
-    final tenGodName = _LiuRiCalendarGrid.tenGodForDay(dt).tenGod;
-    final hidden = _LiuRiCalendarGrid.hiddenTriplesForDay(dt);
+    if (fetchLiuRiData == null) return const SizedBox.shrink();
+    final dataList = fetchLiuRiData!(year, month);
+    final data = dataList.firstWhere((e) => e.gregorianDay == day,
+        orElse: () => dataList.first);
+
+    final gan = data.ganZhi.isNotEmpty ? data.ganZhi[0] : '';
+    final zhi = data.ganZhi.length > 1 ? data.ganZhi[1] : '';
 
     return GestureDetector(
       onTap: onTileTap,
       child: _YunLiuPillarCard(
         gan: gan,
         zhi: zhi,
-        tenGod: tenGodName,
+        tenGod: data.tenGodName,
         hiddenGans:
-            hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
-        bottomText: '$year年$month月$day日',
-        topCornerTag: isToday ? '流日 · 今日' : '流日',
-        isSelected: isToday || isSelected,
+            data.hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
+        bottomText: '$year年$month月$day日 · ${data.lunarText}',
+        topCornerTag: data.isToday ? '流日 · 今日' : '流日',
+        jieQiTag: data.jieQiName,
+        isSelected: data.isToday || isSelected,
         isExpanded: isExpanded,
         onToggleExpand: onToggleExpand,
         isMini: isMini,
@@ -1321,48 +1439,25 @@ class _LiuRiDetailTile extends StatelessWidget {
   }
 
   Widget _buildLiuShiGrid(String dayGan) {
-    const zhiTime = [
-      '23-01',
-      '01-03',
-      '03-05',
-      '05-07',
-      '07-09',
-      '09-11',
-      '11-13',
-      '13-15',
-      '15-17',
-      '17-19',
-      '19-21',
-      '21-23'
-    ];
+    if (fetchLiuShiData == null) return const SizedBox.shrink();
+    final dataList = fetchLiuShiData!(year, month, day);
 
     return GridView.builder(
+      padding: const EdgeInsets.all(6),
+      clipBehavior: Clip.none,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 6,
         mainAxisSpacing: 4,
         crossAxisSpacing: 4,
-        childAspectRatio: 1.4,
+        childAspectRatio: 1.3,
       ),
       itemCount: 12,
       itemBuilder: (context, i) {
         final isActive = selectedLiuShiIdx == i;
-        final hourGz = _getHourGanZhi(dayGan, i);
-        // Mock gods for hour
-        final fakeGod =
-            _LiuRiCalendarGrid.tenGodForDay(DateTime(year, month, day, i))
-                .shortName;
-        final fakeHiddenGod = _LiuRiCalendarGrid.hiddenTriplesForDay(
-                    DateTime(year, month, day, i))
-                .isNotEmpty
-            ? _LiuRiCalendarGrid.hiddenTriplesForDay(
-                    DateTime(year, month, day, i))
-                .first
-                .tenGod
-            : '';
+        final data = dataList[i];
 
-        // Map fakeHiddenGod full name to short name
         final shortNames = {
           '正财': '财',
           '偏财': '才',
@@ -1375,18 +1470,23 @@ class _LiuRiDetailTile extends StatelessWidget {
           '比肩': '比',
           '劫财': '劫'
         };
-        final shortFakeHiddenGod = shortNames[fakeHiddenGod] ?? '';
+        final shortFakeGod = shortNames[data.tenGodName] ?? data.tenGodName;
+        final shortFakeHiddenGod = data.hidden.isNotEmpty
+            ? (shortNames[data.hidden.first.tenGod] ?? data.hidden.first.tenGod)
+            : '';
 
         return _IndexChip(
-          gz: hourGz,
-          ganGodShort: fakeGod,
+          gz: data.ganZhi,
+          ganGodShort: shortFakeGod,
           firstHiddenGodShort: shortFakeHiddenGod,
-          label: zhiTime[i],
+          label: data.zhiTime,
           isActive: isActive,
           activeBorderColor: const Color(0xFF2E5A3C),
           activeBackgroundColor: const Color(0xFF2E5A3C).withAlpha(13),
           ganGodColor: const Color(0xFF2E5A3C),
-          hiddenGodColor: InkTheme.textMuted,
+          hiddenGodColor: InkTheme.gold,
+          isMini: isMini,
+          topCornerTag: data.jieQiName,
           onTap: () => onLiuShiTap(i),
         );
       },
@@ -1405,6 +1505,8 @@ class _LiuShiDetailTile extends StatelessWidget {
   final int shiIdx;
   final bool isSelected;
   final bool isMini;
+  final List<LiuShiDisplayData> Function(int year, int month, int day)?
+      fetchLiuShiData;
 
   const _LiuShiDetailTile({
     required this.year,
@@ -1413,46 +1515,28 @@ class _LiuShiDetailTile extends StatelessWidget {
     required this.shiIdx,
     required this.isSelected,
     this.isMini = false,
+    this.fetchLiuShiData,
   });
 
   @override
   Widget build(BuildContext context) {
-    final dt = DateTime(year, month, day);
-    final dayGanZhi = _LiuRiCalendarGrid.ganZhiForDay(dt);
-    final dayGan = dayGanZhi.isNotEmpty ? dayGanZhi[0] : '甲';
+    if (fetchLiuShiData == null) return const SizedBox.shrink();
+    final dataList = fetchLiuShiData!(year, month, day);
+    final data = dataList.firstWhere((e) => e.shiIdx == shiIdx,
+        orElse: () => dataList.first);
 
-    final shiGanZhi = _LiuRiDetailTile._getHourGanZhi(dayGan, shiIdx);
-    final gan = shiGanZhi.isNotEmpty ? shiGanZhi[0] : '';
-    final shiZhi = shiGanZhi.length > 1 ? shiGanZhi[1] : '';
-
-    final tenGodName =
-        _LiuRiCalendarGrid.tenGodForDay(DateTime(year, month, day, shiIdx))
-            .tenGod;
-    final hidden = _LiuRiCalendarGrid.hiddenTriplesForDay(
-        DateTime(year, month, day, shiIdx));
-
-    const zhiTime = [
-      '23-01',
-      '01-03',
-      '03-05',
-      '05-07',
-      '07-09',
-      '09-11',
-      '11-13',
-      '13-15',
-      '15-17',
-      '17-19',
-      '19-21',
-      '21-23'
-    ];
+    final gan = data.ganZhi.isNotEmpty ? data.ganZhi[0] : '';
+    final shiZhi = data.ganZhi.length > 1 ? data.ganZhi[1] : '';
 
     return _YunLiuPillarCard(
       gan: gan,
       zhi: shiZhi,
-      tenGod: tenGodName,
-      hiddenGans: hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
-      bottomText: '$year年$month月$day日 ${zhiTime[shiIdx]}时',
-      topCornerTag: '流时',
+      tenGod: data.tenGodName,
+      hiddenGans:
+          data.hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
+      bottomText: '$year年$month月$day日 ${data.zhiTime}时',
+      topCornerTag: isSelected ? '流时 · 选' : '流时',
+      jieQiTag: data.jieQiName,
       isSelected: isSelected,
       isMini: isMini,
       content: null,
@@ -1479,6 +1563,9 @@ class _IndexChip extends StatelessWidget {
   /// "今" tag — indicates this chip is "today".
   final bool isToday;
 
+  /// Optional explicit tag, e.g., a JieQi name like '惊蛰'. Takes precedence or merges with '今'/'选'.
+  final String? topCornerTag;
+
   const _IndexChip({
     required this.gz,
     required this.ganGodShort,
@@ -1491,24 +1578,54 @@ class _IndexChip extends StatelessWidget {
     required this.hiddenGodColor,
     required this.onTap,
     this.isToday = false,
+    this.isMini = false,
+    this.topCornerTag,
   });
+
+  final bool isMini;
 
   @override
   Widget build(BuildContext context) {
     final theme = YunLiuCardTheme.of(context);
 
+    final fontSizeGz = isMini ? 11.0 : 15.0;
+    final fontSizeLabel = isMini ? 6.0 : 8.0;
+    final fontSizeGods = isMini ? 7.0 : 10.0;
+    final tagSize = isMini ? 12.0 : 16.0;
+    final tagFontSize = isMini ? 6.0 : 8.0;
+    final spacingMain = isMini ? 2.0 : 6.0;
+    final padVert = isMini ? 2.0 : 4.0;
+    final padHoriz = isMini ? 1.0 : 3.0;
+
     // Determine tag text & color
-    final String? tagText;
-    final Color tagColor;
-    if (isToday) {
-      tagText = '今';
+    String? finalTagText;
+    Color tagColor;
+
+    if (topCornerTag != null && topCornerTag!.isNotEmpty) {
+      finalTagText = topCornerTag;
+      if (isToday) {
+        tagColor = InkTheme.cinnabar;
+      } else if (isActive) {
+        tagColor = const Color(0xFF2E5A3C);
+      } else {
+        tagColor = const Color(0xFF2E5A3C); // Default JieQi color
+      }
+    } else if (isToday) {
+      finalTagText = '今';
       tagColor = InkTheme.cinnabar;
     } else if (isActive) {
-      tagText = '选';
+      finalTagText = '选';
       tagColor = const Color(0xFF2E5A3C); // 墨绿色
     } else {
-      tagText = null;
+      finalTagText = null;
       tagColor = Colors.transparent;
+    }
+
+    // Adaptive tag sizing based on text length
+    double effectiveTagWidth = tagSize;
+    if (finalTagText != null && finalTagText.length > 1) {
+      effectiveTagWidth =
+          tagSize + (finalTagText.length - 1) * (tagFontSize * 1.5) + 4;
     }
 
     // Determine active styling
@@ -1530,7 +1647,8 @@ class _IndexChip extends StatelessWidget {
       child: Stack(clipBehavior: Clip.none, children: [
         AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+          padding:
+              EdgeInsets.symmetric(horizontal: padHoriz, vertical: padVert),
           decoration: BoxDecoration(
             color: showActive ? currentBgColor : Colors.transparent,
             borderRadius: BorderRadius.circular(4),
@@ -1539,97 +1657,110 @@ class _IndexChip extends StatelessWidget {
               width: 1,
             ),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(width: 6),
-              // Left: GanZhi + label
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    height: 3,
-                  ),
-                  Text(
-                    gz,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: InkTheme.ink,
-                      height: 1.0,
-                      fontFamilyFallback: theme.serifFonts,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(width: spacingMain),
+                // Left: GanZhi + label
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 3,
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 8,
-                      color: InkTheme.textMuted,
-                      fontFamilyFallback: const ['sans-serif'],
+                    Text(
+                      gz,
+                      style: TextStyle(
+                        fontSize: fontSizeGz,
+                        fontWeight: FontWeight.w800,
+                        color: InkTheme.ink,
+                        height: 1.0,
+                        fontFamilyFallback: theme.serifFonts,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 2),
-              // Right: stacked gods
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    ganGodShort,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: ganGodColor,
-                      height: 1.0,
-                      fontFamilyFallback: theme.serifFonts,
+                    const SizedBox(height: 2),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: fontSizeLabel,
+                        color: InkTheme.textMuted,
+                        fontFamilyFallback: const ['sans-serif'],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    firstHiddenGodShort,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: hiddenGodColor,
-                      height: 1.0,
-                      fontFamilyFallback: theme.serifFonts,
+                  ],
+                ),
+                const SizedBox(width: 2),
+                // Right: stacked gods
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      ganGodShort,
+                      style: TextStyle(
+                        fontSize: fontSizeGods,
+                        fontWeight: FontWeight.w600,
+                        color: ganGodColor,
+                        height: 1.0,
+                        fontFamilyFallback: theme.serifFonts,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                ],
-              ),
-            ],
+                    const SizedBox(height: 2),
+                    Text(
+                      firstHiddenGodShort,
+                      style: TextStyle(
+                        fontSize: fontSizeGods,
+                        fontWeight: FontWeight.w600,
+                        color: hiddenGodColor,
+                        height: 1.0,
+                        fontFamilyFallback: theme.serifFonts,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         // Floating tag (top-left corner)
-        if (tagText != null)
+        if (finalTagText != null)
           Positioned(
             top: -6,
             left: -6,
             child: Container(
-              width: 16,
-              height: 16,
+              width: effectiveTagWidth,
+              height: tagSize,
+              padding: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
                 color: tagColor,
-                shape: BoxShape.circle,
+                borderRadius:
+                    (finalTagText.length > 1 || finalTagText.length > 2)
+                        ? BorderRadius.circular(10)
+                        : null,
+                shape: (finalTagText.length > 1 || finalTagText.length > 2)
+                    ? BoxShape.rectangle
+                    : BoxShape.circle,
               ),
               alignment: Alignment.center,
               child: Text(
-                tagText,
-                style: const TextStyle(
-                  fontSize: 8,
+                finalTagText,
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+                style: TextStyle(
+                  fontSize:
+                      finalTagText.length > 1 ? tagFontSize - 1 : tagFontSize,
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
-                  height: 1.0,
-                  fontFamilyFallback: ['sans-serif'],
+                  height: 1.1,
+                  fontFamilyFallback: const ['sans-serif'],
                 ),
               ),
             ),
@@ -1644,72 +1775,15 @@ class _LiuRiCalendarGrid extends StatelessWidget {
   final int month;
   final int? selectedDay;
   final ValueChanged<int> onDaySelected;
+  final List<LiuRiDisplayData> Function(int year, int month)? fetchLiuRiData;
 
   const _LiuRiCalendarGrid({
     required this.year,
     required this.month,
     required this.selectedDay,
     required this.onDaySelected,
+    this.fetchLiuRiData,
   });
-
-  static String ganZhiForDay(DateTime date) {
-    const gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
-    const zhi = [
-      '子',
-      '丑',
-      '寅',
-      '寅',
-      '辰',
-      '巳',
-      '午',
-      '未',
-      '申',
-      '酉',
-      '戌',
-      '亥'
-    ]; // Note: original code had '寅' twice by accident? Wait, let's keep original logic.
-    // wait, actually let me just copy original line:
-    // const zhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-    final g = (date.year + date.month + date.day) % gan.length;
-    final z =
-        (date.year + (date.month * 2) + date.day) % 12; // 12 is zhi.length
-    return '${gan[g]}${zhi[z]}';
-  }
-
-  static ({String tenGod, String shortName}) tenGodForDay(DateTime date) {
-    const names = ['正财', '偏财', '正印', '偏印', '食神', '伤官', '正官', '偏官', '比肩', '劫财'];
-    const shortNames = ['财', '才', '印', '枭', '食', '伤', '官', '杀', '比', '劫'];
-    final i = (date.day + date.month + date.year) % names.length;
-    return (tenGod: names[i], shortName: shortNames[i]);
-  }
-
-  static List<({String gan, String tenGod})> hiddenTriplesForDay(
-      DateTime date) {
-    const gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
-    const tenGods = [
-      '正财',
-      '偏财',
-      '正印',
-      '偏印',
-      '食神',
-      '伤官',
-      '正官',
-      '偏官',
-      '比肩',
-      '劫财'
-    ];
-    final seed = (date.year * 37) + (date.month * 11) + date.day;
-    return <({String gan, String tenGod})>[
-      (
-        gan: gan[seed % gan.length],
-        tenGod: tenGods[(seed + 1) % tenGods.length]
-      ),
-      (
-        gan: gan[(seed + 3) % gan.length],
-        tenGod: tenGods[(seed + 2) % tenGods.length]
-      ),
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1732,6 +1806,11 @@ class _LiuRiCalendarGrid extends StatelessWidget {
     final today = DateTime.now();
     final rows = items.isEmpty ? 0 : (items.length ~/ 7);
     final cellMargin = 1.0;
+
+    final dataList = fetchLiuRiData != null
+        ? fetchLiuRiData!(year, month)
+        : <LiuRiDisplayData>[];
+    final dataMap = {for (var e in dataList) e.gregorianDay: e};
 
     return LayoutBuilder(builder: (context, constraints) {
       final availableWidth = constraints.maxWidth;
@@ -1776,6 +1855,7 @@ class _LiuRiCalendarGrid extends StatelessWidget {
                         items[r * 7 + c],
                         today,
                         cellMargin,
+                        dataMap,
                       ),
                     ),
                 ],
@@ -1786,7 +1866,8 @@ class _LiuRiCalendarGrid extends StatelessWidget {
     });
   }
 
-  Widget _buildCell(DateTime? dt, DateTime today, double cellMargin) {
+  Widget _buildCell(DateTime? dt, DateTime today, double cellMargin,
+      Map<int, LiuRiDisplayData> dataMap) {
     if (dt == null) {
       return Padding(
         padding: EdgeInsets.all(cellMargin),
@@ -1801,25 +1882,11 @@ class _LiuRiCalendarGrid extends StatelessWidget {
       );
     }
 
-    final isToday =
-        dt.year == today.year && dt.month == today.month && dt.day == today.day;
-    final ganZhi = ganZhiForDay(dt);
-    final ganText = ganZhi.isNotEmpty ? ganZhi[0] : '';
-    final zhiText = ganZhi.length > 1 ? ganZhi[1] : '';
-    final info = SolarLunarDateTimeHelper.cacluateChineseDateInfo(
-      dt,
-      ZiShiStrategy.noDistinguishAt23,
-    );
-    final jieQiInfo = info.jieQiInfo;
-    String? jieQiName;
-    if (jieQiInfo.startAt.year == dt.year &&
-        jieQiInfo.startAt.month == dt.month &&
-        jieQiInfo.startAt.day == dt.day) {
-      jieQiName = jieQiInfo.jieQi.name;
-    }
+    final data = dataMap[dt.day];
+    if (data == null) return const SizedBox.shrink();
 
-    final tenGodName = tenGodForDay(dt).tenGod;
-    final hidden = hiddenTriplesForDay(dt);
+    final ganText = data.ganZhi.isNotEmpty ? data.ganZhi[0] : '';
+    final zhiText = data.ganZhi.length > 1 ? data.ganZhi[1] : '';
 
     return Padding(
       padding: EdgeInsets.all(cellMargin),
@@ -1827,10 +1894,10 @@ class _LiuRiCalendarGrid extends StatelessWidget {
         day: dt.day,
         ganText: ganText,
         zhiText: zhiText,
-        tenGodName: tenGodName,
-        jieQiName: jieQiName,
-        hidden: hidden,
-        isToday: isToday,
+        tenGodName: data.tenGodName,
+        jieQiName: data.jieQiName,
+        hidden: data.hidden,
+        isToday: data.isToday,
         isSelected: selectedDay == dt.day,
         onTap: () => onDaySelected(dt.day),
       ),
@@ -1997,24 +2064,24 @@ class _LiuDayMiniCell extends StatelessWidget {
                 // ── Layer 2.5: JieQi Tag (top-right) ──
                 if (jieQiName != null)
                   Positioned(
-                    top: 2,
-                    right: 2,
+                    top: -6,
+                    right: -6,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 4, vertical: 2),
                       decoration: BoxDecoration(
-                        color: theme.activeColor.withAlpha(20),
-                        border: Border.all(
-                            color: theme.activeColor.withAlpha(100),
-                            width: 0.5),
-                        borderRadius: BorderRadius.circular(2),
+                        color: showActive
+                            ? Theme.of(context).primaryColor
+                            : const Color(0xFF2E5A3C),
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      alignment: Alignment.center,
                       child: Text(
                         jieQiName!,
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: 8,
                           fontWeight: FontWeight.w600,
-                          color: theme.activeColor,
+                          color: Colors.white,
                           height: 1.1,
                           fontFamilyFallback: theme.serifFonts,
                         ),
