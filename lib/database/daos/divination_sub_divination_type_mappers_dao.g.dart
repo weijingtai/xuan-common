@@ -11,4 +11,21 @@ mixin _$DivinationSubDivinationTypeMappersDaoMixin
   $DivinationSubDivinationTypeMappersTable
       get divinationSubDivinationTypeMappers =>
           attachedDatabase.divinationSubDivinationTypeMappers;
+  DivinationSubDivinationTypeMappersDaoManager get managers =>
+      DivinationSubDivinationTypeMappersDaoManager(this);
+}
+
+class DivinationSubDivinationTypeMappersDaoManager {
+  final _$DivinationSubDivinationTypeMappersDaoMixin _db;
+  DivinationSubDivinationTypeMappersDaoManager(this._db);
+  $$DivinationTypesTableTableManager get divinationTypes =>
+      $$DivinationTypesTableTableManager(
+          _db.attachedDatabase, _db.divinationTypes);
+  $$SubDivinationTypesTableTableManager get subDivinationTypes =>
+      $$SubDivinationTypesTableTableManager(
+          _db.attachedDatabase, _db.subDivinationTypes);
+  $$DivinationSubDivinationTypeMappersTableTableManager
+      get divinationSubDivinationTypeMappers =>
+          $$DivinationSubDivinationTypeMappersTableTableManager(
+              _db.attachedDatabase, _db.divinationSubDivinationTypeMappers);
 }

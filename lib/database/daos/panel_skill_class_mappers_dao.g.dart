@@ -9,4 +9,20 @@ mixin _$PanelSkillClassMappersDaoMixin on DatabaseAccessor<AppDatabase> {
   $SkillClassesTable get skillClasses => attachedDatabase.skillClasses;
   $PanelSkillClassMappersTable get panelSkillClassMappers =>
       attachedDatabase.panelSkillClassMappers;
+  PanelSkillClassMappersDaoManager get managers =>
+      PanelSkillClassMappersDaoManager(this);
+}
+
+class PanelSkillClassMappersDaoManager {
+  final _$PanelSkillClassMappersDaoMixin _db;
+  PanelSkillClassMappersDaoManager(this._db);
+  $$SkillsTableTableManager get skills =>
+      $$SkillsTableTableManager(_db.attachedDatabase, _db.skills);
+  $$PanelsTableTableManager get panels =>
+      $$PanelsTableTableManager(_db.attachedDatabase, _db.panels);
+  $$SkillClassesTableTableManager get skillClasses =>
+      $$SkillClassesTableTableManager(_db.attachedDatabase, _db.skillClasses);
+  $$PanelSkillClassMappersTableTableManager get panelSkillClassMappers =>
+      $$PanelSkillClassMappersTableTableManager(
+          _db.attachedDatabase, _db.panelSkillClassMappers);
 }

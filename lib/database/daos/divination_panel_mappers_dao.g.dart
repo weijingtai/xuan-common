@@ -11,4 +11,25 @@ mixin _$DivinationPanelMappersDaoMixin on DatabaseAccessor<AppDatabase> {
   $PanelsTable get panels => attachedDatabase.panels;
   $DivinationPanelMappersTable get divinationPanelMappers =>
       attachedDatabase.divinationPanelMappers;
+  DivinationPanelMappersDaoManager get managers =>
+      DivinationPanelMappersDaoManager(this);
+}
+
+class DivinationPanelMappersDaoManager {
+  final _$DivinationPanelMappersDaoMixin _db;
+  DivinationPanelMappersDaoManager(this._db);
+  $$DivinationTypesTableTableManager get divinationTypes =>
+      $$DivinationTypesTableTableManager(
+          _db.attachedDatabase, _db.divinationTypes);
+  $$SeekersTableTableManager get seekers =>
+      $$SeekersTableTableManager(_db.attachedDatabase, _db.seekers);
+  $$DivinationsTableTableManager get divinations =>
+      $$DivinationsTableTableManager(_db.attachedDatabase, _db.divinations);
+  $$SkillsTableTableManager get skills =>
+      $$SkillsTableTableManager(_db.attachedDatabase, _db.skills);
+  $$PanelsTableTableManager get panels =>
+      $$PanelsTableTableManager(_db.attachedDatabase, _db.panels);
+  $$DivinationPanelMappersTableTableManager get divinationPanelMappers =>
+      $$DivinationPanelMappersTableTableManager(
+          _db.attachedDatabase, _db.divinationPanelMappers);
 }

@@ -112,6 +112,11 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
   final ScrollController _liuRiScrollCtrl = ScrollController();
   final ScrollController _liuShiScrollCtrl = ScrollController();
 
+  final ValueNotifier<bool> _daYunExpanded = ValueNotifier(true);
+  final ValueNotifier<bool> _liuNianExpanded = ValueNotifier(true);
+  final ValueNotifier<bool> _liuYueExpanded = ValueNotifier(true);
+  final ValueNotifier<bool> _liuRiExpanded = ValueNotifier(true);
+
   YunLiuViewModel get vm => widget.viewModel;
 
   @override
@@ -132,6 +137,10 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     _liuYueScrollCtrl.dispose();
     _liuRiScrollCtrl.dispose();
     _liuShiScrollCtrl.dispose();
+    _daYunExpanded.dispose();
+    _liuNianExpanded.dispose();
+    _liuYueExpanded.dispose();
+    _liuRiExpanded.dispose();
     super.dispose();
   }
 
@@ -143,14 +152,33 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
   }
 
   void _handlePreciseScroll() {
+    if (!mounted) return;
     final theme = YunLiuCardTheme.of(context);
-    final viewportWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final viewportWidth = screenWidth.clamp(0.0, theme.daYunCardWidth + 50);
 
     if (vm.selectedDaYunIdx != null) {
       _scrollToCenterExact(_daYunScrollCtrl, vm.selectedDaYunIdx!,
           theme.daYunCardWidth, viewportWidth);
     }
-    // ... repeat for others as needed or based on tier transitions
+    if (vm.selectedLiuNianIdx != null) {
+      _scrollToCenterExact(_liuNianScrollCtrl, vm.selectedLiuNianIdx!,
+          theme.daYunCardWidth, viewportWidth);
+    }
+    if (vm.selectedLiuYueIdx != null) {
+      _scrollToCenterExact(_liuYueScrollCtrl, vm.selectedLiuYueIdx!,
+          theme.daYunCardWidth, viewportWidth);
+    }
+    if (vm.isHorizontal) {
+      if (vm.selectedLiuRiDay != null) {
+        _scrollToCenterExact(_liuRiScrollCtrl, vm.selectedLiuRiDay! - 1,
+            theme.daYunCardWidth, viewportWidth);
+      }
+      if (vm.selectedLiuShiIdx != null) {
+        _scrollToCenterExact(_liuShiScrollCtrl, vm.selectedLiuShiIdx!,
+            theme.daYunCardWidth, viewportWidth);
+      }
+    }
   }
 
   void _scrollToCenterExact(ScrollController ctrl, int index, double itemWidth,
@@ -159,10 +187,10 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
 
     // Exact formula for centering:
     // Offset = (index * (itemWidth + spacing)) + listPadding - (viewportWidth / 2) + (itemWidth / 2)
-    // Here spacing is 14.0, listPadding is 25.0
     final spacing = 14.0;
-    final listPadding = 25.0;
     final targetWidth = vm.isMiniMode ? (itemWidth * 0.75) : itemWidth;
+    final hPad = (viewportWidth - targetWidth) / 2;
+    final listPadding = hPad.clamp(25.0, double.infinity);
 
     final offset = (index * (targetWidth + spacing)) +
         listPadding -
@@ -177,9 +205,10 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
   }
 
   // ── Tier label ──
-  Widget _buildTierLabel(String text, YunLiuCardThemeData theme) {
+  Widget _buildTierLabel(String text, YunLiuCardThemeData theme,
+      {bool? isExpanded, VoidCallback? onToggle}) {
     return Container(
-      width: vm.isHorizontal ? (theme.daYunCardWidth + 50) : double.infinity,
+      width: double.infinity,
       padding: EdgeInsets.only(
           left: vm.isHorizontal ? 25 : 20,
           right: vm.isHorizontal ? 25 : 20,
@@ -200,6 +229,41 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
           Expanded(
             child: Container(height: 1, color: InkTheme.borderLight),
           ),
+          if (isExpanded != null && onToggle != null) ...[
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isExpanded ? "收起" : "展开",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: InkTheme.inkMuted,
+                        letterSpacing: 1,
+                        fontFamilyFallback: theme.sansFonts,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    AnimatedRotation(
+                      turns: isExpanded ? 0 : 0.5,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      child: const Icon(
+                        Icons.keyboard_arrow_up,
+                        size: 14,
+                        color: InkTheme.inkMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -277,39 +341,63 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     required YunLiuCardThemeData theme,
     required Axis scrollDirection,
     required int itemCount,
-    required Widget Function(BuildContext, int) builder,
+    required Widget Function(BuildContext, int, bool) builder,
+    ValueNotifier<bool>? expansionNotifier,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildTierLabel(title, theme),
-        if (scrollDirection == Axis.horizontal)
-          SingleChildScrollView(
-            controller: child is ListView ? child.controller : null,
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 25),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (int i = 0; i < itemCount; i++) ...[
-                  if (i > 0) const SizedBox(width: 14),
-                  builder(context, i),
-                ],
-              ],
+    return ValueListenableBuilder<bool>(
+      valueListenable: expansionNotifier ?? ValueNotifier(true),
+      builder: (context, isExpanded, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTierLabel(
+              title,
+              theme,
+              isExpanded: isExpanded,
+              onToggle: expansionNotifier != null
+                  ? () => expansionNotifier.value = !expansionNotifier.value
+                  : null,
             ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: itemCount,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
-              itemBuilder: builder,
-            ),
-          ),
-      ],
+            if (scrollDirection == Axis.horizontal)
+              Builder(builder: (context) {
+                final screenWidth = MediaQuery.of(context).size.width;
+                final viewportWidth =
+                    screenWidth.clamp(0.0, theme.daYunCardWidth + 50);
+                final targetWidth = vm.isMiniMode
+                    ? (theme.daYunCardWidth * 0.75)
+                    : theme.daYunCardWidth;
+                final hPad = (viewportWidth - targetWidth) / 2;
+
+                return SingleChildScrollView(
+                  controller: child is ListView ? child.controller : null,
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.symmetric(
+                      horizontal: hPad.clamp(25.0, double.infinity)),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (int i = 0; i < itemCount; i++) ...[
+                        if (i > 0) const SizedBox(width: 14),
+                        builder(context, i, isExpanded),
+                      ],
+                    ],
+                  ),
+                );
+              })
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: itemCount,
+                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  itemBuilder: (ctx, i) => builder(ctx, i, isExpanded),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -335,11 +423,15 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
 
         final theme = YunLiuCardTheme.of(context);
 
-        return SizedBox(
-          width: double.infinity,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: theme.daYunCardWidth + 50,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
               _buildGlobalControls(theme),
               // ── Tier 1: DaYun ──
               _buildTierRow(
@@ -349,7 +441,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                     vm.isHorizontal ? Axis.horizontal : Axis.vertical,
                 itemCount: daYunList.length,
                 child: ListView(controller: _daYunScrollCtrl),
-                builder: (context, idx) {
+                expansionNotifier: _daYunExpanded,
+                builder: (context, idx, isExpanded) {
                   final dy = daYunList[idx];
                   final isSelected = idx == vm.selectedDaYunIdx;
                   return _DaYunTile(
@@ -359,8 +452,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                     selectedLiuNianIdx:
                         isSelected ? vm.selectedLiuNianIdx : null,
                     isMini: vm.isMiniMode,
-                    isExpanded: vm.isDaYunExpanded(idx),
-                    onToggleExpand: () => vm.toggleDaYunExpand(idx),
+                    isExpanded: isExpanded,
                     onTileTap: () => vm.selectDaYun(idx),
                     onLiuNianTap: (lnIdx) {
                       vm.selectDaYun(idx);
@@ -379,7 +471,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       vm.isHorizontal ? Axis.horizontal : Axis.vertical,
                   itemCount: selectedDaYun.liunian.length,
                   child: ListView(controller: _liuNianScrollCtrl),
-                  builder: (context, lnIdx) {
+                  expansionNotifier: _liuNianExpanded,
+                  builder: (context, lnIdx, isExpanded) {
                     final ln = selectedDaYun.liunian[lnIdx];
                     final isSelected = lnIdx == vm.selectedLiuNianIdx;
                     return _LiuNianDetailTile(
@@ -388,8 +481,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       selectedLiuYueIdx:
                           isSelected ? vm.selectedLiuYueIdx : null,
                       isMini: vm.isMiniMode,
-                      isExpanded: vm.isLiuNianExpanded(lnIdx),
-                      onToggleExpand: () => vm.toggleLiuNianExpand(lnIdx),
+                      isExpanded: isExpanded,
                       onTileTap: () => vm.selectLiuNian(lnIdx),
                       onLiuYueTap: (lyIdx) {
                         vm.selectLiuNian(lnIdx);
@@ -408,7 +500,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       vm.isHorizontal ? Axis.horizontal : Axis.vertical,
                   itemCount: selectedLiuNian.liuyue.length,
                   child: ListView(controller: _liuYueScrollCtrl),
-                  builder: (context, lyIdx) {
+                  expansionNotifier: _liuYueExpanded,
+                  builder: (context, lyIdx, isExpanded) {
                     final ly = selectedLiuNian.liuyue[lyIdx];
                     final isSelected = lyIdx == vm.selectedLiuYueIdx;
                     return _LiuYueDetailTile(
@@ -419,8 +512,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       isMini: vm.isMiniMode,
                       fetchLiuRiData: vm.fetchLiuRiData,
                       fetchLiuShiData: vm.fetchLiuShiData,
-                      isExpanded: vm.isLiuYueExpanded(lyIdx),
-                      onToggleExpand: () => vm.toggleLiuYueExpand(lyIdx),
+                      isExpanded: isExpanded,
                       onTileTap: () => vm.selectLiuYue(lyIdx),
                       onDaySelected: (day) {
                         vm.selectLiuYue(lyIdx);
@@ -446,7 +538,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                         vm.isHorizontal ? Axis.horizontal : Axis.vertical,
                     itemCount: daysInMonth,
                     child: ListView(controller: _liuRiScrollCtrl),
-                    builder: (context, idx) {
+                    expansionNotifier: _liuRiExpanded,
+                    builder: (context, idx, isExpanded) {
                       final day = idx + 1;
                       final isSelected = day == vm.selectedLiuRiDay;
                       return _LiuRiDetailTile(
@@ -456,11 +549,10 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                         isSelected: isSelected,
                         selectedLiuShiIdx:
                             isSelected ? vm.selectedLiuShiIdx : null,
-                        isExpanded: vm.isLiuRiExpanded(day),
+                        isExpanded: isExpanded,
                         isMini: vm.isMiniMode,
                         fetchLiuRiData: vm.fetchLiuRiData,
                         fetchLiuShiData: vm.fetchLiuShiData,
-                        onToggleExpand: () => vm.toggleLiuRiExpand(day),
                         onTileTap: () => vm.selectLiuRi(day),
                         onLiuShiTap: (shiIdx) {
                           vm.selectLiuRi(day);
@@ -485,7 +577,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                         vm.isHorizontal ? Axis.horizontal : Axis.vertical,
                     itemCount: 12, // 12 Chinese hours
                     child: ListView(controller: _liuShiScrollCtrl),
-                    builder: (context, shiIdx) {
+                    builder: (context, shiIdx, _) {
                       final isSelected = shiIdx == vm.selectedLiuShiIdx;
                       return GestureDetector(
                         onTap: () => vm.selectLiuShi(shiIdx),
@@ -506,10 +598,11 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
               const SizedBox(height: 16),
             ],
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -526,7 +619,6 @@ class _YunLiuPillarCard extends StatelessWidget {
   final bool isSelected;
   final Widget? content;
   final bool isExpanded;
-  final VoidCallback? onToggleExpand;
   final bool isMini;
   final String? jieQiTag;
 
@@ -540,7 +632,6 @@ class _YunLiuPillarCard extends StatelessWidget {
     this.isSelected = true,
     this.content,
     this.isExpanded = true,
-    this.onToggleExpand,
     this.isMini = false,
     this.jieQiTag,
   });
@@ -560,11 +651,11 @@ class _YunLiuPillarCard extends StatelessWidget {
         final vertPad = lerpDouble(12, 5, t)!;
         final separatorH = lerpDouble(80, 44, t)!;
         final bottomFontSize = lerpDouble(12, 10, t)!;
-        final iconSize = lerpDouble(20, 16, t)!;
         final cardWidth =
             lerpDouble(theme.daYunCardWidth, theme.daYunCardWidth * 0.75, t)!;
-        return Stack(
-          children: [
+        return RepaintBoundary(
+          child: Stack(
+            children: [
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: cardWidth,
@@ -648,23 +739,8 @@ class _YunLiuPillarCard extends StatelessWidget {
                                   ),
                                 ),
                                 const Spacer(),
-                                if (content != null && onToggleExpand != null)
-                                  GestureDetector(
-                                    onTap: onToggleExpand,
-                                    child: AnimatedRotation(
-                                      turns: isExpanded ? 0.0 : 0.5,
-                                      duration:
-                                          const Duration(milliseconds: 250),
-                                      curve: Curves.easeInOut,
-                                      child: Icon(
-                                        Icons.keyboard_arrow_up,
-                                        size: iconSize,
-                                        color: InkTheme.inkMuted,
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
+                                ],
+                              ),
                             const SizedBox(height: 2),
                             // Row 2: Hidden stems
                             if (hiddenGans.isNotEmpty)
@@ -792,10 +868,11 @@ class _YunLiuPillarCard extends StatelessWidget {
               ),
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 }
 
 class _DaYunTile extends StatelessWidget {
@@ -806,7 +883,6 @@ class _DaYunTile extends StatelessWidget {
   final VoidCallback onTileTap;
   final ValueChanged<int> onLiuNianTap;
   final bool isExpanded;
-  final VoidCallback onToggleExpand;
   final bool isMini;
 
   static const _chineseOrdinals = [
@@ -830,7 +906,6 @@ class _DaYunTile extends StatelessWidget {
     required this.onTileTap,
     required this.onLiuNianTap,
     required this.isExpanded,
-    required this.onToggleExpand,
     this.isMini = false,
   });
 
@@ -855,7 +930,6 @@ class _DaYunTile extends StatelessWidget {
         topCornerTag: badgeLabel,
         isSelected: isSelected,
         isExpanded: isExpanded,
-        onToggleExpand: onToggleExpand,
         isMini: isMini,
         content: _buildLiuNianGrid(),
       ),
@@ -911,7 +985,6 @@ class _LiuNianDetailTile extends StatelessWidget {
   final VoidCallback onTileTap;
   final ValueChanged<int> onLiuYueTap;
   final bool isExpanded;
-  final VoidCallback onToggleExpand;
   final bool isMini;
 
   const _LiuNianDetailTile({
@@ -921,7 +994,6 @@ class _LiuNianDetailTile extends StatelessWidget {
     required this.onTileTap,
     required this.onLiuYueTap,
     required this.isExpanded,
-    required this.onToggleExpand,
     this.isMini = false,
   });
 
@@ -942,7 +1014,6 @@ class _LiuNianDetailTile extends StatelessWidget {
         topCornerTag: badgeLabel,
         isSelected: isSelected,
         isExpanded: isExpanded,
-        onToggleExpand: onToggleExpand,
         isMini: isMini,
         content: _buildLiuYueGrid(),
       ),
@@ -1006,7 +1077,6 @@ class _LiuYueDetailTile extends StatelessWidget {
   final VoidCallback onTileTap;
   final ValueChanged<int> onDaySelected;
   final bool isExpanded;
-  final VoidCallback onToggleExpand;
   final bool isMini;
   final List<LiuRiDisplayData> Function(int year, int month)? fetchLiuRiData;
   final List<LiuShiDisplayData> Function(int year, int month, int day)?
@@ -1020,7 +1090,6 @@ class _LiuYueDetailTile extends StatelessWidget {
     required this.onTileTap,
     required this.onDaySelected,
     required this.isExpanded,
-    required this.onToggleExpand,
     this.isMini = false,
     this.fetchLiuRiData,
     this.fetchLiuShiData,
@@ -1051,7 +1120,6 @@ class _LiuYueDetailTile extends StatelessWidget {
         topCornerTag: badgeLabel,
         isSelected: isSelected,
         isExpanded: isExpanded,
-        onToggleExpand: onToggleExpand,
         isMini: isMini,
         content: _LiuRiCalendarGrid(
           year: year,
@@ -1078,7 +1146,6 @@ class _LiuRiDetailTile extends StatelessWidget {
   final VoidCallback onTileTap;
   final ValueChanged<int> onLiuShiTap;
   final bool isExpanded;
-  final VoidCallback onToggleExpand;
   final bool isMini;
   final List<LiuRiDisplayData> Function(int year, int month)? fetchLiuRiData;
   final List<LiuShiDisplayData> Function(int year, int month, int day)?
@@ -1093,7 +1160,6 @@ class _LiuRiDetailTile extends StatelessWidget {
     required this.onTileTap,
     required this.onLiuShiTap,
     required this.isExpanded,
-    required this.onToggleExpand,
     this.isMini = false,
     this.fetchLiuRiData,
     this.fetchLiuShiData,
@@ -1123,7 +1189,6 @@ class _LiuRiDetailTile extends StatelessWidget {
         jieQiTag: data.jieQiName,
         isSelected: data.isToday || isSelected,
         isExpanded: isExpanded,
-        onToggleExpand: onToggleExpand,
         isMini: isMini,
         content: _buildLiuShiGrid(gan),
       ),

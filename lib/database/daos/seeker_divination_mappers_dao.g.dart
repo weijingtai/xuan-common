@@ -9,4 +9,21 @@ mixin _$SeekerDivinationMappersDaoMixin on DatabaseAccessor<AppDatabase> {
   $DivinationsTable get divinations => attachedDatabase.divinations;
   $SeekerDivinationMappersTable get seekerDivinationMappers =>
       attachedDatabase.seekerDivinationMappers;
+  SeekerDivinationMappersDaoManager get managers =>
+      SeekerDivinationMappersDaoManager(this);
+}
+
+class SeekerDivinationMappersDaoManager {
+  final _$SeekerDivinationMappersDaoMixin _db;
+  SeekerDivinationMappersDaoManager(this._db);
+  $$DivinationTypesTableTableManager get divinationTypes =>
+      $$DivinationTypesTableTableManager(
+          _db.attachedDatabase, _db.divinationTypes);
+  $$SeekersTableTableManager get seekers =>
+      $$SeekersTableTableManager(_db.attachedDatabase, _db.seekers);
+  $$DivinationsTableTableManager get divinations =>
+      $$DivinationsTableTableManager(_db.attachedDatabase, _db.divinations);
+  $$SeekerDivinationMappersTableTableManager get seekerDivinationMappers =>
+      $$SeekerDivinationMappersTableTableManager(
+          _db.attachedDatabase, _db.seekerDivinationMappers);
 }
