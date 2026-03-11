@@ -51,8 +51,8 @@ class _YunLiuDemoPageState extends State<YunLiuDemoPage> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: YunLiuListTileCardWidget(
-            viewModel: _viewModel,
+          child: SingleChildScrollView(
+            child: YunLiuListTileCardWidget(viewModel: _viewModel),
           ),
         ),
       ),

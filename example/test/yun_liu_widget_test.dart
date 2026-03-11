@@ -37,21 +37,11 @@ Widget _buildDemoFull() {
     ZiShiStrategy.noDistinguishAt23,
   );
 
-  // Generate demo LiuYue data (intentionally unused for now as per VM constructor)
-  // final List<LiuYueDisplayData> liuyueData = YunLiuDemoDataHelper.generateLiuYueDisplayData();
-
   final vm = YunLiuViewModel(
     service: service,
     birthDateTime: birthDate,
     gender: Gender.male,
     birthDateInfo: birthDateInfo,
-    // Assuming YunLiuViewModel can accept a list of LiuYueDisplayData
-    // If not, this part of the instruction might imply a change to the ViewModel constructor.
-    // For now, we'll assume it's passed as a parameter if the ViewModel supports it.
-    // If the ViewModel does not support it, this line should be removed or adjusted.
-    // For the purpose of this edit, we'll assume the intent was to generate and potentially use this data.
-    // As the ViewModel constructor doesn't show a parameter for liuyue, we'll omit passing it directly
-    // but keep the generation as per the instruction's implied intent.
   );
   return MaterialApp(
     home: Scaffold(
@@ -65,7 +55,7 @@ Widget _buildDemoFull() {
   );
 }
 
-/// No auto-selection — only Tier 1 renders; much less overflow.
+/// No auto-selection — selects DaYun[0] so 大运·一 is centered and visible.
 Widget _buildDemoNoAutoSelect() {
   final birthDate = DateTime(1990, 6, 15, 12, 0);
   final service = YunLiuService();
@@ -78,8 +68,8 @@ Widget _buildDemoNoAutoSelect() {
     birthDateTime: birthDate,
     gender: Gender.male,
     birthDateInfo: birthDateInfo,
+    referenceDate: DateTime(1995, 1, 1),
   );
-  // Manual adjust to collapse others if needed, but VM default is mostly what we want for basic test
   return MaterialApp(
     home: Scaffold(
       appBar: AppBar(title: const Text('大运流年 · 三层级联')),

@@ -214,15 +214,15 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           TextButton.icon(
-            onPressed: vm.collapseAll,
-            icon: const Icon(
-              Icons.unfold_less,
+            onPressed: vm.isAllCollapsed ? vm.expandAll : vm.collapseAll,
+            icon: Icon(
+              vm.isAllCollapsed ? Icons.unfold_more : Icons.unfold_less,
               size: 16,
               color: InkTheme.inkMuted,
             ),
-            label: const Text(
-              '全部收起',
-              style: TextStyle(fontSize: 12, color: InkTheme.inkMuted),
+            label: Text(
+              vm.isAllCollapsed ? '全部展开' : '全部收起',
+              style: const TextStyle(fontSize: 12, color: InkTheme.inkMuted),
             ),
           ),
           const SizedBox(width: 12),
@@ -280,45 +280,36 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     required int itemCount,
     required Widget Function(BuildContext, int) builder,
   }) {
-    final targetCardWidth =
-        vm.isMiniMode ? (theme.daYunCardWidth * 0.75) : theme.daYunCardWidth;
-    final fixedWidth = targetCardWidth + 50;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      width: fixedWidth,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTierLabel(title, theme),
-          if (scrollDirection == Axis.horizontal)
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              width: fixedWidth,
-              height: horizontalHeight,
-              child: ListView.separated(
-                controller: child is ListView ? child.controller : null,
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 25),
-                itemCount: itemCount,
-                separatorBuilder: (_, __) => const SizedBox(width: 14),
-                itemBuilder: builder,
-              ),
-            )
-          else
-            Padding(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTierLabel(title, theme),
+        if (scrollDirection == Axis.horizontal)
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            height: horizontalHeight,
+            child: ListView.separated(
+              controller: child is ListView ? child.controller : null,
+              scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 25),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: itemCount,
-                separatorBuilder: (_, __) => const SizedBox(height: 14),
-                itemBuilder: builder,
-              ),
+              itemCount: itemCount,
+              separatorBuilder: (_, __) => const SizedBox(width: 14),
+              itemBuilder: builder,
             ),
-        ],
-      ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 25),
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: itemCount,
+              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              itemBuilder: builder,
+            ),
+          ),
+      ],
     );
   }
 
@@ -330,19 +321,20 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     } else if (tier == 2 && vm.selectedDaYunIdx != null) {
       hasExpanded = vm.liuNianExpanded.values.any((e) => e);
     } else if (tier == 3 && vm.selectedLiuNianIdx != null) {
-      // For LiuYue we don't have individual local expansion in VM yet,
-      // but we can assume it follows global or similar.
-      hasExpanded = true;
+      hasExpanded = vm.liuYueExpanded.values.any((e) => e) ||
+          vm.selectedLiuYueIdx != null;
+    } else if (tier == 4) {
+      hasExpanded = true; // LiuRi cards are always expanded
     }
 
     if (vm.isMiniMode) {
-      if (tier == 5) return 85;
-      if (tier == 3) return hasExpanded ? 400 : 85;
-      return hasExpanded ? 200 : 85;
+      if (tier == 5) return 120;
+      if (tier == 3) return hasExpanded ? 480 : 120;
+      return hasExpanded ? 280 : 120;
     } else {
-      if (tier == 5) return 130;
-      if (tier == 3) return hasExpanded ? 500 : 130;
-      return hasExpanded ? 260 : 130;
+      if (tier == 5) return 240;
+      if (tier == 3) return hasExpanded ? 560 : 240;
+      return hasExpanded ? 380 : 240;
     }
   }
 
@@ -455,8 +447,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       isMini: vm.isMiniMode,
                       fetchLiuRiData: vm.fetchLiuRiData,
                       fetchLiuShiData: vm.fetchLiuShiData,
-                      isExpanded: true, // Auto expanded for detail view
-                      onToggleExpand: () {},
+                      isExpanded: isSelected || vm.isLiuYueExpanded(lyIdx),
+                      onToggleExpand: () => vm.toggleLiuYueExpand(lyIdx),
                       onTileTap: () => vm.selectLiuYue(lyIdx),
                       onDaySelected: (day) {
                         vm.selectLiuYue(lyIdx);
@@ -606,6 +598,7 @@ class _YunLiuPillarCard extends StatelessWidget {
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: cardWidth,
+              clipBehavior: Clip.hardEdge,
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: vertPad),
               decoration: BoxDecoration(
                 color: InkTheme.paperSoft,

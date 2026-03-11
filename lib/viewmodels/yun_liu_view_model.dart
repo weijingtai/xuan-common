@@ -45,6 +45,11 @@ class YunLiuViewModel extends ChangeNotifier {
   Map<int, bool> get daYunExpanded => _daYunExpanded;
   final Map<int, bool> _liuNianExpanded = {};
   Map<int, bool> get liuNianExpanded => _liuNianExpanded;
+  final Map<int, bool> _liuYueExpanded = {};
+  Map<int, bool> get liuYueExpanded => _liuYueExpanded;
+
+  bool _isExplicitlyCollapsed = false;
+  bool get isAllCollapsed => _isExplicitlyCollapsed;
 
   YunLiuViewModel({
     required YunLiuService service,
@@ -116,6 +121,7 @@ class YunLiuViewModel extends ChangeNotifier {
 
   void toggleDaYunExpand(int idx) {
     _daYunExpanded[idx] = !(_daYunExpanded[idx] ?? false);
+    if (_daYunExpanded[idx] == true) _isExplicitlyCollapsed = false;
     notifyListeners();
   }
 
@@ -123,14 +129,25 @@ class YunLiuViewModel extends ChangeNotifier {
 
   void toggleLiuNianExpand(int idx) {
     _liuNianExpanded[idx] = !(_liuNianExpanded[idx] ?? false);
+    if (_liuNianExpanded[idx] == true) _isExplicitlyCollapsed = false;
     notifyListeners();
   }
 
   bool isLiuNianExpanded(int idx) => _liuNianExpanded[idx] ?? false;
 
+  void toggleLiuYueExpand(int idx) {
+    _liuYueExpanded[idx] = !(_liuYueExpanded[idx] ?? false);
+    if (_liuYueExpanded[idx] == true) _isExplicitlyCollapsed = false;
+    notifyListeners();
+  }
+
+  bool isLiuYueExpanded(int idx) => _liuYueExpanded[idx] ?? false;
+
   void collapseAll() {
     _daYunExpanded.clear();
     _liuNianExpanded.clear();
+    _liuYueExpanded.clear();
+    _isExplicitlyCollapsed = true;
     notifyListeners();
   }
 
@@ -138,7 +155,7 @@ class YunLiuViewModel extends ChangeNotifier {
     for (int i = 0; i < _daYunList.length; i++) {
         _daYunExpanded[i] = true;
     }
-    // Note: LiuNian expansion depends on selected DaYun, we only expand what's visible or all.
+    _isExplicitlyCollapsed = false;
     notifyListeners();
   }
 
