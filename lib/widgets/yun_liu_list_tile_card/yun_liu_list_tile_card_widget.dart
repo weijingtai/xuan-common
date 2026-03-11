@@ -1257,7 +1257,7 @@ class _LiuShiDetailTile extends StatelessWidget {
       hiddenGans:
           data.hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
       bottomText: '$year年$month月$day日 ${data.zhiTime}时',
-      topCornerTag: isSelected ? '流时 · 选' : '流时',
+      topCornerTag: '流时',
       jieQiTag: data.jieQiName,
       isSelected: isSelected,
       isMini: isMini,
