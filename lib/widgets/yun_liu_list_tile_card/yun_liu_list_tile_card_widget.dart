@@ -273,7 +273,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
 
   Widget _buildTierRow({
     required String title,
-    double? horizontalHeight,
     required Widget child,
     required YunLiuCardThemeData theme,
     required Axis scrollDirection,
@@ -285,17 +284,18 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
       children: [
         _buildTierLabel(title, theme),
         if (scrollDirection == Axis.horizontal)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            height: horizontalHeight,
-            child: ListView.separated(
-              controller: child is ListView ? child.controller : null,
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 25),
-              itemCount: itemCount,
-              separatorBuilder: (_, __) => const SizedBox(width: 14),
-              itemBuilder: builder,
+          SingleChildScrollView(
+            controller: child is ListView ? child.controller : null,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 25),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (int i = 0; i < itemCount; i++) ...[
+                  if (i > 0) const SizedBox(width: 14),
+                  builder(context, i),
+                ],
+              ],
             ),
           )
         else
@@ -311,31 +311,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
           ),
       ],
     );
-  }
-
-  // Helper to determine horizontal height for a tier row
-  double _getTierHeight(int tier) {
-    bool hasExpanded = false;
-    if (tier == 1) {
-      hasExpanded = vm.daYunList.asMap().keys.any(vm.isDaYunExpanded);
-    } else if (tier == 2 && vm.selectedDaYunIdx != null) {
-      hasExpanded = vm.liuNianExpanded.values.any((e) => e);
-    } else if (tier == 3 && vm.selectedLiuNianIdx != null) {
-      hasExpanded = vm.liuYueExpanded.values.any((e) => e) ||
-          vm.selectedLiuYueIdx != null;
-    } else if (tier == 4) {
-      hasExpanded = true; // LiuRi cards are always expanded
-    }
-
-    if (vm.isMiniMode) {
-      if (tier == 5) return 120;
-      if (tier == 3) return hasExpanded ? 480 : 120;
-      return hasExpanded ? 280 : 120;
-    } else {
-      if (tier == 5) return 240;
-      if (tier == 3) return hasExpanded ? 560 : 240;
-      return hasExpanded ? 380 : 240;
-    }
   }
 
   @override
@@ -369,7 +344,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
               // ── Tier 1: DaYun ──
               _buildTierRow(
                 title: '大运',
-                horizontalHeight: _getTierHeight(1),
                 theme: theme,
                 scrollDirection:
                     vm.isHorizontal ? Axis.horizontal : Axis.vertical,
@@ -400,7 +374,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
               if (selectedDaYun != null && vm.selectedLiuNianIdx != null)
                 _buildTierRow(
                   title: '流年 · ${selectedDaYun.pillar.name}大运',
-                  horizontalHeight: _getTierHeight(2),
                   theme: theme,
                   scrollDirection:
                       vm.isHorizontal ? Axis.horizontal : Axis.vertical,
@@ -430,7 +403,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
               if (selectedLiuYue != null && selectedLiuNian != null)
                 _buildTierRow(
                   title: '流月 · ${selectedLiuNian.year}年',
-                  horizontalHeight: _getTierHeight(3),
                   theme: theme,
                   scrollDirection:
                       vm.isHorizontal ? Axis.horizontal : Axis.vertical,
@@ -447,7 +419,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                       isMini: vm.isMiniMode,
                       fetchLiuRiData: vm.fetchLiuRiData,
                       fetchLiuShiData: vm.fetchLiuShiData,
-                      isExpanded: isSelected || vm.isLiuYueExpanded(lyIdx),
+                      isExpanded: vm.isLiuYueExpanded(lyIdx),
                       onToggleExpand: () => vm.toggleLiuYueExpand(lyIdx),
                       onTileTap: () => vm.selectLiuYue(lyIdx),
                       onDaySelected: (day) {
@@ -469,7 +441,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                   return _buildTierRow(
                     title:
                         '流日 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月',
-                    horizontalHeight: _getTierHeight(4),
                     theme: theme,
                     scrollDirection:
                         vm.isHorizontal ? Axis.horizontal : Axis.vertical,
@@ -485,11 +456,11 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                         isSelected: isSelected,
                         selectedLiuShiIdx:
                             isSelected ? vm.selectedLiuShiIdx : null,
-                        isExpanded: true,
+                        isExpanded: vm.isLiuRiExpanded(day),
                         isMini: vm.isMiniMode,
                         fetchLiuRiData: vm.fetchLiuRiData,
                         fetchLiuShiData: vm.fetchLiuShiData,
-                        onToggleExpand: () {},
+                        onToggleExpand: () => vm.toggleLiuRiExpand(day),
                         onTileTap: () => vm.selectLiuRi(day),
                         onLiuShiTap: (shiIdx) {
                           vm.selectLiuRi(day);
@@ -509,7 +480,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                   return _buildTierRow(
                     title:
                         '流时 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月${vm.selectedLiuRiDay}日',
-                    horizontalHeight: _getTierHeight(5),
                     theme: theme,
                     scrollDirection:
                         vm.isHorizontal ? Axis.horizontal : Axis.vertical,

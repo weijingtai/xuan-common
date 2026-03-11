@@ -47,6 +47,8 @@ class YunLiuViewModel extends ChangeNotifier {
   Map<int, bool> get liuNianExpanded => _liuNianExpanded;
   final Map<int, bool> _liuYueExpanded = {};
   Map<int, bool> get liuYueExpanded => _liuYueExpanded;
+  final Map<int, bool> _liuRiExpanded = {};
+  Map<int, bool> get liuRiExpanded => _liuRiExpanded;
 
   bool _isExplicitlyCollapsed = false;
   bool get isAllCollapsed => _isExplicitlyCollapsed;
@@ -93,6 +95,7 @@ class YunLiuViewModel extends ChangeNotifier {
 
   void selectLiuYue(int idx) {
     _selectedLiuYueIdx = idx;
+    _liuYueExpanded[idx] = true;
     _selectedLiuRiDay = null;
     _selectedLiuShiIdx = null;
     notifyListeners();
@@ -100,6 +103,7 @@ class YunLiuViewModel extends ChangeNotifier {
 
   void selectLiuRi(int day) {
     _selectedLiuRiDay = day;
+    _liuRiExpanded[day] = true;
     _selectedLiuShiIdx = null;
     notifyListeners();
   }
@@ -143,17 +147,45 @@ class YunLiuViewModel extends ChangeNotifier {
 
   bool isLiuYueExpanded(int idx) => _liuYueExpanded[idx] ?? false;
 
+  void toggleLiuRiExpand(int day) {
+    _liuRiExpanded[day] = !(_liuRiExpanded[day] ?? false);
+    if (_liuRiExpanded[day] == true) _isExplicitlyCollapsed = false;
+    notifyListeners();
+  }
+
+  bool isLiuRiExpanded(int day) => _liuRiExpanded[day] ?? false;
+
   void collapseAll() {
     _daYunExpanded.clear();
     _liuNianExpanded.clear();
     _liuYueExpanded.clear();
+    _liuRiExpanded.clear();
     _isExplicitlyCollapsed = true;
     notifyListeners();
   }
 
   void expandAll() {
     for (int i = 0; i < _daYunList.length; i++) {
-        _daYunExpanded[i] = true;
+      _daYunExpanded[i] = true;
+    }
+    if (_selectedDaYunIdx != null) {
+      final dy = _daYunList[_selectedDaYunIdx!];
+      for (int j = 0; j < dy.liunian.length; j++) {
+        _liuNianExpanded[j] = true;
+      }
+      if (_selectedLiuNianIdx != null) {
+        final ln = dy.liunian[_selectedLiuNianIdx!];
+        for (int k = 0; k < ln.liuyue.length; k++) {
+          _liuYueExpanded[k] = true;
+        }
+        if (_selectedLiuYueIdx != null) {
+          final ly = ln.liuyue[_selectedLiuYueIdx!];
+          final dt = DateTime(ln.year, ly.gregorianMonth + 1, 0);
+          for (int d = 1; d <= dt.day; d++) {
+            _liuRiExpanded[d] = true;
+          }
+        }
+      }
     }
     _isExplicitlyCollapsed = false;
     notifyListeners();
