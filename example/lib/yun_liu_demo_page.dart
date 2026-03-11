@@ -1,8 +1,11 @@
 import 'package:common/features/liu_yun/themes/ink_theme.dart';
 import 'package:common/widgets/yun_liu_list_tile_card/yun_liu_list_tile_card_widget.dart';
+import 'package:common/viewmodels/yun_liu_view_model.dart';
+import 'package:common/services/yun_liu_service.dart';
+import 'package:common/enums.dart';
+import 'package:common/helpers/solar_lunar_datetime_helper.dart';
+import 'package:common/features/datetime_details/input_info_params.dart';
 import 'package:flutter/material.dart';
-
-import 'yun_liu_demo_data_helper.dart';
 
 void main() {
   runApp(const MaterialApp(home: YunLiuDemoPage()));
@@ -16,24 +19,28 @@ class YunLiuDemoPage extends StatefulWidget {
 }
 
 class _YunLiuDemoPageState extends State<YunLiuDemoPage> {
-  late List<DaYunDisplayData> _mockData;
+  late YunLiuViewModel _viewModel;
 
   @override
   void initState() {
     super.initState();
-    _mockData = _buildMockData();
-  }
+    final birthDate = DateTime(1990, 6, 15, 12, 0);
+    final service = YunLiuService();
+    final birthDateInfo = SolarLunarDateTimeHelper.cacluateChineseDateInfo(
+      birthDate,
+      ZiShiStrategy.noDistinguishAt23,
+    );
 
-  List<DaYunDisplayData> _buildMockData() {
-    // Generates the real DaYun calculation data (using fake birth date set in the helper)
-    return YunLiuDemoDataHelper.buildRealDaYunData();
+    _viewModel = YunLiuViewModel(
+      service: service,
+      birthDateTime: birthDate,
+      gender: Gender.male,
+      birthDateInfo: birthDateInfo,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Current date values for initial scrolling
-    final today = DateTime.now();
-
     return Scaffold(
       backgroundColor: InkTheme.paperStone,
       appBar: AppBar(
@@ -45,12 +52,7 @@ class _YunLiuDemoPageState extends State<YunLiuDemoPage> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: YunLiuListTileCardWidget(
-            daYunList: _mockData,
-            initialSelectedDaYunIndex: 0,
-            initialSelectedLiuNianIndex: 0,
-            initialSelectedLiuYueIndex: today.month - 1,
-            fetchLiuRiData: YunLiuDemoDataHelper.fetchLiuRiData,
-            fetchLiuShiData: YunLiuDemoDataHelper.fetchLiuShiData,
+            viewModel: _viewModel,
           ),
         ),
       ),

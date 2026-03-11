@@ -1,0 +1,188 @@
+import 'package:flutter/material.dart';
+import 'package:common/models/yun_liu_display_models.dart';
+import 'package:common/services/yun_liu_service.dart';
+import 'package:common/models/chinese_date_info.dart';
+import 'package:common/enums/enum_gender.dart';
+import 'package:common/enums/enum_tian_gan.dart';
+
+class YunLiuViewModel extends ChangeNotifier {
+  final YunLiuService _service;
+
+  // --- Input Config ---
+  final DateTime birthDateTime;
+  final Gender gender;
+  final ChineseDateInfo birthDateInfo;
+  final DateTime referenceDate;
+
+  // --- Business Data ---
+  List<DaYunDisplayData> _daYunList = [];
+  List<DaYunDisplayData> get daYunList => _daYunList;
+
+  // --- Interaction State ---
+  int? _selectedDaYunIdx;
+  int? get selectedDaYunIdx => _selectedDaYunIdx;
+
+  int? _selectedLiuNianIdx;
+  int? get selectedLiuNianIdx => _selectedLiuNianIdx;
+
+  int? _selectedLiuYueIdx;
+  int? get selectedLiuYueIdx => _selectedLiuYueIdx;
+
+  int? _selectedLiuRiDay;
+  int? get selectedLiuRiDay => _selectedLiuRiDay;
+
+  int? _selectedLiuShiIdx;
+  int? get selectedLiuShiIdx => _selectedLiuShiIdx;
+
+  // --- View State ---
+  bool _isMiniMode = false;
+  bool get isMiniMode => _isMiniMode;
+
+  bool _isHorizontal = true;
+  bool get isHorizontal => _isHorizontal;
+
+  final Map<int, bool> _daYunExpanded = {};
+  Map<int, bool> get daYunExpanded => _daYunExpanded;
+  final Map<int, bool> _liuNianExpanded = {};
+  Map<int, bool> get liuNianExpanded => _liuNianExpanded;
+
+  YunLiuViewModel({
+    required YunLiuService service,
+    required this.birthDateTime,
+    required this.gender,
+    required this.birthDateInfo,
+    DateTime? referenceDate,
+  })  : _service = service,
+        referenceDate = referenceDate ?? DateTime.now() {
+    _init();
+  }
+
+  void _init() {
+    _daYunList = _service.calculateDaYunList(
+      birthDateTime: birthDateTime,
+      gender: gender,
+      birthDateInfo: birthDateInfo,
+    );
+    backToTargetDate(referenceDate);
+  }
+
+  // --- Actions ---
+
+  void selectDaYun(int index) {
+    if (index == _selectedDaYunIdx) return;
+    _selectedDaYunIdx = index;
+    _selectedLiuNianIdx = 0;
+    _selectedLiuYueIdx = 0;
+    _selectedLiuRiDay = null;
+    _selectedLiuShiIdx = null;
+    notifyListeners();
+  }
+
+  void selectLiuNian(int idx) {
+    _selectedLiuNianIdx = idx;
+    _selectedLiuYueIdx = 0;
+    _selectedLiuRiDay = null;
+    _selectedLiuShiIdx = null;
+    notifyListeners();
+  }
+
+  void selectLiuYue(int idx) {
+    _selectedLiuYueIdx = idx;
+    _selectedLiuRiDay = null;
+    _selectedLiuShiIdx = null;
+    notifyListeners();
+  }
+
+  void selectLiuRi(int day) {
+    _selectedLiuRiDay = day;
+    _selectedLiuShiIdx = null;
+    notifyListeners();
+  }
+
+  void selectLiuShi(int idx) {
+    _selectedLiuShiIdx = idx;
+    notifyListeners();
+  }
+
+  void toggleMiniMode() {
+    _isMiniMode = !_isMiniMode;
+    notifyListeners();
+  }
+
+  void toggleOrientation() {
+    _isHorizontal = !_isHorizontal;
+    notifyListeners();
+  }
+
+  void toggleDaYunExpand(int idx) {
+    _daYunExpanded[idx] = !(_daYunExpanded[idx] ?? false);
+    notifyListeners();
+  }
+
+  bool isDaYunExpanded(int idx) => _daYunExpanded[idx] ?? false;
+
+  void toggleLiuNianExpand(int idx) {
+    _liuNianExpanded[idx] = !(_liuNianExpanded[idx] ?? false);
+    notifyListeners();
+  }
+
+  bool isLiuNianExpanded(int idx) => _liuNianExpanded[idx] ?? false;
+
+  void collapseAll() {
+    _daYunExpanded.clear();
+    _liuNianExpanded.clear();
+    notifyListeners();
+  }
+
+  void expandAll() {
+    for (int i = 0; i < _daYunList.length; i++) {
+        _daYunExpanded[i] = true;
+    }
+    // Note: LiuNian expansion depends on selected DaYun, we only expand what's visible or all.
+    notifyListeners();
+  }
+
+  /// Automatically syncs indices with the target date (e.g. Back to Today)
+  void backToTargetDate(DateTime target) {
+    final targetYear = target.year;
+    final targetMonth = target.month;
+
+    for (int i = 0; i < _daYunList.length; i++) {
+      final dy = _daYunList[i];
+      if (targetYear >= dy.startYear && targetYear < dy.startYear + dy.yearsCount) {
+        _selectedDaYunIdx = i;
+        for (int j = 0; j < dy.liunian.length; j++) {
+          final ln = dy.liunian[j];
+          if (ln.year == targetYear) {
+            _selectedLiuNianIdx = j;
+            for (int k = 0; k < ln.liuyue.length; k++) {
+              if (ln.liuyue[k].gregorianMonth == targetMonth) {
+                _selectedLiuYueIdx = k;
+                _selectedLiuRiDay = target.day;
+                int hourIdx = (target.hour + 1) ~/ 2;
+                if (hourIdx >= 12) hourIdx = 0;
+                _selectedLiuShiIdx = hourIdx;
+                break;
+              }
+            }
+            break;
+          }
+        }
+        break;
+      }
+    }
+    notifyListeners();
+  }
+
+  // --- Data Providing ---
+
+  TianGan get dayMaster => birthDateInfo.dayGanZhi.tianGan;
+
+  List<LiuRiDisplayData> fetchLiuRiData(int year, int month) {
+    return _service.fetchLiuRiData(year, month, dayMaster);
+  }
+
+  List<LiuShiDisplayData> fetchLiuShiData(int year, int month, int day) {
+    return _service.fetchLiuShiData(year, month, day, dayMaster);
+  }
+}
