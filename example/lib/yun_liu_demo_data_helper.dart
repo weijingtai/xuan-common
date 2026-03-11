@@ -135,13 +135,16 @@ class YunLiuDemoDataHelper {
           .map((h) => (gan: h.name, tenGod: h.getTenGods(_dayMaster).name))
           .toList();
 
-      liuyue.add(LiuYueDisplayData(
-        monthName: '$i月',
-        gregorianMonth: i, // Note: Gregorian month mapping is approximate in this simple UI demo
-        ganZhi: monthPillar.ganZhiStr,
-        tenGodName: ganGod.name,
-        hidden: zhiGods,
-      ));
+      liuyue.add(
+        LiuYueDisplayData(
+          monthName: '$i月',
+          gregorianMonth:
+              i, // Note: Gregorian month mapping is approximate in this simple UI demo
+          ganZhi: monthPillar.ganZhiStr,
+          tenGodName: ganGod.name,
+          hidden: zhiGods,
+        ),
+      );
 
       monthPillar = monthPillar.getNext();
     }
@@ -180,7 +183,8 @@ class YunLiuDemoDataHelper {
           .toList();
 
       final today = DateTime.now();
-      final isToday = dt.year == today.year &&
+      final isToday =
+          dt.year == today.year &&
           dt.month == today.month &&
           dt.day == today.day;
 
@@ -189,17 +193,19 @@ class YunLiuDemoDataHelper {
       final lunarDayName = lunarDayObj.getName();
       final lunarText = '农历 $lunarMonthName$lunarDayName';
 
-      results.add(LiuRiDisplayData(
-        gregorianYear: year,
-        gregorianMonth: month,
-        gregorianDay: d,
-        ganZhi: dayPillar.ganZhiStr,
-        tenGodName: ganGod.name,
-        jieQiName: jieQiName,
-        hidden: zhiGods,
-        lunarText: lunarText,
-        isToday: isToday,
-      ));
+      results.add(
+        LiuRiDisplayData(
+          gregorianYear: year,
+          gregorianMonth: month,
+          gregorianDay: d,
+          ganZhi: dayPillar.ganZhiStr,
+          tenGodName: ganGod.name,
+          jieQiName: jieQiName,
+          hidden: zhiGods,
+          lunarText: lunarText,
+          isToday: isToday,
+        ),
+      );
     }
 
     return results;
@@ -215,8 +221,18 @@ class YunLiuDemoDataHelper {
     final dayGan = dayGanZhi.isNotEmpty ? dayGanZhi[0] : '甲';
 
     const zhiTime = [
-      '23-01', '01-03', '03-05', '05-07', '07-09', '09-11',
-      '11-13', '13-15', '15-17', '17-19', '19-21', '21-23'
+      '23-01',
+      '01-03',
+      '03-05',
+      '05-07',
+      '07-09',
+      '09-11',
+      '11-13',
+      '13-15',
+      '15-17',
+      '17-19',
+      '19-21',
+      '21-23',
     ];
 
     final results = <LiuShiDisplayData>[];
@@ -224,11 +240,11 @@ class YunLiuDemoDataHelper {
       // Real Wu Shu Dun (Five Rats Calculation for Hour Stem)
       final dGan = TianGan.getFromValue(dayGan) ?? TianGan.JIA;
       final List<TianGan> wuShuDunStart = [
-        TianGan.JIA,  // 甲己还加甲
+        TianGan.JIA, // 甲己还加甲
         TianGan.BING, // 乙庚丙作初
-        TianGan.WU,   // 丙辛从戊起
+        TianGan.WU, // 丙辛从戊起
         TianGan.GENG, // 丁壬庚子居
-        TianGan.REN,  // 戊癸何方发，壬子是真途
+        TianGan.REN, // 戊癸何方发，壬子是真途
         TianGan.JIA,
         TianGan.BING,
         TianGan.WU,
@@ -249,26 +265,31 @@ class YunLiuDemoDataHelper {
 
       String? jieQiName;
 
-      results.add(LiuShiDisplayData(
-        shiIdx: h,
-        zhiTime: zhiTime[h],
-        ganZhi: hourPillar.ganZhiStr,
-        tenGodName: ganGod.name,
-        hidden: zhiGods,
-        jieQiName: jieQiName,
-      ));
+      results.add(
+        LiuShiDisplayData(
+          shiIdx: h,
+          zhiTime: zhiTime[h],
+          ganZhi: hourPillar.ganZhiStr,
+          tenGodName: ganGod.name,
+          hidden: zhiGods,
+          jieQiName: jieQiName,
+        ),
+      );
     }
 
     return results;
   }
 
   static List<LiuYueDisplayData> generateLiuYueDisplayData() {
-    return List.generate(12, (i) => LiuYueDisplayData(
-      monthName: '${i + 1}月',
-      gregorianMonth: i + 1,
-      ganZhi: '甲子',
-      tenGodName: '比肩',
-      hidden: [],
-    ));
+    return List.generate(
+      12,
+      (i) => LiuYueDisplayData(
+        monthName: '${i + 1}月',
+        gregorianMonth: i + 1,
+        ganZhi: JiaZi.values[(JiaZi.BING_YIN.index + i) % 60].ganZhiStr,
+        tenGodName: '比肩',
+        hidden: [],
+      ),
+    );
   }
 }
