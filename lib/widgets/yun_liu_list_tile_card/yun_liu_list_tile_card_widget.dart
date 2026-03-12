@@ -188,7 +188,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
     // Exact formula for centering:
     // Offset = (index * (itemWidth + spacing)) + listPadding - (viewportWidth / 2) + (itemWidth / 2)
     final spacing = 14.0;
-    final targetWidth = vm.isMiniMode ? (itemWidth * 0.75) : itemWidth;
+    final targetWidth = vm.isMiniMode ? (itemWidth * 0.65) : itemWidth;
     final hPad = (viewportWidth - targetWidth) / 2;
     final listPadding = hPad.clamp(25.0, double.infinity);
 
@@ -364,7 +364,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
                 final viewportWidth =
                     screenWidth.clamp(0.0, theme.daYunCardWidth + 50);
                 final targetWidth = vm.isMiniMode
-                    ? (theme.daYunCardWidth * 0.75)
+                    ? (theme.daYunCardWidth * 0.65)
                     : theme.daYunCardWidth;
                 final hPad = (viewportWidth - targetWidth) / 2;
 
@@ -432,177 +432,177 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-              _buildGlobalControls(theme),
-              // ── Tier 1: DaYun ──
-              _buildTierRow(
-                title: '大运',
-                theme: theme,
-                scrollDirection:
-                    vm.isHorizontal ? Axis.horizontal : Axis.vertical,
-                itemCount: daYunList.length,
-                child: ListView(controller: _daYunScrollCtrl),
-                expansionNotifier: _daYunExpanded,
-                builder: (context, idx, isExpanded) {
-                  final dy = daYunList[idx];
-                  final isSelected = idx == vm.selectedDaYunIdx;
-                  return _DaYunTile(
-                    data: dy,
-                    index: idx,
-                    isSelected: isSelected,
-                    selectedLiuNianIdx:
-                        isSelected ? vm.selectedLiuNianIdx : null,
-                    isMini: vm.isMiniMode,
-                    isExpanded: isExpanded,
-                    onTileTap: () => vm.selectDaYun(idx),
-                    onLiuNianTap: (lnIdx) {
-                      vm.selectDaYun(idx);
-                      vm.selectLiuNian(lnIdx);
-                    },
-                  );
-                },
-              ),
-
-              // ── Tier 2: LiuNian Detail ──
-              if (selectedDaYun != null && vm.selectedLiuNianIdx != null)
+                _buildGlobalControls(theme),
+                // ── Tier 1: DaYun ──
                 _buildTierRow(
-                  title: '流年 · ${selectedDaYun.pillar.name}大运',
+                  title: '大运',
                   theme: theme,
                   scrollDirection:
                       vm.isHorizontal ? Axis.horizontal : Axis.vertical,
-                  itemCount: selectedDaYun.liunian.length,
-                  child: ListView(controller: _liuNianScrollCtrl),
-                  expansionNotifier: _liuNianExpanded,
-                  builder: (context, lnIdx, isExpanded) {
-                    final ln = selectedDaYun.liunian[lnIdx];
-                    final isSelected = lnIdx == vm.selectedLiuNianIdx;
-                    return _LiuNianDetailTile(
-                      data: ln,
+                  itemCount: daYunList.length,
+                  child: ListView(controller: _daYunScrollCtrl),
+                  expansionNotifier: _daYunExpanded,
+                  builder: (context, idx, isExpanded) {
+                    final dy = daYunList[idx];
+                    final isSelected = idx == vm.selectedDaYunIdx;
+                    return _DaYunTile(
+                      data: dy,
+                      index: idx,
                       isSelected: isSelected,
-                      selectedLiuYueIdx:
-                          isSelected ? vm.selectedLiuYueIdx : null,
+                      selectedLiuNianIdx:
+                          isSelected ? vm.selectedLiuNianIdx : null,
                       isMini: vm.isMiniMode,
                       isExpanded: isExpanded,
-                      onTileTap: () => vm.selectLiuNian(lnIdx),
-                      onLiuYueTap: (lyIdx) {
+                      onTileTap: () => vm.selectDaYun(idx),
+                      onLiuNianTap: (lnIdx) {
+                        vm.selectDaYun(idx);
                         vm.selectLiuNian(lnIdx);
-                        vm.selectLiuYue(lyIdx);
                       },
                     );
                   },
                 ),
 
-              // ── Tier 3: LiuYue Detail ──
-              if (selectedLiuYue != null && selectedLiuNian != null)
-                _buildTierRow(
-                  title: '流月 · ${selectedLiuNian.year}年',
-                  theme: theme,
-                  scrollDirection:
-                      vm.isHorizontal ? Axis.horizontal : Axis.vertical,
-                  itemCount: selectedLiuNian.liuyue.length,
-                  child: ListView(controller: _liuYueScrollCtrl),
-                  expansionNotifier: _liuYueExpanded,
-                  builder: (context, lyIdx, isExpanded) {
-                    final ly = selectedLiuNian.liuyue[lyIdx];
-                    final isSelected = lyIdx == vm.selectedLiuYueIdx;
-                    return _LiuYueDetailTile(
-                      data: ly,
-                      year: selectedLiuNian.year,
-                      isSelected: isSelected,
-                      selectedDay: isSelected ? vm.selectedLiuRiDay : null,
-                      isMini: vm.isMiniMode,
-                      fetchLiuRiData: vm.fetchLiuRiData,
-                      fetchLiuShiData: vm.fetchLiuShiData,
-                      isExpanded: isExpanded,
-                      onTileTap: () => vm.selectLiuYue(lyIdx),
-                      onDaySelected: (day) {
-                        vm.selectLiuYue(lyIdx);
-                        vm.selectLiuRi(day);
-                      },
-                    );
-                  },
-                ),
-
-              // ── Tier 4: LiuRi Detail ──
-              if (vm.selectedLiuRiDay != null &&
-                  selectedLiuYue != null &&
-                  selectedLiuNian != null)
-                Builder(builder: (context) {
-                  final dt = DateTime(selectedLiuNian.year,
-                      selectedLiuYue.gregorianMonth + 1, 0);
-                  final daysInMonth = dt.day;
-                  return _buildTierRow(
-                    title:
-                        '流日 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月',
+                // ── Tier 2: LiuNian Detail ──
+                if (selectedDaYun != null && vm.selectedLiuNianIdx != null)
+                  _buildTierRow(
+                    title: '流年 · ${selectedDaYun.pillar.name}大运',
                     theme: theme,
                     scrollDirection:
                         vm.isHorizontal ? Axis.horizontal : Axis.vertical,
-                    itemCount: daysInMonth,
-                    child: ListView(controller: _liuRiScrollCtrl),
-                    expansionNotifier: _liuRiExpanded,
-                    builder: (context, idx, isExpanded) {
-                      final day = idx + 1;
-                      final isSelected = day == vm.selectedLiuRiDay;
-                      return _LiuRiDetailTile(
-                        year: selectedLiuNian.year,
-                        month: selectedLiuYue.gregorianMonth,
-                        day: day,
+                    itemCount: selectedDaYun.liunian.length,
+                    child: ListView(controller: _liuNianScrollCtrl),
+                    expansionNotifier: _liuNianExpanded,
+                    builder: (context, lnIdx, isExpanded) {
+                      final ln = selectedDaYun.liunian[lnIdx];
+                      final isSelected = lnIdx == vm.selectedLiuNianIdx;
+                      return _LiuNianDetailTile(
+                        data: ln,
                         isSelected: isSelected,
-                        selectedLiuShiIdx:
-                            isSelected ? vm.selectedLiuShiIdx : null,
-                        isExpanded: isExpanded,
+                        selectedLiuYueIdx:
+                            isSelected ? vm.selectedLiuYueIdx : null,
                         isMini: vm.isMiniMode,
-                        fetchLiuRiData: vm.fetchLiuRiData,
-                        fetchLiuShiData: vm.fetchLiuShiData,
-                        onTileTap: () => vm.selectLiuRi(day),
-                        onLiuShiTap: (shiIdx) {
-                          vm.selectLiuRi(day);
-                          vm.selectLiuShi(shiIdx);
+                        isExpanded: isExpanded,
+                        onTileTap: () => vm.selectLiuNian(lnIdx),
+                        onLiuYueTap: (lyIdx) {
+                          vm.selectLiuNian(lnIdx);
+                          vm.selectLiuYue(lyIdx);
                         },
                       );
                     },
-                  );
-                }),
+                  ),
 
-              // ── Tier 5: LiuShi Detail ──
-              if (vm.selectedLiuShiIdx != null &&
-                  vm.selectedLiuRiDay != null &&
-                  selectedLiuYue != null &&
-                  selectedLiuNian != null)
-                Builder(builder: (context) {
-                  return _buildTierRow(
-                    title:
-                        '流时 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月${vm.selectedLiuRiDay}日',
+                // ── Tier 3: LiuYue Detail ──
+                if (selectedLiuYue != null && selectedLiuNian != null)
+                  _buildTierRow(
+                    title: '流月 · ${selectedLiuNian.year}年',
                     theme: theme,
                     scrollDirection:
                         vm.isHorizontal ? Axis.horizontal : Axis.vertical,
-                    itemCount: 12, // 12 Chinese hours
-                    child: ListView(controller: _liuShiScrollCtrl),
-                    builder: (context, shiIdx, _) {
-                      final isSelected = shiIdx == vm.selectedLiuShiIdx;
-                      return GestureDetector(
-                        onTap: () => vm.selectLiuShi(shiIdx),
-                        child: _LiuShiDetailTile(
-                          year: selectedLiuNian.year,
-                          month: selectedLiuYue.gregorianMonth,
-                          day: vm.selectedLiuRiDay!,
-                          shiIdx: shiIdx,
-                          isSelected: isSelected,
-                          isMini: vm.isMiniMode,
-                          fetchLiuShiData: vm.fetchLiuShiData,
-                        ),
+                    itemCount: selectedLiuNian.liuyue.length,
+                    child: ListView(controller: _liuYueScrollCtrl),
+                    expansionNotifier: _liuYueExpanded,
+                    builder: (context, lyIdx, isExpanded) {
+                      final ly = selectedLiuNian.liuyue[lyIdx];
+                      final isSelected = lyIdx == vm.selectedLiuYueIdx;
+                      return _LiuYueDetailTile(
+                        data: ly,
+                        year: selectedLiuNian.year,
+                        isSelected: isSelected,
+                        selectedDay: isSelected ? vm.selectedLiuRiDay : null,
+                        isMini: vm.isMiniMode,
+                        fetchLiuRiData: vm.fetchLiuRiData,
+                        fetchLiuShiData: vm.fetchLiuShiData,
+                        isExpanded: isExpanded,
+                        onTileTap: () => vm.selectLiuYue(lyIdx),
+                        onDaySelected: (day) {
+                          vm.selectLiuYue(lyIdx);
+                          vm.selectLiuRi(day);
+                        },
                       );
                     },
-                  );
-                }),
+                  ),
 
-              const SizedBox(height: 16),
-            ],
+                // ── Tier 4: LiuRi Detail ──
+                if (vm.selectedLiuRiDay != null &&
+                    selectedLiuYue != null &&
+                    selectedLiuNian != null)
+                  Builder(builder: (context) {
+                    final dt = DateTime(selectedLiuNian.year,
+                        selectedLiuYue.gregorianMonth + 1, 0);
+                    final daysInMonth = dt.day;
+                    return _buildTierRow(
+                      title:
+                          '流日 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月',
+                      theme: theme,
+                      scrollDirection:
+                          vm.isHorizontal ? Axis.horizontal : Axis.vertical,
+                      itemCount: daysInMonth,
+                      child: ListView(controller: _liuRiScrollCtrl),
+                      expansionNotifier: _liuRiExpanded,
+                      builder: (context, idx, isExpanded) {
+                        final day = idx + 1;
+                        final isSelected = day == vm.selectedLiuRiDay;
+                        return _LiuRiDetailTile(
+                          year: selectedLiuNian.year,
+                          month: selectedLiuYue.gregorianMonth,
+                          day: day,
+                          isSelected: isSelected,
+                          selectedLiuShiIdx:
+                              isSelected ? vm.selectedLiuShiIdx : null,
+                          isExpanded: isExpanded,
+                          isMini: vm.isMiniMode,
+                          fetchLiuRiData: vm.fetchLiuRiData,
+                          fetchLiuShiData: vm.fetchLiuShiData,
+                          onTileTap: () => vm.selectLiuRi(day),
+                          onLiuShiTap: (shiIdx) {
+                            vm.selectLiuRi(day);
+                            vm.selectLiuShi(shiIdx);
+                          },
+                        );
+                      },
+                    );
+                  }),
+
+                // ── Tier 5: LiuShi Detail ──
+                if (vm.selectedLiuShiIdx != null &&
+                    vm.selectedLiuRiDay != null &&
+                    selectedLiuYue != null &&
+                    selectedLiuNian != null)
+                  Builder(builder: (context) {
+                    return _buildTierRow(
+                      title:
+                          '流时 · ${selectedLiuNian.year}年${selectedLiuYue.gregorianMonth}月${vm.selectedLiuRiDay}日',
+                      theme: theme,
+                      scrollDirection:
+                          vm.isHorizontal ? Axis.horizontal : Axis.vertical,
+                      itemCount: 12, // 12 Chinese hours
+                      child: ListView(controller: _liuShiScrollCtrl),
+                      builder: (context, shiIdx, _) {
+                        final isSelected = shiIdx == vm.selectedLiuShiIdx;
+                        return GestureDetector(
+                          onTap: () => vm.selectLiuShi(shiIdx),
+                          child: _LiuShiDetailTile(
+                            year: selectedLiuNian.year,
+                            month: selectedLiuYue.gregorianMonth,
+                            day: vm.selectedLiuRiDay!,
+                            shiIdx: shiIdx,
+                            isSelected: isSelected,
+                            isMini: vm.isMiniMode,
+                            fetchLiuShiData: vm.fetchLiuShiData,
+                          ),
+                        );
+                      },
+                    );
+                  }),
+
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -639,6 +639,16 @@ class _YunLiuPillarCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = YunLiuCardTheme.of(context);
+
+    String displayTag = topCornerTag;
+    if (isMini) {
+      if (displayTag.contains(' · ')) {
+        displayTag = displayTag.split(' · ').last;
+      } else if (displayTag.contains('·')) {
+        displayTag = displayTag.split('·').last;
+      }
+    }
+
     // t=0 → full size, t=1 → mini — animated by TweenAnimationBuilder
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(end: isMini ? 1.0 : 0.0),
@@ -652,227 +662,230 @@ class _YunLiuPillarCard extends StatelessWidget {
         final separatorH = lerpDouble(80, 44, t)!;
         final bottomFontSize = lerpDouble(12, 10, t)!;
         final cardWidth =
-            lerpDouble(theme.daYunCardWidth, theme.daYunCardWidth * 0.75, t)!;
+            lerpDouble(theme.daYunCardWidth, theme.daYunCardWidth * 0.65, t)!;
         return RepaintBoundary(
           child: Stack(
             children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: cardWidth,
-              clipBehavior: Clip.hardEdge,
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: vertPad),
-              decoration: BoxDecoration(
-                color: InkTheme.paperSoft,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isSelected ? InkTheme.cinnabar : InkTheme.borderLight,
-                  width: 1,
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: cardWidth,
+                clipBehavior: Clip.hardEdge,
+                padding:
+                    EdgeInsets.symmetric(horizontal: 16, vertical: vertPad),
+                decoration: BoxDecoration(
+                  color: InkTheme.paperSoft,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color:
+                        isSelected ? InkTheme.cinnabar : InkTheme.borderLight,
+                    width: 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: InkTheme.cinnabar.withAlpha(25),
+                            blurRadius: 24,
+                            offset: const Offset(0, 6),
+                          ),
+                        ]
+                      : [],
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: InkTheme.cinnabar.withAlpha(25),
-                          blurRadius: 24,
-                          offset: const Offset(0, 6),
-                        ),
-                      ]
-                    : [],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // ── Header: Pillar + Info ──
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Left: GanZhi pillar (Huge)
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            gan,
-                            style: TextStyle(
-                              fontSize: ganZhiSize,
-                              fontWeight: FontWeight.w900,
-                              color: InkTheme.ink,
-                              height: 1.05,
-                              fontFamilyFallback: theme.serifFonts,
-                            ),
-                          ),
-                          Text(
-                            zhi,
-                            style: TextStyle(
-                              fontSize: ganZhiSize,
-                              fontWeight: FontWeight.w900,
-                              color: InkTheme.ink,
-                              height: 1.05,
-                              fontFamilyFallback: theme.serifFonts,
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Separator
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 10),
-                        width: 2,
-                        height: separatorH,
-                        color: InkTheme.cinnabar,
-                      ),
-                      // Right: Info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── Header: Pillar + Info ──
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Left: GanZhi pillar (Huge)
+                        Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Row 1: TenGod + expand toggle
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Text(
-                                  tenGod,
-                                  style: TextStyle(
-                                    fontSize: tenGodSize,
-                                    fontWeight: FontWeight.w600,
-                                    color: InkTheme.inkMuted,
-                                    fontFamilyFallback: theme.serifFonts,
-                                  ),
-                                ),
-                                const Spacer(),
-                                ],
-                              ),
-                            const SizedBox(height: 2),
-                            // Row 2: Hidden stems
-                            if (hiddenGans.isNotEmpty)
-                              Wrap(
-                                spacing: 6,
-                                runSpacing: 4,
-                                children: hiddenGans.map((h) {
-                                  return Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: InkTheme.paperAlt,
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: RichText(
-                                      text: TextSpan(
-                                        style: TextStyle(
-                                          fontSize: hiddenStemSize,
-                                          fontFamilyFallback: theme.serifFonts,
-                                        ),
-                                        children: [
-                                          TextSpan(
-                                            text: h.gan,
-                                            style: TextStyle(
-                                              color: InkTheme.gold,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                          const TextSpan(text: " "),
-                                          TextSpan(
-                                            text: h.hiddenGod,
-                                            style: TextStyle(
-                                              color: InkTheme.inkDeep,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            const SizedBox(height: 4),
-                            // Row 3: Year / age
                             Text(
-                              bottomText,
+                              gan,
                               style: TextStyle(
-                                fontSize: bottomFontSize,
-                                color: InkTheme.textMuted,
-                                fontFamilyFallback: const ['sans-serif'],
+                                fontSize: ganZhiSize,
+                                fontWeight: FontWeight.w900,
+                                color: InkTheme.ink,
+                                height: 1.05,
+                                fontFamilyFallback: theme.serifFonts,
+                              ),
+                            ),
+                            Text(
+                              zhi,
+                              style: TextStyle(
+                                fontSize: ganZhiSize,
+                                fontWeight: FontWeight.w900,
+                                color: InkTheme.ink,
+                                height: 1.05,
+                                fontFamilyFallback: theme.serifFonts,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  // Expandable content with smooth AnimatedSize
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    alignment: Alignment.topCenter,
-                    child: content != null && isExpanded
-                        ? ClipRect(
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 10),
-                              child: content!,
-                            ),
-                          )
-                        : const SizedBox.shrink(),
-                  ),
-                ],
+                        // Separator
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                          width: 2,
+                          height: separatorH,
+                          color: InkTheme.cinnabar,
+                        ),
+                        // Right: Info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Row 1: TenGod + expand toggle
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    tenGod,
+                                    style: TextStyle(
+                                      fontSize: tenGodSize,
+                                      fontWeight: FontWeight.w600,
+                                      color: InkTheme.inkMuted,
+                                      fontFamilyFallback: theme.serifFonts,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              // Row 2: Hidden stems
+                              if (hiddenGans.isNotEmpty)
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 4,
+                                  children: hiddenGans.map((h) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: InkTheme.paperAlt,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: TextStyle(
+                                            fontSize: hiddenStemSize,
+                                            fontFamilyFallback:
+                                                theme.serifFonts,
+                                          ),
+                                          children: [
+                                            TextSpan(
+                                              text: h.gan,
+                                              style: TextStyle(
+                                                color: InkTheme.gold,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const TextSpan(text: " "),
+                                            TextSpan(
+                                              text: h.hiddenGod,
+                                              style: TextStyle(
+                                                color: InkTheme.inkDeep,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              const SizedBox(height: 4),
+                              // Row 3: Year / age
+                              Text(
+                                bottomText,
+                                style: TextStyle(
+                                  fontSize: bottomFontSize,
+                                  color: InkTheme.textMuted,
+                                  fontFamilyFallback: const ['sans-serif'],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Expandable content with smooth AnimatedSize
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOut,
+                      alignment: Alignment.topCenter,
+                      child: content != null && isExpanded
+                          ? ClipRect(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: content!,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (jieQiTag != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (jieQiTag != null)
+                      Container(
+                        margin: const EdgeInsets.only(top: 4, right: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2E5A3C),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          jieQiTag!,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     Container(
-                      margin: const EdgeInsets.only(top: 4, right: 6),
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2E5A3C),
-                        borderRadius: BorderRadius.circular(4),
+                        color:
+                            isSelected ? InkTheme.cinnabar : InkTheme.paperSoft,
+                        border: Border.all(
+                          color: InkTheme.cinnabar,
+                          width: 0.5,
+                        ),
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
+                        ),
                       ),
                       child: Text(
-                        jieQiTag!,
-                        style: const TextStyle(
-                          fontSize: 10,
+                        displayTag,
+                        style: TextStyle(
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: isSelected ? Colors.white : InkTheme.cinnabar,
+                          fontFamilyFallback: const ['sans-serif'],
                         ),
                       ),
                     ),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color:
-                          isSelected ? InkTheme.cinnabar : InkTheme.paperSoft,
-                      border: Border.all(
-                        color: InkTheme.cinnabar,
-                        width: 0.5,
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        topRight: Radius.circular(8),
-                        bottomLeft: Radius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      topCornerTag,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : InkTheme.cinnabar,
-                        fontFamilyFallback: const ['sans-serif'],
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _DaYunTile extends StatelessWidget {
@@ -962,9 +975,6 @@ class _DaYunTile extends StatelessWidget {
           label: '${ln.year}',
           isActive: isActive,
           isToday: ln.year == DateTime.now().year,
-          activeBorderColor: const Color(0xFF2E5A3C),
-          activeBackgroundColor: const Color(0xFF2E5A3C).withAlpha(13),
-          ganGodColor: const Color(0xFF2E5A3C),
           hiddenGodColor: InkTheme.gold,
           isMini: isMini,
           onTap: () => onLiuNianTap(i),
@@ -999,7 +1009,7 @@ class _LiuNianDetailTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badgeLabel = '流年 · ${data.pillar.name}';
+    final badgeLabel = '流年 · ${data.year}';
 
     return GestureDetector(
       onTap: onTileTap,
@@ -1053,9 +1063,6 @@ class _LiuNianDetailTile extends StatelessWidget {
           label: ly.monthName,
           isActive: isActive,
           isToday: ly.gregorianMonth == DateTime.now().month,
-          activeBorderColor: const Color(0xFF2E5A3C),
-          activeBackgroundColor: const Color(0xFF2E5A3C).withAlpha(13),
-          ganGodColor: const Color(0xFF2E5A3C),
           hiddenGodColor: InkTheme.textMuted,
           isMini: isMini,
           onTap: () => onLiuYueTap(i),
@@ -1185,7 +1192,7 @@ class _LiuRiDetailTile extends StatelessWidget {
         hiddenGans:
             data.hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
         bottomText: '$year年$month月$day日 · ${data.lunarText}',
-        topCornerTag: data.isToday ? '流日 · 今日' : '流日',
+        topCornerTag: data.isToday ? '流日 · $day日 · 今日' : '流日 · $day日',
         jieQiTag: data.jieQiName,
         isSelected: data.isToday || isSelected,
         isExpanded: isExpanded,
@@ -1238,9 +1245,6 @@ class _LiuRiDetailTile extends StatelessWidget {
           firstHiddenGodShort: shortFakeHiddenGod,
           label: data.zhiTime,
           isActive: isActive,
-          activeBorderColor: const Color(0xFF2E5A3C),
-          activeBackgroundColor: const Color(0xFF2E5A3C).withAlpha(13),
-          ganGodColor: const Color(0xFF2E5A3C),
           hiddenGodColor: InkTheme.gold,
           isMini: isMini,
           topCornerTag: data.jieQiName,
@@ -1292,7 +1296,7 @@ class _LiuShiDetailTile extends StatelessWidget {
       hiddenGans:
           data.hidden.map((h) => (gan: h.gan, hiddenGod: h.tenGod)).toList(),
       bottomText: '$year年$month月$day日 ${data.zhiTime}时',
-      topCornerTag: '流时',
+      topCornerTag: '流时 · ${data.zhiTime}时',
       jieQiTag: data.jieQiName,
       isSelected: isSelected,
       isMini: isMini,
@@ -1311,9 +1315,6 @@ class _IndexChip extends StatelessWidget {
   final String firstHiddenGodShort;
   final String label;
   final bool isActive;
-  final Color activeBorderColor;
-  final Color activeBackgroundColor;
-  final Color ganGodColor;
   final Color hiddenGodColor;
   final VoidCallback onTap;
 
@@ -1329,9 +1330,6 @@ class _IndexChip extends StatelessWidget {
     required this.firstHiddenGodShort,
     required this.label,
     required this.isActive,
-    required this.activeBorderColor,
-    required this.activeBackgroundColor,
-    required this.ganGodColor,
     required this.hiddenGodColor,
     required this.onTap,
     this.isToday = false,
@@ -1361,18 +1359,16 @@ class _IndexChip extends StatelessWidget {
     if (topCornerTag != null && topCornerTag!.isNotEmpty) {
       finalTagText = topCornerTag;
       if (isToday) {
-        tagColor = InkTheme.cinnabar;
-      } else if (isActive) {
-        tagColor = const Color(0xFF2E5A3C);
+        tagColor = theme.todayColor;
       } else {
-        tagColor = const Color(0xFF2E5A3C); // Default JieQi color
+        tagColor = theme.activeColor; // Default JieQi/Selected color
       }
     } else if (isToday) {
       finalTagText = '今';
-      tagColor = InkTheme.cinnabar;
+      tagColor = theme.todayColor;
     } else if (isActive) {
       finalTagText = '选';
-      tagColor = const Color(0xFF2E5A3C); // 墨绿色
+      tagColor = theme.activeColor;
     } else {
       finalTagText = null;
       tagColor = Colors.transparent;
@@ -1387,16 +1383,18 @@ class _IndexChip extends StatelessWidget {
 
     // Determine active styling
     final showActive = isActive || isToday;
-    Color currentBorderColor = activeBorderColor;
-    Color currentBgColor = activeBackgroundColor;
+    Color currentBorderColor = theme.activeColor;
+    Color currentBgColor = theme.activeColor.withAlpha(13);
+    Color effectiveGanGodColor = theme.activeColor;
 
     if (isToday) {
-      currentBorderColor = InkTheme.cinnabar;
-      currentBgColor = InkTheme.cinnabar.withAlpha(13);
+      currentBorderColor = theme.todayColor;
+      currentBgColor = theme.todayColor.withAlpha(13);
+      effectiveGanGodColor = theme.todayColor;
     } else if (isActive) {
-      // Ensure active selection uses the dark green color mapping
-      currentBorderColor = const Color(0xFF2E5A3C);
-      currentBgColor = const Color(0xFF2E5A3C).withAlpha(13);
+      currentBorderColor = theme.activeColor;
+      currentBgColor = theme.activeColor.withAlpha(13);
+      effectiveGanGodColor = theme.activeColor;
     }
 
     return GestureDetector(
@@ -1464,7 +1462,7 @@ class _IndexChip extends StatelessWidget {
                       style: TextStyle(
                         fontSize: fontSizeGods,
                         fontWeight: FontWeight.w600,
-                        color: ganGodColor,
+                        color: effectiveGanGodColor,
                         height: 1.0,
                         fontFamilyFallback: theme.serifFonts,
                       ),
