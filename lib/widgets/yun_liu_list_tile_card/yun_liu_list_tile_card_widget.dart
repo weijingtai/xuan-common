@@ -674,8 +674,12 @@ class _YunLiuPillarCard extends StatelessWidget {
         final cardWidth =
             lerpDouble(theme.daYunCardWidth, theme.daYunCardWidth * 0.65, t)!;
         return RepaintBoundary(
-          child: Stack(
-            children: [
+          child: Center(
+            child: SizedBox(
+              width: cardWidth,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: cardWidth,
@@ -892,7 +896,9 @@ class _YunLiuPillarCard extends StatelessWidget {
               ),
             ],
           ),
-        );
+        ),
+      ),
+    );
       },
     );
   }
