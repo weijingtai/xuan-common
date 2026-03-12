@@ -117,6 +117,8 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
   final ValueNotifier<bool> _liuYueExpanded = ValueNotifier(true);
   final ValueNotifier<bool> _liuRiExpanded = ValueNotifier(true);
 
+  bool _lastIsAllCollapsed = false;
+
   YunLiuViewModel get vm => widget.viewModel;
 
   @override
@@ -146,6 +148,14 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
 
   void _onViewModelChanged() {
     if (mounted) {
+      if (vm.isAllCollapsed != _lastIsAllCollapsed) {
+        _lastIsAllCollapsed = vm.isAllCollapsed;
+        final newVal = !_lastIsAllCollapsed;
+        _daYunExpanded.value = newVal;
+        _liuNianExpanded.value = newVal;
+        _liuYueExpanded.value = newVal;
+        _liuRiExpanded.value = newVal;
+      }
       setState(() {});
       _handlePreciseScroll();
     }
