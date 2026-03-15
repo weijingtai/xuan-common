@@ -1,5 +1,5 @@
 import 'package:common/helpers/solar_lunar_datetime_helper.dart';
-import 'package:common/models/yun_liu_display_models.dart';
+import '../models/yun_liu_display_models.dart';
 import 'package:common/features/da_yun/da_yun_calculator.dart';
 import 'package:common/models/chinese_date_info.dart';
 import 'package:common/enums.dart';
@@ -86,7 +86,8 @@ class YunLiuService {
   }
 
   /// Generates real LiuYue (Month) list for a given LiuNian pillar
-  List<LiuYueDisplayData> calculateLiuYueList(JiaZi yearPillar, TianGan dayMaster) {
+  List<LiuYueDisplayData> calculateLiuYueList(
+      JiaZi yearPillar, TianGan dayMaster) {
     final liuyue = <LiuYueDisplayData>[];
 
     // Wu Hu Dun (Yin Month Start Stem based on Year Stem)
@@ -127,7 +128,8 @@ class YunLiuService {
   }
 
   /// Fetches real LiuRi (Day) and relationships for the specified year and month.
-  List<LiuRiDisplayData> fetchLiuRiData(int year, int month, TianGan dayMaster) {
+  List<LiuRiDisplayData> fetchLiuRiData(
+      int year, int month, TianGan dayMaster) {
     final next = DateTime(year, month + 1, 1);
     final days = next.subtract(const Duration(days: 1)).day;
 
@@ -181,7 +183,8 @@ class YunLiuService {
   }
 
   /// Fetches real LiuShi (Hour) and relationships for the specified year, month, and day.
-  List<LiuShiDisplayData> fetchLiuShiData(int year, int month, int day, TianGan dayMaster) {
+  List<LiuShiDisplayData> fetchLiuShiData(
+      int year, int month, int day, TianGan dayMaster) {
     final dt = DateTime(year, month, day);
     final infoDay = SolarLunarDateTimeHelper.cacluateChineseDateInfo(
       dt,
@@ -191,24 +194,34 @@ class YunLiuService {
     final dGan = dayGanPillar.tianGan;
 
     const zhiTime = [
-      '23-01', '01-03', '03-05', '05-07', '07-09', '09-11',
-      '11-13', '13-15', '15-17', '17-19', '19-21', '21-23'
+      '23-01',
+      '01-03',
+      '03-05',
+      '05-07',
+      '07-09',
+      '09-11',
+      '11-13',
+      '13-15',
+      '15-17',
+      '17-19',
+      '19-21',
+      '21-23'
     ];
 
     final results = <LiuShiDisplayData>[];
-    
+
     // Wu Shu Dun (Five Rats Calculation for Hour Stem)
     final List<TianGan> wuShuDunStart = [
-      TianGan.JIA,  // 甲己还加甲
+      TianGan.JIA, // 甲己还加甲
       TianGan.BING, // 乙庚丙作初
-      TianGan.WU,   // 丙辛从戊起
+      TianGan.WU, // 丙辛从戊起
       TianGan.GENG, // 丁壬庚子居
-      TianGan.REN,  // 戊癸何方发，壬子是真途
-      TianGan.JIA,  // 己
+      TianGan.REN, // 戊癸何方发，壬子是真途
+      TianGan.JIA, // 己
       TianGan.BING, // 庚
-      TianGan.WU,   // 辛
+      TianGan.WU, // 辛
       TianGan.GENG, // 壬
-      TianGan.REN,  // 癸
+      TianGan.REN, // 癸
     ];
     final startingHourStem = wuShuDunStart[dGan.index];
 
@@ -228,7 +241,7 @@ class YunLiuService {
         hidden: zhiGods,
         jieQiName: null, // Hour level solar terms are rare in basic display
       ));
-      
+
       hourPillar = hourPillar.getNext();
     }
 

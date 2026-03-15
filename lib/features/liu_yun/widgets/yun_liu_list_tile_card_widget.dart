@@ -1,8 +1,8 @@
 import 'dart:ui' show lerpDouble;
 import 'package:common/enums.dart';
 import 'package:common/features/liu_yun/themes/ink_theme.dart';
-import 'package:common/models/yun_liu_display_models.dart';
-import 'package:common/viewmodels/yun_liu_view_model.dart';
+import '../models/yun_liu_display_models.dart';
+import '../viewmodels/yun_liu_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:tyme/tyme.dart';
 
@@ -156,7 +156,6 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
         _liuYueExpanded.value = newVal;
         _liuRiExpanded.value = newVal;
       }
-      setState(() {});
       _handlePreciseScroll();
     }
   }
@@ -680,225 +679,231 @@ class _YunLiuPillarCard extends StatelessWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: cardWidth,
-                clipBehavior: Clip.hardEdge,
-                padding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: vertPad),
-                decoration: BoxDecoration(
-                  color: InkTheme.paperSoft,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color:
-                        isSelected ? InkTheme.cinnabar : InkTheme.borderLight,
-                    width: 1,
-                  ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: InkTheme.cinnabar.withAlpha(25),
-                            blurRadius: 24,
-                            offset: const Offset(0, 6),
-                          ),
-                        ]
-                      : [],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ── Header: Pillar + Info ──
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Left: GanZhi pillar (Huge)
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              gan,
-                              style: TextStyle(
-                                fontSize: ganZhiSize,
-                                fontWeight: FontWeight.w900,
-                                color: InkTheme.ink,
-                                height: 1.05,
-                                fontFamilyFallback: theme.serifFonts,
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: cardWidth,
+                    clipBehavior: Clip.hardEdge,
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: vertPad),
+                    decoration: BoxDecoration(
+                      color: InkTheme.paperSoft,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isSelected
+                            ? InkTheme.cinnabar
+                            : InkTheme.borderLight,
+                        width: 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: InkTheme.cinnabar.withAlpha(25),
+                                blurRadius: 24,
+                                offset: const Offset(0, 6),
                               ),
+                            ]
+                          : [],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // ── Header: Pillar + Info ──
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Left: GanZhi pillar (Huge)
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  gan,
+                                  style: TextStyle(
+                                    fontSize: ganZhiSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: InkTheme.ink,
+                                    height: 1.05,
+                                    fontFamilyFallback: theme.serifFonts,
+                                  ),
+                                ),
+                                Text(
+                                  zhi,
+                                  style: TextStyle(
+                                    fontSize: ganZhiSize,
+                                    fontWeight: FontWeight.w900,
+                                    color: InkTheme.ink,
+                                    height: 1.05,
+                                    fontFamilyFallback: theme.serifFonts,
+                                  ),
+                                ),
+                              ],
                             ),
-                            Text(
-                              zhi,
-                              style: TextStyle(
-                                fontSize: ganZhiSize,
-                                fontWeight: FontWeight.w900,
-                                color: InkTheme.ink,
-                                height: 1.05,
-                                fontFamilyFallback: theme.serifFonts,
+                            // Separator
+                            Container(
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              width: 2,
+                              height: separatorH,
+                              color: InkTheme.cinnabar,
+                            ),
+                            // Right: Info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Row 1: TenGod + expand toggle
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        tenGod,
+                                        style: TextStyle(
+                                          fontSize: tenGodSize,
+                                          fontWeight: FontWeight.w600,
+                                          color: InkTheme.inkMuted,
+                                          fontFamilyFallback: theme.serifFonts,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  // Row 2: Hidden stems
+                                  if (hiddenGans.isNotEmpty)
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: hiddenGans.map((h) {
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: InkTheme.paperAlt,
+                                            borderRadius:
+                                                BorderRadius.circular(4),
+                                          ),
+                                          child: RichText(
+                                            text: TextSpan(
+                                              style: TextStyle(
+                                                fontSize: hiddenStemSize,
+                                                fontFamilyFallback:
+                                                    theme.serifFonts,
+                                              ),
+                                              children: [
+                                                TextSpan(
+                                                  text: h.gan,
+                                                  style: TextStyle(
+                                                    color: InkTheme.gold,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const TextSpan(text: " "),
+                                                TextSpan(
+                                                  text: h.hiddenGod,
+                                                  style: TextStyle(
+                                                    color: InkTheme.inkDeep,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  const SizedBox(height: 4),
+                                  // Row 3: Year / age
+                                  Text(
+                                    bottomText,
+                                    style: TextStyle(
+                                      fontSize: bottomFontSize,
+                                      color: InkTheme.textMuted,
+                                      fontFamilyFallback: const ['sans-serif'],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
                         ),
-                        // Separator
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 10),
-                          width: 2,
-                          height: separatorH,
-                          color: InkTheme.cinnabar,
-                        ),
-                        // Right: Info
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Row 1: TenGod + expand toggle
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    tenGod,
-                                    style: TextStyle(
-                                      fontSize: tenGodSize,
-                                      fontWeight: FontWeight.w600,
-                                      color: InkTheme.inkMuted,
-                                      fontFamilyFallback: theme.serifFonts,
-                                    ),
+                        // Expandable content with smooth AnimatedSize
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeInOut,
+                          alignment: Alignment.topCenter,
+                          child: content != null && isExpanded
+                              ? ClipRect(
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 10),
+                                    child: content!,
                                   ),
-                                  const Spacer(),
-                                ],
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (jieQiTag != null)
+                          Container(
+                            margin: const EdgeInsets.only(top: 4, right: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2E5A3C),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              jieQiTag!,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
-                              const SizedBox(height: 2),
-                              // Row 2: Hidden stems
-                              if (hiddenGans.isNotEmpty)
-                                Wrap(
-                                  spacing: 6,
-                                  runSpacing: 4,
-                                  children: hiddenGans.map((h) {
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: InkTheme.paperAlt,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: RichText(
-                                        text: TextSpan(
-                                          style: TextStyle(
-                                            fontSize: hiddenStemSize,
-                                            fontFamilyFallback:
-                                                theme.serifFonts,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: h.gan,
-                                              style: TextStyle(
-                                                color: InkTheme.gold,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            const TextSpan(text: " "),
-                                            TextSpan(
-                                              text: h.hiddenGod,
-                                              style: TextStyle(
-                                                color: InkTheme.inkDeep,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              const SizedBox(height: 4),
-                              // Row 3: Year / age
-                              Text(
-                                bottomText,
-                                style: TextStyle(
-                                  fontSize: bottomFontSize,
-                                  color: InkTheme.textMuted,
-                                  fontFamilyFallback: const ['sans-serif'],
-                                ),
-                              ),
-                            ],
+                            ),
+                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? InkTheme.cinnabar
+                                : InkTheme.paperSoft,
+                            border: Border.all(
+                              color: InkTheme.cinnabar,
+                              width: 0.5,
+                            ),
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(8),
+                              bottomLeft: Radius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            displayTag,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isSelected ? Colors.white : InkTheme.cinnabar,
+                              fontFamilyFallback: const ['sans-serif'],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    // Expandable content with smooth AnimatedSize
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 250),
-                      curve: Curves.easeInOut,
-                      alignment: Alignment.topCenter,
-                      child: content != null && isExpanded
-                          ? ClipRect(
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 10),
-                                child: content!,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (jieQiTag != null)
-                      Container(
-                        margin: const EdgeInsets.only(top: 4, right: 6),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2E5A3C),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          jieQiTag!,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected ? InkTheme.cinnabar : InkTheme.paperSoft,
-                        border: Border.all(
-                          color: InkTheme.cinnabar,
-                          width: 0.5,
-                        ),
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(8),
-                          bottomLeft: Radius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        displayTag,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : InkTheme.cinnabar,
-                          fontFamilyFallback: const ['sans-serif'],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        );
       },
     );
   }

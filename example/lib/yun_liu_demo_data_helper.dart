@@ -1,5 +1,5 @@
 import 'package:common/helpers/solar_lunar_datetime_helper.dart';
-import 'package:common/models/yun_liu_display_models.dart';
+import 'package:common/features/liu_yun/models/yun_liu_display_models.dart';
 import 'package:common/features/datetime_details/input_info_params.dart';
 import 'package:tyme/tyme.dart' hide Gender;
 import 'package:common/features/da_yun/da_yun_calculator.dart';

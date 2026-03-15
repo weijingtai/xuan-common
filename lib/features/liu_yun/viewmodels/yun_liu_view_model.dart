@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:common/models/yun_liu_display_models.dart';
-import 'package:common/services/yun_liu_service.dart';
+import '../models/yun_liu_display_models.dart';
+import '../services/yun_liu_service.dart';
 import 'package:common/models/chinese_date_info.dart';
 import 'package:common/enums/enum_gender.dart';
 import 'package:common/enums/enum_tian_gan.dart';
@@ -33,6 +33,10 @@ class YunLiuViewModel extends ChangeNotifier {
 
   int? _selectedLiuShiIdx;
   int? get selectedLiuShiIdx => _selectedLiuShiIdx;
+
+  // --- Cache ---
+  final Map<String, List<LiuRiDisplayData>> _liuRiCache = {};
+  final Map<String, List<LiuShiDisplayData>> _liuShiCache = {};
 
   // --- View State ---
   bool _isMiniMode = false;
@@ -129,7 +133,8 @@ class YunLiuViewModel extends ChangeNotifier {
 
     for (int i = 0; i < _daYunList.length; i++) {
       final dy = _daYunList[i];
-      if (targetYear >= dy.startYear && targetYear < dy.startYear + dy.yearsCount) {
+      if (targetYear >= dy.startYear &&
+          targetYear < dy.startYear + dy.yearsCount) {
         _selectedDaYunIdx = i;
         for (int j = 0; j < dy.liunian.length; j++) {
           final ln = dy.liunian[j];
@@ -159,10 +164,22 @@ class YunLiuViewModel extends ChangeNotifier {
   TianGan get dayMaster => birthDateInfo.dayGanZhi.tianGan;
 
   List<LiuRiDisplayData> fetchLiuRiData(int year, int month) {
-    return _service.fetchLiuRiData(year, month, dayMaster);
+    final key = '$year-$month';
+    if (_liuRiCache.containsKey(key)) {
+      return _liuRiCache[key]!;
+    }
+    final data = _service.fetchLiuRiData(year, month, dayMaster);
+    _liuRiCache[key] = data;
+    return data;
   }
 
   List<LiuShiDisplayData> fetchLiuShiData(int year, int month, int day) {
-    return _service.fetchLiuShiData(year, month, day, dayMaster);
+    final key = '$year-$month-$day';
+    if (_liuShiCache.containsKey(key)) {
+      return _liuShiCache[key]!;
+    }
+    final data = _service.fetchLiuShiData(year, month, day, dayMaster);
+    _liuShiCache[key] = data;
+    return data;
   }
 }
