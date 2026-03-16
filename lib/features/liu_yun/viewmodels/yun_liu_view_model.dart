@@ -65,7 +65,7 @@ class YunLiuViewModel extends ChangeNotifier {
       gender: gender,
       birthDateInfo: birthDateInfo,
     );
-    backToTargetDate(referenceDate);
+    jumpToTargetDateTime(referenceDate);
   }
 
   // --- Actions ---
@@ -126,8 +126,9 @@ class YunLiuViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Automatically syncs indices with the target date (e.g. Back to Today)
-  void backToTargetDate(DateTime target) {
+  /// Jumps to a specific date and time, synchronizing all levels of the list.
+  /// Automatically syncs indices with the target date (e.g. Back to Today).
+  void jumpToTargetDateTime(DateTime target) {
     final targetYear = target.year;
     final targetMonth = target.month;
 

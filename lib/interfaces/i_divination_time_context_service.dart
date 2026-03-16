@@ -1,5 +1,7 @@
 import 'package:common/models/chinese_date_info.dart';
 
+import '../enums/enum_jia_zi.dart';
+
 /// 命理排盘的基础时空流逝接口定义
 ///
 /// 该接口用于为各大命理推演插件（八字引擎、铁板神数等）提供统一的、流派无关的

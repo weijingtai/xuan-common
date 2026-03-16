@@ -328,7 +328,7 @@ class _YunLiuListTileCardWidgetState extends State<YunLiuListTileCardWidget> {
           ),
           const SizedBox(width: 8),
           TextButton.icon(
-            onPressed: () => vm.backToTargetDate(DateTime.now()),
+            onPressed: () => vm.jumpToTargetDateTime(DateTime.now()),
             icon: const Icon(
               Icons.today,
               size: 16,
