@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:account/account.dart';
-import 'package:example/dev_yun_liu_table.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';

@@ -1,3 +1,4 @@
+import 'package:common/models/lunar_date_info_v2_data.dart';
 import 'package:common/widgets/lunar_date_info_card_v2.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -223,10 +224,12 @@ class _NewSeekerUiDemoBodyState extends State<_NewSeekerUiDemoBody> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           LunarDateInfoCardV2(
-                            bundle: _bundle!,
-                            inUsed: _bundle!.trueSolarChineseInfo != null
-                                ? EnumDatetimeType.trueSolar
-                                : EnumDatetimeType.standard,
+                            data: LunarDateInfoV2Data(
+                              bundle: _bundle!,
+                              inUsed: _bundle!.trueSolarChineseInfo != null
+                                  ? EnumDatetimeType.trueSolar
+                                  : EnumDatetimeType.standard,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Row(
@@ -303,7 +306,7 @@ class _NewSeekerUiDemoBodyState extends State<_NewSeekerUiDemoBody> {
                                         scale: 0.7,
                                         child: Switch(
                                           value: _showTags,
-                                          activeColor: const Color(
+                                          activeThumbColor: const Color(
                                             0xFFA62C2B,
                                           ), // Vermilion
                                           onChanged: (val) {

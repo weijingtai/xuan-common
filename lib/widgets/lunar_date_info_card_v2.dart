@@ -4,31 +4,39 @@ import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:common/models/chinese_date_info.dart';
 import 'package:common/models/seventy_two_phenology.dart';
-import 'package:common/features/datetime_details/input_info_params.dart';
-import 'package:common/models/divination_datetime.dart';
-import '../themes/gan_zhi_gua_colors.dart';
 
 import '../helpers/solar_lunar_datetime_helper.dart';
 
-class LunarDateInfoCardV2 extends StatelessWidget {
-  final DateTimeDetailsBundle bundle;
-  final EnumDatetimeType inUsed;
-  final bool isHiddenDatetimeType;
-  final double underlingWidth = 1.0;
-  final String? cardChipTagStr;
+import 'package:common/models/lunar_date_info_v2_data.dart';
 
+/// 现代版的农历日期信息卡片。
+///
+/// 此小部件显示有关农历日期的全面信息，包括：
+/// - 公历和农历日期
+/// - 八字 (BaZi)
+/// - 节气 (JieQi) 和 物候 (WuHou)
+/// - 天文状态（日出日落和月升月落时间）
+/// - 地点和时区详情
+///
+/// 它使用 [LunarDateInfoV2Data] 处理其状态和样式。
+class LunarDateInfoCardV2 extends StatelessWidget {
+  /// 包含所有要显示的信息的数据模型。
+  final LunarDateInfoV2Data data;
+
+  /// 卡片中下划线装饰的默认宽度。
+  final double underlingWidth = 1.0;
+
+  /// 创建 [LunarDateInfoCardV2] 小部件。
   const LunarDateInfoCardV2({
     super.key,
-    required this.bundle,
-    required this.inUsed,
-    this.isHiddenDatetimeType = false,
-    this.cardChipTagStr,
+    required this.data,
   });
 
-  Color get mainlyTextThemeColor =>
-      AppColors.zodiacZhiColors[chineseDateInfo!.eightChars.month.diZhi]!;
-  Color get timingTextThemeColor =>
-      AppColors.zodiacZhiColors[chineseDateInfo!.eightChars.hourDiZhi]!;
+  Color get mainlyTextThemeColor => data.mainlyTextThemeColor;
+  Color get timingTextThemeColor => data.timingTextThemeColor;
+  ChineseDateInfo? get chineseDateInfo => data.chineseDateInfo;
+  DateTime? get dateTime => data.dateTime;
+
   @override
   Widget build(BuildContext context) {
     final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -40,7 +48,7 @@ class LunarDateInfoCardV2 extends StatelessWidget {
         : (isDarkMode ? AppThemes.darkTheme : AppThemes.lightTheme);
     EdgeInsets padding =
         const EdgeInsets.symmetric(horizontal: 20, vertical: 10);
-    if (cardChipTagStr != null) {
+    if (data.cardChipTagStr != null) {
       padding = const EdgeInsets.fromLTRB(20, 20, 20, 10);
     }
 
@@ -79,11 +87,11 @@ class LunarDateInfoCardV2 extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (cardChipTagStr != null)
+                  if (data.cardChipTagStr != null)
                     Positioned(
                         top: 0,
                         left: 0,
-                        child: _buildCardChipTag(cardChipTagStr!))
+                        child: _buildCardChipTag(data.cardChipTagStr!))
                 ],
               )),
         );
@@ -113,31 +121,6 @@ class LunarDateInfoCardV2 extends StatelessWidget {
     );
   }
 
-  ChineseDateInfo? get chineseDateInfo {
-    switch (inUsed) {
-      case EnumDatetimeType.standard:
-        return bundle.standeredChineseInfo;
-      case EnumDatetimeType.removeDST:
-        return bundle.removeDSTChineseInfo;
-      case EnumDatetimeType.meanSolar:
-        return bundle.meanSolarChineseInfo;
-      case EnumDatetimeType.trueSolar:
-        return bundle.trueSolarChineseInfo;
-    }
-  }
-
-  DateTime? get dateTime {
-    switch (inUsed) {
-      case EnumDatetimeType.standard:
-        return bundle.standeredDatetime;
-      case EnumDatetimeType.removeDST:
-        return bundle.removeDSTDatetime;
-      case EnumDatetimeType.meanSolar:
-        return bundle.meanSolarDatetime;
-      case EnumDatetimeType.trueSolar:
-        return bundle.trueSolarDatetime;
-    }
-  }
 
   Widget _buildDateTimeSection(BuildContext context) {
     return Row(
@@ -209,7 +192,7 @@ class LunarDateInfoCardV2 extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: cardChipTagStr == null ? 10 : 20,
+          height: data.cardChipTagStr == null ? 10 : 20,
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -226,7 +209,7 @@ class LunarDateInfoCardV2 extends StatelessWidget {
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
-                if (!isHiddenDatetimeType)
+                if (!data.isHiddenDatetimeType)
                   Padding(
                     padding: const EdgeInsets.only(left: 8.0),
                     child: Container(
@@ -237,7 +220,7 @@ class LunarDateInfoCardV2 extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        inUsed.name,
+                        data.inUsed.name,
                         style: TextStyle(
                           fontSize: 10,
                           height: 1.1,
@@ -453,7 +436,8 @@ class LunarDateInfoCardV2 extends StatelessWidget {
   }
 
   Widget _buildAstronomicalSection(BuildContext context) {
-    final coordinates = bundle.coordinates ?? bundle.location?.coordinates;
+    final coordinates =
+        data.bundle.coordinates ?? data.bundle.location?.coordinates;
 
     if (coordinates == null || dateTime == null) {
       return Column(
@@ -473,7 +457,7 @@ class LunarDateInfoCardV2 extends StatelessWidget {
 
     // IMPORTANT: We must construct mock times using the SAME timezone reference
     // as the dateTime from the card to ensure the comparison is valid.
-    final location = tz.getLocation(bundle.timezoneStr);
+    final location = tz.getLocation(data.bundle.timezoneStr);
     DateTime createTime(int hour, int minute) {
       if (isUtc) {
         return tz.TZDateTime.utc(mockYear, mockMonth, mockDay, hour, minute);
@@ -546,7 +530,6 @@ class LunarDateInfoCardV2 extends StatelessWidget {
   }) {
     final secondaryTextColor = Theme.of(context).textTheme.titleMedium?.color;
     final primaryTextColor = Theme.of(context).textTheme.bodyLarge?.color;
-    final progressColor = mainlyTextThemeColor;
 
     double progress = 0.0;
     if (rise != null && down != null && dateTime != null) {
@@ -677,9 +660,10 @@ class LunarDateInfoCardV2 extends StatelessWidget {
   Widget _buildFooterSection(BuildContext context) {
     final secondaryTextColor =
         Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6);
-    final coordinates = bundle.coordinates ?? bundle.location?.coordinates;
-    final timezone = bundle.timezoneStr;
-    final address = bundle.location?.address;
+    final coordinates =
+        data.bundle.coordinates ?? data.bundle.location?.coordinates;
+    final timezone = data.bundle.timezoneStr;
+    final address = data.bundle.location?.address;
 
     List<String> addressParts = [];
     if (address != null) {
