@@ -1,6 +1,4 @@
 import 'package:common/datamodel/location.dart' as my;
-import 'package:common/models/chinese_date_info.dart';
-import 'package:common/helpers/solar_lunar_datetime_helper.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'calculation_strategy_config.dart';
 import 'input_info_params.dart';
@@ -140,6 +138,11 @@ class DateTimeDetailsBundleCalculation {
       // 4. 构建最终对象
       return DateTimeDetailsBundle.internal(
         calculationConfig: config,
+        location: params.location,
+        coordinates: params.coordinates,
+        isDST: tzDateTime.timeZone.isDst,
+        removeDSTDatetime: dstData?.removeDSTDatetime,
+        removeDSTChineseInfo: dstData?.removeDSTChineseInfo,
         meanSolarDatetime: solarTimeData?.meanSolarDatetime,
         meanSolarChineseInfo: solarTimeData?.meanSolarChineseInfo,
         trueSolarDatetime: solarTimeData?.trueSolarDatetime,
@@ -159,20 +162,6 @@ class DateTimeDetailsBundleCalculation {
     }
   }
 
-  /// 构建计算元数据
-  static CalculationMetadata _buildCalculationMetadata(
-    TimezoneProcessResult timezoneData,
-    DSTProcessResult? dstData,
-    SolarTimeProcessResult? solarTimeData,
-  ) {
-    return CalculationMetadata(
-      calculationTime: DateTime.now(),
-      timezoneInfo: timezoneData.getSummary(),
-      dstInfo: dstData?.getSummary() ?? {'isDST': false, 'processed': false},
-      solarTimeInfo: solarTimeData?.getSummary() ?? {'processed': false},
-      version: '1.0.0', // 专业版本
-    );
-  }
 }
 
 /// 计算异常类

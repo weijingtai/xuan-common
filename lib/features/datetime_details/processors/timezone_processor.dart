@@ -13,7 +13,24 @@ class TimezoneProcessor {
     final location = tz.getLocation(timezoneStr);
 
     // 转换为指定时区的时间
-    final standardDateTime = tz.TZDateTime.from(inputDateTime, location);
+    // 如果是本地时间，将其视为目标时区的挂钟时间 (Wall Time)
+    // 如果是 UTC 时间，则进行绝对时刻转换
+    final tz.TZDateTime standardDateTime;
+    if (inputDateTime.isUtc) {
+      standardDateTime = tz.TZDateTime.from(inputDateTime, location);
+    } else {
+      standardDateTime = tz.TZDateTime(
+        location,
+        inputDateTime.year,
+        inputDateTime.month,
+        inputDateTime.day,
+        inputDateTime.hour,
+        inputDateTime.minute,
+        inputDateTime.second,
+        inputDateTime.millisecond,
+        inputDateTime.microsecond,
+      );
+    }
 
     // 转换为UTC时间
     final utcDateTime = standardDateTime.toUtc();

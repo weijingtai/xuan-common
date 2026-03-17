@@ -1,3 +1,4 @@
+import 'package:common/widgets/lunar_date_info_card_v2.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,11 +24,11 @@ import 'package:common/features/datetime_details/datetime_details_bundle_calcula
 import 'package:common/features/datetime_details/input_info_params.dart';
 import 'package:common/models/divination_datetime.dart';
 import 'package:common/datamodel/location.dart' as loc;
+import 'package:common/datamodel/geo_location.dart' as geo;
 import 'package:common/widgets/editable_fourzhu_card.dart';
 import 'package:common/widgets/jieqi_entry_settings_capsule.dart';
 import 'package:common/widgets/jieqi_phenology_settings_capsule.dart';
 import 'package:common/widgets/zi_strategy_settings_capsule.dart';
-import 'package:common/widgets/lunar_date_info_card.dart';
 
 class NewSeekerUiDemo extends StatelessWidget {
   const NewSeekerUiDemo({super.key});
@@ -90,8 +91,9 @@ class _NewSeekerUiDemoBodyState extends State<_NewSeekerUiDemoBody> {
   Future<void> _loadData() async {
     try {
       final params = DateTimeDetailsCalculationParams(
-        inputDateTime: DateTime(1995, 6, 12, 10, 30),
+        inputDateTime: DateTime(1995, 6, 12, 13, 30),
         timezoneStr: 'Asia/Shanghai',
+        // timezoneStr: 'America/Los_Angeles',
         coordinates: loc.Coordinates(
           latitude: 31.23170,
           longitude: 121.47260,
@@ -100,6 +102,36 @@ class _NewSeekerUiDemoBodyState extends State<_NewSeekerUiDemoBody> {
           preciseCoordinates: loc.Coordinates(
             latitude: 31.23170,
             longitude: 121.47260,
+          ),
+          address: loc.Address(
+            countryName: '中国',
+            countryId: 45,
+            regionId: 9,
+            province: geo.GeoLocation(
+              name: '上海',
+              latitude: 31.2317,
+              longitude: 121.4726,
+              level: geo.GeoLevel.province,
+              code: '310000',
+              parentCode: '0',
+            ),
+            city: geo.GeoLocation(
+              name: '上海',
+              latitude: 31.2317,
+              longitude: 121.4726,
+              code: '310100',
+              parentCode: '310000',
+              level: geo.GeoLevel.city,
+            ),
+            area: geo.GeoLocation(
+              name: '黄浦区',
+              latitude: 31.2317,
+              longitude: 121.4726,
+              code: '310101',
+              parentCode: '310100',
+              level: geo.GeoLevel.county,
+            ),
+            timezone: 'Asia/Shanghai',
           ),
         ),
       );
@@ -190,7 +222,7 @@ class _NewSeekerUiDemoBodyState extends State<_NewSeekerUiDemoBody> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          LunarDateInfoCard(
+                          LunarDateInfoCardV2(
                             bundle: _bundle!,
                             inUsed: _bundle!.trueSolarChineseInfo != null
                                 ? EnumDatetimeType.trueSolar
