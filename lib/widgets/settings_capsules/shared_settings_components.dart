@@ -76,94 +76,122 @@ class SettingsOptionCard extends StatelessWidget {
     required this.goldLeaf,
   });
 
+  /// 方案 A：静态测量高度契约
+  /// 封装了 SettingsOptionCard 内部所有的像素开销
+  static double computeHeight({
+    required String title,
+    String? subtitle,
+    required double cardWidth,
+  }) {
+    // 全固定物理模型 (Zero Dynamic Model):
+    // 8.0 (Spacer) + 24.0 (Padding) + 2.0 (Border) + 20.0 (Title) + 4.0 (Gap) + 50.0 (Subtitle) = 108.0
+    return 108.0;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFFFCF5) : Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(
-            color: selected ? goldLeaf : const Color(0xFFEEEEEE),
-            width: selected ? 1.5 : 1,
-          ),
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: goldLeaf.withValues(alpha: 0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : null,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
-          child: Row(
-            children: [
-              TaijiRadio(
-                selected: selected,
-                darkColor: selected ? goldLeaf : woodDark,
-                lightColor: Colors.white,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            // 物理间距重构：垂直间距由底部 SizedBox 管理，此处恢复水平 Margin
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(
+              color: selected ? const Color(0xFFFFFCF5) : Colors.white,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: selected ? goldLeaf : const Color(0xFFEEEEEE),
+                width: selected ? 1.5 : 1,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
+              boxShadow: selected
+                  ? [
+                      BoxShadow(
+                        color: goldLeaf.withValues(alpha: 0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  : null,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+              child: Row(
+                children: [
+                  TaijiRadio(
+                    selected: selected,
+                    darkColor: selected ? goldLeaf : woodDark,
+                    lightColor: Colors.white,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: inkText,
-                          ),
-                        ),
-                        if (isRecommended) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1),
-                            decoration: BoxDecoration(
-                              color: vermilion.withValues(alpha: 0.1),
-                              border: Border.all(
-                                  color: vermilion.withValues(alpha: 0.4),
-                                  width: 0.8),
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                            child: Text(
-                              '推荐',
-                              style: TextStyle(
-                                color: vermilion,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
+                        Row(
+                          children: [
+                            SizedBox(
+                              height: 20, // 固定标题高度
+                              child: Text(
+                                title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: inkText,
+                                  height: 1.0,
+                                ),
                               ),
                             ),
+                            if (isRecommended) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: vermilion.withValues(alpha: 0.1),
+                                  border: Border.all(
+                                      color: vermilion.withValues(alpha: 0.4),
+                                      width: 0.8),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: Text(
+                                  '推荐',
+                                  style: TextStyle(
+                                    color: vermilion,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 4), // 标题与副标题间的 4px 间距
+                        SizedBox(
+                          height: 50,
+                          child: Text(
+                            subtitle,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF666666),
+                            ),
                           ),
-                        ],
+                        ),
                       ],
                     ),
-                    if (subtitle.isNotEmpty)
-                      Text(
-                        subtitle,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF666666),
-                        ),
-                      ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
-      ),
+        const SizedBox(height: 8), // 统一的物理间距
+      ],
     );
   }
 }

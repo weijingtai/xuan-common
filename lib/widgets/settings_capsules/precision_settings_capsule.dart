@@ -114,6 +114,10 @@ class _PrecisionSettingsCapsuleState<T>
   bool _isHovered = false;
   bool _isPanelOpen = false;
 
+  // 预缓存布局变量
+  Widget? _cachedPanelContent;
+  double _cachedPanelHeight = 0.0;
+
   bool get _isTiny => widget.viewMode == CapsuleViewMode.tiny;
   bool get _isTinyCollapsed => _isTiny && !_isHovered;
 
@@ -135,6 +139,51 @@ class _PrecisionSettingsCapsuleState<T>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _overlayCtrl.show();
     });
+
+    // 初始化时预缓存布局
+    _updateLayoutCache();
+  }
+
+  @override
+  void didUpdateWidget(covariant PrecisionSettingsCapsule<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 如果影响布局的项目变更，重新计算缓存
+    if (oldWidget.current != widget.current ||
+        oldWidget.options != widget.options ||
+        oldWidget.expandedWidth != widget.expandedWidth) {
+      _updateLayoutCache();
+    }
+  }
+
+  void _updateLayoutCache() {
+    // 1. 各区块固定高度锁定：
+    // Header(48) + Divider(26) + Footer(44) + ContainerPadding(16) + Border(2) * 2 = 138.0
+    const double kFixedTotalHeight = 138.0;
+
+    // 2. 动态计算所有选项高度
+    double optionsHeightSum = 0.0;
+    // 宽度计算：expandedWidth - 20(父容器 Padding) - 16(卡片水平 Margin) = 36
+    final double cardPhysicalWidth = widget.expandedWidth - 36;
+
+    for (var opt in widget.options) {
+      optionsHeightSum += SettingsOptionCard.computeHeight(
+        title: opt.title,
+        subtitle: opt.subtitle,
+        cardWidth: cardPhysicalWidth,
+      );
+    }
+
+    // 由于选项列表中 100% 存在一个“选中项”，其边框（1.5 * 2）比基准预估（1.0 * 2）多出 1px
+    _cachedPanelHeight = (kFixedTotalHeight + optionsHeightSum + 1.0);
+
+    // 3. 预构建完整的面板 UI
+    _cachedPanelContent = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildPanelHeader(),
+        _buildPanelContent(),
+      ],
+    );
   }
 
   @override
@@ -242,14 +291,24 @@ class _PrecisionSettingsCapsuleState<T>
   Widget _buildAnimatedCapsule({bool forceCollapsed = false}) {
     final bool isExpanded = _isPanelOpen && !forceCollapsed;
 
+    // ── 预缓存驱动方案：零延迟响应 ──────
+    const double borderWidth = 2;
+    final double targetExpandedHeight = _cachedPanelHeight;
+
+    final double currentHeight =
+        isExpanded ? targetExpandedHeight : (_isTinyCollapsed ? 28 : 50);
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOutQuart,
       width: isExpanded ? widget.expandedWidth : _triggerWidth,
+      height: currentHeight,
+      alignment: Alignment.topLeft,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isExpanded ? cs.paperLight : cs.woodDark,
         borderRadius: BorderRadius.circular(isExpanded ? 20 : _triggerRadius),
-        border: Border.all(color: cs.woodDark, width: 2),
+        border: Border.all(color: cs.woodDark, width: borderWidth),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isExpanded ? 0.25 : 0.18),
@@ -258,50 +317,39 @@ class _PrecisionSettingsCapsuleState<T>
           ),
         ],
       ),
-      child: AnimatedSize(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOutQuart,
+      child: OverflowBox(
         alignment: Alignment.topLeft,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(isExpanded ? 20 : _triggerRadius),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            switchInCurve: Curves.easeIn,
-            switchOutCurve: Curves.easeOut,
-            layoutBuilder:
-                (Widget? currentChild, List<Widget> previousChildren) {
-              return ClipRect(
-                child: Stack(
-                  alignment: Alignment.topLeft,
-                  children: [
-                    ...previousChildren,
-                    if (currentChild != null) currentChild,
-                  ],
-                ),
-              );
-            },
-            child: isExpanded
-                ? KeyedSubtree(
-                    key: const ValueKey('expanded'),
-                    child: SizedBox(
-                      width: widget.expandedWidth,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _buildPanelHeader(),
-                          _buildPanelContent(),
-                        ],
-                      ),
-                    ),
-                  )
-                : KeyedSubtree(
-                    key: const ValueKey('collapsed'),
-                    child: SizedBox(
-                      width: _triggerWidth,
-                      child: _buildTriggerContent(),
-                    ),
-                  ),
-          ),
+        minWidth: isExpanded ? widget.expandedWidth : _triggerWidth,
+        maxWidth: isExpanded ? widget.expandedWidth : _triggerWidth,
+        minHeight:
+            isExpanded ? targetExpandedHeight : (_isTinyCollapsed ? 28 : 50),
+        maxHeight:
+            isExpanded ? targetExpandedHeight : (_isTinyCollapsed ? 28 : 50),
+        child: Stack(
+          children: [
+            // 折叠态：药丸内容
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 300),
+              opacity: isExpanded ? 0.0 : 1.0,
+              curve: Curves.easeInOut,
+              child: SizedBox(
+                width: _triggerWidth,
+                height: _isTinyCollapsed ? 28 : 50,
+                child: _buildTriggerContent(),
+              ),
+            ),
+            // 展开态：面板内容 (消费预缓存件)
+            AnimatedOpacity(
+              duration: const Duration(milliseconds: 350),
+              opacity: isExpanded ? 1.0 : 0.0,
+              curve: Curves.easeInOut,
+              child: SizedBox(
+                width: widget.expandedWidth,
+                height: targetExpandedHeight,
+                child: _cachedPanelContent,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -357,48 +405,51 @@ class _PrecisionSettingsCapsuleState<T>
   }
 
   Widget _buildPanelHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Text(
-              widget.headTitle,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: cs.woodDark,
-                fontSize: 16,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Text(
-              widget.subTitle,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: cs.woodDark,
-                fontSize: 16,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Text('·',
+    return SizedBox(
+      height: 48,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Text(
+                widget.headTitle,
                 style: TextStyle(
-                    color: cs.woodDark,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
-          ),
-          SettingsPrecisionTag(
-            label: widget.labelBuilder(widget.current),
-            tagColor: cs.woodDark,
-          ),
-        ],
+                  fontWeight: FontWeight.bold,
+                  color: cs.woodDark,
+                  fontSize: 16,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Text(
+                widget.subTitle,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: cs.woodDark,
+                  fontSize: 16,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Text('·',
+                  style: TextStyle(
+                      color: cs.woodDark,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
+            ),
+            SettingsPrecisionTag(
+              label: widget.labelBuilder(widget.current),
+              tagColor: cs.woodDark,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -406,7 +457,7 @@ class _PrecisionSettingsCapsuleState<T>
   Widget _buildPanelContent() {
     return Container(
       width: widget.expandedWidth,
-      padding: const EdgeInsets.fromLTRB(10, 0, 10, 20),
+      padding: const EdgeInsets.fromLTRB(10, 0, 10, 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -422,23 +473,26 @@ class _PrecisionSettingsCapsuleState<T>
                 woodDark: cs.woodDark,
                 goldLeaf: cs.goldLeaf,
               )),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: List.generate(
-                20,
-                (i) => Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    height: 1,
-                    color: const Color(0xFFDDDDDD),
+          SizedBox(
+            height: 26,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: List.generate(
+                    20,
+                    (i) => Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        height: 1,
+                        color: const Color(0xFFDDDDDD),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
           _buildActionRow(),
         ],
       ),
@@ -446,22 +500,26 @@ class _PrecisionSettingsCapsuleState<T>
   }
 
   Widget _buildActionRow() {
-    return Row(
-      children: [
-        ...widget.leftActions.expand((btn) => [btn, const SizedBox(width: 8)]),
-        ...widget.extraActions.map((btn) => Expanded(flex: 1, child: btn)),
-        if (widget.extraActions.isNotEmpty) const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: SettingsActionButton(
-            label: '确定',
-            isPrimary: true,
-            woodDark: cs.woodDark,
-            goldLeaf: cs.goldLeaf,
-            onPressed: _onConfirm,
+    return SizedBox(
+      height: 44,
+      child: Row(
+        children: [
+          ...widget.leftActions
+              .expand((btn) => [btn, const SizedBox(width: 8)]),
+          ...widget.extraActions.map((btn) => Expanded(flex: 1, child: btn)),
+          if (widget.extraActions.isNotEmpty) const SizedBox(width: 8),
+          Expanded(
+            flex: 2,
+            child: SettingsActionButton(
+              label: '确定',
+              isPrimary: true,
+              woodDark: cs.woodDark,
+              goldLeaf: cs.goldLeaf,
+              onPressed: _onConfirm,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

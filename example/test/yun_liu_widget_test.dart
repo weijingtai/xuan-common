@@ -14,19 +14,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:common/widgets/yun_liu_list_tile_card/yun_liu_list_tile_card_widget.dart';
-import 'package:common/viewmodels/yun_liu_view_model.dart';
-import 'package:common/services/yun_liu_service.dart';
 import 'package:common/enums.dart';
 import 'package:common/helpers/solar_lunar_datetime_helper.dart';
 import 'package:common/features/datetime_details/input_info_params.dart';
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Widget factories
 // ─────────────────────────────────────────────────────────────────────────────
-
-
 
 /// Full demo — auto-selects DaYun / LiuNian / LiuYue showing all 5 tiers.
 Widget _buildDemoFull() {
@@ -47,9 +41,7 @@ Widget _buildDemoFull() {
     home: Scaffold(
       appBar: AppBar(title: const Text('大运流年 · 三层级联')),
       body: SingleChildScrollView(
-        child: YunLiuListTileCardWidget(
-          viewModel: vm,
-        ),
+        child: YunLiuListTileCardWidget(viewModel: vm),
       ),
     ),
   );
@@ -74,9 +66,7 @@ Widget _buildDemoNoAutoSelect() {
     home: Scaffold(
       appBar: AppBar(title: const Text('大运流年 · 三层级联')),
       body: SingleChildScrollView(
-        child: YunLiuListTileCardWidget(
-          viewModel: vm,
-        ),
+        child: YunLiuListTileCardWidget(viewModel: vm),
       ),
     ),
   );
@@ -97,7 +87,6 @@ Future<void> _pump(WidgetTester tester, [int frames = 12]) async {
 }
 
 /// Ensure a widget is scrolled into view, then tap it (no-warn variant).
-
 
 /// Drain ALL pending exceptions from the binding so they don't accumulate
 /// and trigger the "Multiple exceptions detected" test failure.
@@ -516,11 +505,7 @@ void main() {
 
       await t.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: YunLiuListTileCardWidget(
-              viewModel: viewModel,
-            ),
-          ),
+          home: Scaffold(body: YunLiuListTileCardWidget(viewModel: viewModel)),
         ),
       );
       await _pumpAndDrain(t);
