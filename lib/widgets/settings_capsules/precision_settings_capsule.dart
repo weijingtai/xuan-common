@@ -189,13 +189,14 @@ class _PrecisionSettingsCapsuleState<T>
         controller: _overlayCtrl,
         overlayChildBuilder: _buildOverlay,
         // 透明占位，保留布局空间；触发器视觉由 overlay 层渲染
-        child: SizedBox(
-          width: _placeholderWidth,
-          // 我们只需要宽度占位即可。
-          // 真正的药丸内容会被外面的 Stack/Row 居中对齐处理
-          child: Opacity(
-            opacity: 0,
-            child: _buildTrigger(), // 渲染一个不可见的药丸来撑开高度
+        child: IgnorePointer(
+          child: SizedBox(
+            width: _placeholderWidth,
+            height: _isTinyCollapsed ? 28 : 50,
+            child: Opacity(
+              opacity: 0,
+              child: _buildAnimatedCapsule(forceCollapsed: true),
+            ),
           ),
         ),
       ),
@@ -228,20 +229,7 @@ class _PrecisionSettingsCapsuleState<T>
             child: MouseRegion(
               onEnter: _onEnter,
               onExit: _scheduleHide,
-              // 触发器 + 面板作为一个整体，MouseRegion 统一覆盖两者
-              // 鼠标在任意部分都不会触发 onExit；离开整体才触发
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment:
-                    CrossAxisAlignment.start, // 关键：确保按左对齐（不使用 Stack 的默认强制居中）
-                children: [
-                  _buildTrigger(),
-                  if (_isPanelOpen) ...[
-                    const SizedBox(height: 8),
-                    _buildPanel(),
-                  ],
-                ],
-              ),
+              child: _buildAnimatedCapsule(),
             ),
           ),
         ),
@@ -249,105 +237,119 @@ class _PrecisionSettingsCapsuleState<T>
     );
   }
 
-  // ── 触发器药丸 ───────────────────────────────────────────────
+  // ── 统一的动画胶囊/面板 ───────────────────────────────────────
 
-  Widget _buildTrigger() {
+  Widget _buildAnimatedCapsule({bool forceCollapsed = false}) {
+    final bool isExpanded = _isPanelOpen && !forceCollapsed;
+
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-      width: _triggerWidth,
-      alignment: Alignment.center,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOutQuart,
+      width: isExpanded ? widget.expandedWidth : _triggerWidth,
       decoration: BoxDecoration(
-        color: cs.woodDark,
-        borderRadius: BorderRadius.circular(_triggerRadius),
+        color: isExpanded ? cs.paperLight : cs.woodDark,
+        borderRadius: BorderRadius.circular(isExpanded ? 20 : _triggerRadius),
         border: Border.all(color: cs.woodDark, width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: isExpanded ? 0.25 : 0.18),
+            blurRadius: isExpanded ? 32 : 12,
+            offset: Offset(0, isExpanded ? 12 : 4),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(_triggerRadius),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: _isTinyCollapsed ? 0 : 14,
-            vertical: _isTinyCollapsed ? 4 : 12,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.ideographic,
-            children: [
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                alignment: Alignment.centerLeft,
-                child: _isTinyCollapsed
-                    ? const SizedBox(width: 0)
-                    : Text(
-                        widget.headTitle,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: cs.goldLeaf.withValues(alpha: 0.75),
-                          fontSize: 14,
-                          letterSpacing: 0.5,
-                        ),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOutQuart,
+        alignment: Alignment.topLeft,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(isExpanded ? 20 : _triggerRadius),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            switchInCurve: Curves.easeIn,
+            switchOutCurve: Curves.easeOut,
+            layoutBuilder:
+                (Widget? currentChild, List<Widget> previousChildren) {
+              return ClipRect(
+                child: Stack(
+                  alignment: Alignment.topLeft,
+                  children: [
+                    ...previousChildren,
+                    if (currentChild != null) currentChild,
+                  ],
+                ),
+              );
+            },
+            child: isExpanded
+                ? KeyedSubtree(
+                    key: const ValueKey('expanded'),
+                    child: SizedBox(
+                      width: widget.expandedWidth,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildPanelHeader(),
+                          _buildPanelContent(),
+                        ],
                       ),
-              ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                child: _isTinyCollapsed
-                    ? const SizedBox(width: 0)
-                    : Row(children: [
-                        const SizedBox(width: 4),
-                        Text('·',
-                            style: TextStyle(
-                                color: cs.goldLeaf,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(width: 4),
-                      ]),
-              ),
-              SettingsPrecisionTag(
-                label: widget.labelBuilder(widget.current),
-                tagColor: cs.goldLeaf,
-                isPillar: true,
-                isTinyCollapsed: _isTinyCollapsed,
-              ),
-            ],
+                    ),
+                  )
+                : KeyedSubtree(
+                    key: const ValueKey('collapsed'),
+                    child: SizedBox(
+                      width: _triggerWidth,
+                      child: _buildTriggerContent(),
+                    ),
+                  ),
           ),
         ),
       ),
     );
   }
 
-  // ── 展开面板 ─────────────────────────────────────────────────
+  // ── 药丸内容 ─────────────────────────────────────────────────
 
-  Widget _buildPanel() {
-    return Container(
-      width: widget.expandedWidth,
-      decoration: BoxDecoration(
-        color: cs.paperLight,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cs.woodDark, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Column(
+  Widget _buildTriggerContent() {
+    final double fixedHeight = _isTinyCollapsed ? 28 : 50;
+    return SizedBox(
+      height: fixedHeight,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: _isTinyCollapsed ? 0 : 14,
+          vertical: _isTinyCollapsed ? 4 : 12,
+        ),
+        child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildPanelHeader(),
-            _buildPanelContent(),
+            if (!_isTinyCollapsed) ...[
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Text(
+                  widget.headTitle,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: cs.goldLeaf.withValues(alpha: 0.75),
+                    fontSize: 14,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Text('·',
+                    style: TextStyle(
+                        color: cs.goldLeaf,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold)),
+              ),
+            ],
+            SettingsPrecisionTag(
+              label: widget.labelBuilder(widget.current),
+              tagColor: cs.goldLeaf,
+              isPillar: true,
+              isTinyCollapsed: _isTinyCollapsed,
+            ),
           ],
         ),
       ),
@@ -358,34 +360,40 @@ class _PrecisionSettingsCapsuleState<T>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.ideographic,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            widget.headTitle,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: cs.woodDark,
-              fontSize: 16,
-              letterSpacing: 0.5,
-            ),
-          ),
-          Text(
-            widget.subTitle,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: cs.woodDark,
-              fontSize: 16,
-              letterSpacing: 0.5,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text('·',
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(
+              widget.headTitle,
               style: TextStyle(
-                  color: cs.woodDark,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(width: 8),
+                fontWeight: FontWeight.bold,
+                color: cs.woodDark,
+                fontSize: 16,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(
+              widget.subTitle,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: cs.woodDark,
+                fontSize: 16,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text('·',
+                style: TextStyle(
+                    color: cs.woodDark,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
+          ),
           SettingsPrecisionTag(
             label: widget.labelBuilder(widget.current),
             tagColor: cs.woodDark,
