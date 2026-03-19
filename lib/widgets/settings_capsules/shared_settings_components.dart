@@ -88,27 +88,31 @@ class SettingsOptionCard extends StatelessWidget {
 
     if (subtitle != null && subtitle.isNotEmpty) {
       gapHeight = 4.0;
-      // 计算副标题可用宽度： Card宽 - 内边距(15*2) - 图标宽(22) - 间距(12) = cardWidth - 64
+      // 恢复原有的横向可用宽度即可
       final double availableWidth = cardWidth - 64;
       final TextPainter painter = TextPainter(
         text: TextSpan(
           text: subtitle,
           style: const TextStyle(
             fontSize: 12,
+            height: 1.2,
             color: Color(0xFF666666),
           ),
         ),
         textDirection: TextDirection.ltr,
+        textScaler: TextScaler.noScaling,
       );
       painter.layout(maxWidth: availableWidth);
-      subtitleHeight = painter.height;
+
+      // 测量完成后，强制额外增加一行的高度 (12 * 1.2 = 14.4) 作为高度补偿，完全避免少算带来的裁剪或溢出
+      subtitleHeight = painter.height + 14.4;
     }
 
     // 基础物理开销：
-    // 8.0 (底部 Spacer margin) 
-    // + 24.0 (Card Padding vertical) 
-    // + 2.0 (Border width) 
-    // + 20.0 (Title height) 
+    // 8.0 (底部 Spacer margin)
+    // + 24.0 (Card Padding vertical)
+    // + 2.0 (Border width)
+    // + 20.0 (Title height)
     // = 54.0
     return 54.0 + gapHeight + subtitleHeight;
   }
@@ -164,6 +168,7 @@ class SettingsOptionCard extends StatelessWidget {
                                 title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                                textScaler: TextScaler.noScaling,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -198,12 +203,39 @@ class SettingsOptionCard extends StatelessWidget {
                         ),
                         if (subtitle.isNotEmpty) ...[
                           const SizedBox(height: 4), // 标题与副标题间的 4px 间距
-                          Text(
-                            subtitle,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF666666),
-                            ),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final TextPainter textPainter = TextPainter(
+                                text: TextSpan(
+                                  text: subtitle,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    height: 1.2,
+                                    color: Color(0xFF666666),
+                                  ),
+                                ),
+                                textDirection: TextDirection.ltr,
+                                textScaler: TextScaler.noScaling,
+                              );
+                              textPainter.layout(
+                                  maxWidth: constraints.maxWidth);
+                              final double calculatedHeight =
+                                  textPainter.height + 14.4;
+
+                              return Container(
+                                height: calculatedHeight,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  subtitle,
+                                  textScaler: TextScaler.noScaling,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    height: 1.2,
+                                    color: Color(0xFF666666),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ],
