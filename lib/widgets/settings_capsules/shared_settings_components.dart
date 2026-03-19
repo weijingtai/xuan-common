@@ -87,25 +87,9 @@ class SettingsOptionCard extends StatelessWidget {
     double gapHeight = 0.0;
 
     if (subtitle != null && subtitle.isNotEmpty) {
-      gapHeight = 4.0;
-      // 恢复原有的横向可用宽度即可
-      final double availableWidth = cardWidth - 64;
-      final TextPainter painter = TextPainter(
-        text: TextSpan(
-          text: subtitle,
-          style: const TextStyle(
-            fontSize: 12,
-            height: 1.2,
-            color: Color(0xFF666666),
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-        textScaler: TextScaler.noScaling,
-      );
-      painter.layout(maxWidth: availableWidth);
-
-      // 测量完成后，强制额外增加一行的高度 (12 * 1.2 = 14.4) 作为高度补偿，完全避免少算带来的裁剪或溢出
-      subtitleHeight = painter.height + 14.4;
+      gapHeight = 0.0;
+      // 方案 B 修正：固定为 32.0 px（基于 2 行文本高约 28.8px + 约 3px 的微留白）
+      subtitleHeight = 32.0;
     }
 
     // 基础物理开销：
@@ -202,40 +186,20 @@ class SettingsOptionCard extends StatelessWidget {
                           ],
                         ),
                         if (subtitle.isNotEmpty) ...[
-                          const SizedBox(height: 4), // 标题与副标题间的 4px 间距
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              final TextPainter textPainter = TextPainter(
-                                text: TextSpan(
-                                  text: subtitle,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    height: 1.2,
-                                    color: Color(0xFF666666),
-                                  ),
-                                ),
-                                textDirection: TextDirection.ltr,
-                                textScaler: TextScaler.noScaling,
-                              );
-                              textPainter.layout(
-                                  maxWidth: constraints.maxWidth);
-                              final double calculatedHeight =
-                                  textPainter.height + 14.4;
-
-                              return Container(
-                                height: calculatedHeight,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  subtitle,
-                                  textScaler: TextScaler.noScaling,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    height: 1.2,
-                                    color: Color(0xFF666666),
-                                  ),
-                                ),
-                              );
-                            },
+                          Container(
+                            height: 32.0,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              subtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textScaler: TextScaler.noScaling,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                height: 1.2,
+                                color: Color(0xFF666666),
+                              ),
+                            ),
                           ),
                         ],
                       ],
