@@ -76,16 +76,41 @@ class SettingsOptionCard extends StatelessWidget {
     required this.goldLeaf,
   });
 
-  /// 方案 A：静态测量高度契约
+  /// 方案 A：动态测量高度契约
   /// 封装了 SettingsOptionCard 内部所有的像素开销
   static double computeHeight({
     required String title,
     String? subtitle,
     required double cardWidth,
   }) {
-    // 全固定物理模型 (Zero Dynamic Model):
-    // 8.0 (Spacer) + 24.0 (Padding) + 2.0 (Border) + 20.0 (Title) + 4.0 (Gap) + 50.0 (Subtitle) = 108.0
-    return 108.0;
+    double subtitleHeight = 0.0;
+    double gapHeight = 0.0;
+
+    if (subtitle != null && subtitle.isNotEmpty) {
+      gapHeight = 4.0;
+      // 计算副标题可用宽度： Card宽 - 内边距(15*2) - 图标宽(22) - 间距(12) = cardWidth - 64
+      final double availableWidth = cardWidth - 64;
+      final TextPainter painter = TextPainter(
+        text: TextSpan(
+          text: subtitle,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF666666),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      painter.layout(maxWidth: availableWidth);
+      subtitleHeight = painter.height;
+    }
+
+    // 基础物理开销：
+    // 8.0 (底部 Spacer margin) 
+    // + 24.0 (Card Padding vertical) 
+    // + 2.0 (Border width) 
+    // + 20.0 (Title height) 
+    // = 54.0
+    return 54.0 + gapHeight + subtitleHeight;
   }
 
   @override
@@ -171,17 +196,16 @@ class SettingsOptionCard extends StatelessWidget {
                             ],
                           ],
                         ),
-                        const SizedBox(height: 4), // 标题与副标题间的 4px 间距
-                        SizedBox(
-                          height: 50,
-                          child: Text(
+                        if (subtitle.isNotEmpty) ...[
+                          const SizedBox(height: 4), // 标题与副标题间的 4px 间距
+                          Text(
                             subtitle,
                             style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF666666),
                             ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                   ),
