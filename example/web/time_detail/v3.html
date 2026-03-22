@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>中式时令卡片 - 日月乾坤</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+
+        :root {
+            --paper-bg: #f7f3ed;     /* 绢布色 */
+            --ink-black: #2c2c2c;    /* 水墨黑 */
+            --seal-red: #b22222;     /* 朱砂红 */
+            --jade-green: #4f6f46;   /* 黛绿 */
+            --border-color: #d1c7b7; /* 古法金 */
+        }
+
+        body {
+            background-color: #e5e0d8;
+            font-family: 'Noto Serif SC', serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: var(--ink-black);
+        }
+
+        /* 卡片主体 */
+        .cn-card {
+            background-color: var(--paper-bg);
+            width: 380px;
+            padding: 40px 30px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+
+        /* 装饰性的边框内衬 */
+        .cn-card::before {
+            content: "";
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 1px solid var(--border-color);
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* 顶部标题区 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            letter-spacing: 8px;
+            font-weight: 700;
+        }
+
+        .solar-term {
+            position: absolute;
+            top: -10px;
+            right: 0;
+            background: var(--seal-red);
+            color: white;
+            padding: 4px 2px;
+            writing-mode: vertical-rl;
+            font-size: 12px;
+            letter-spacing: 2px;
+            border-radius: 2px;
+            box-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+        }
+
+        .date-info {
+            font-size: 13px;
+            color: #777;
+            margin-top: 10px;
+            border-top: 1px solid var(--border-color);
+            display: inline-block;
+            padding: 5px 20px 0;
+        }
+
+        /* 数据展示区 */
+        .data-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .data-column {
+            width: 45%;
+        }
+
+        .column-title {
+            font-size: 14px;
+            border-bottom: 2px solid var(--ink-black);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .column-title::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            background: var(--seal-red);
+            transform: rotate(45deg);
+        }
+
+        .time-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+
+        .label {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .value {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Georgia', serif; /* 数字使用古典衬线体 */
+        }
+
+        /* 底部详情区 */
+        .footer-details {
+            border-top: 1px dashed var(--border-color);
+            padding-top: 20px;
+            font-size: 12px;
+            line-height: 1.8;
+            color: #555;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .footer-item b {
+            color: var(--ink-black);
+            font-weight: 400;
+            margin-right: 5px;
+        }
+
+        /* 底部云纹装饰 */
+        .decoration {
+            text-align: center;
+            margin-top: 25px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="cn-card">
+    <div class="solar-term">惊蛰</div>
+    
+    <div class="header">
+        <h1>日月乾坤</h1>
+        <div class="date-info">丙午年正月廿九 · 2026年3月17日</div>
+    </div>
+
+    <div class="data-section">
+        <div class="data-column">
+            <div class="column-title">日时</div>
+            <div class="time-item">
+                <span class="label">日出</span>
+                <span class="value">06:23</span>
+            </div>
+            <div class="time-item">
+                <span class="label">日落</span>
+                <span class="value">18:22</span>
+            </div>
+        </div>
+
+        <div class="data-column">
+            <div class="column-title">月相</div>
+            <div class="time-item">
+                <span class="label">月出</span>
+                <span class="value">05:50</span>
+            </div>
+            <div class="time-item">
+                <span class="label">月落</span>
+                <span class="value">16:28</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-details">
+        <div class="footer-item"><b>真太阳时</b> 05:50 AM</div>
+        <div class="footer-item" style="text-align: right;"><b>卯时</b>（日出）</div>
+        <div class="footer-item" style="grid-column: span 2; margin-top: 5px;">
+            <b>观测地</b> 东经116°24' 北纬39°54'
+        </div>
+    </div>
+
+    <div class="decoration">
+        <svg width="60" height="20" viewBox="0 0 60 20">
+            <path d="M0 10 Q15 0 30 10 T60 10" fill="none" stroke="currentColor" stroke-width="1"/>
+        </svg>
+    </div>
+</div>
+
+</body>
+</html>

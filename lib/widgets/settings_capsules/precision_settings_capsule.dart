@@ -122,8 +122,9 @@ class _PrecisionSettingsCapsuleState<T>
   bool get _isTinyCollapsed => _isTiny && !_isHovered;
 
   double get _triggerRadius => _isTinyCollapsed ? 14 : 25;
-  double get _triggerWidth =>
-      _isTinyCollapsed ? widget.tinyCollapsedWidth : widget.collapsedWidth;
+  double get _triggerWidth => widget.tinyCollapsedWidth;
+  // double get _triggerWidth =>
+  // _isTinyCollapsed ? widget.tinyCollapsedWidth : widget.collapsedWidth;
 
   // 布局占位高度（近似值，与触发器实际渲染高度匹配）
   double get _placeholderWidth =>
@@ -303,10 +304,11 @@ class _PrecisionSettingsCapsuleState<T>
       curve: Curves.easeInOutQuart,
       width: isExpanded ? widget.expandedWidth : _triggerWidth,
       height: currentHeight,
-      alignment: Alignment.topLeft,
+      alignment: isExpanded ? Alignment.center : Alignment.topLeft,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: isExpanded ? cs.paperLight : cs.woodDark,
+        // color: Colors.black,
         borderRadius: BorderRadius.circular(isExpanded ? 20 : _triggerRadius),
         border: Border.all(color: cs.woodDark, width: borderWidth),
         boxShadow: [
@@ -318,7 +320,8 @@ class _PrecisionSettingsCapsuleState<T>
         ],
       ),
       child: OverflowBox(
-        alignment: Alignment.topLeft,
+        alignment: isExpanded ? Alignment.topLeft : Alignment.center,
+        // alignment: Alignment.center,
         minWidth: isExpanded ? widget.expandedWidth : _triggerWidth,
         maxWidth: isExpanded ? widget.expandedWidth : _triggerWidth,
         minHeight:
@@ -328,14 +331,20 @@ class _PrecisionSettingsCapsuleState<T>
         child: Stack(
           children: [
             // 折叠态：药丸内容
-            AnimatedOpacity(
-              duration: const Duration(milliseconds: 300),
-              opacity: isExpanded ? 0.0 : 1.0,
-              curve: Curves.easeInOut,
-              child: SizedBox(
-                width: _triggerWidth,
-                height: _isTinyCollapsed ? 28 : 50,
-                child: _buildTriggerContent(),
+            Positioned(
+              left: 0,
+              top: 0,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: isExpanded ? 0.0 : 1.0,
+                curve: Curves.easeInOut,
+                child: Container(
+                  width: _triggerWidth,
+                  // height: _isTinyCollapsed ? 28 : 50,
+                  height: 28,
+                  alignment: Alignment.center,
+                  child: _buildTriggerContent(),
+                ),
               ),
             ),
             // 展开态：面板内容 (消费预缓存件)
