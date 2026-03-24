@@ -176,7 +176,8 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     this.cardTemplateSettingDao,
     this.cardTemplateSkillUsageDao,
     LayoutTemplateTelemetry? templateTelemetry,
-  }) : _templateTelemetry = templateTelemetry ?? LayoutTemplateTelemetry.logger() {
+  }) : _templateTelemetry =
+            templateTelemetry ?? LayoutTemplateTelemetry.logger() {
     _initRuntimeNotifiers();
   }
 
@@ -349,11 +350,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       newIndex -= 1;
     }
 
-    reorderPillar(
-      groupId: groupId,
-      oldIndex: oldIndex,
-      newIndex: newIndex,
-    );
+    reorderPillar(groupId: groupId, oldIndex: oldIndex, newIndex: newIndex);
   }
 
   void updatePillarOrderInGroup(String groupId, List<PillarType> newOrder) {
@@ -408,15 +405,19 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> initialize({required String collectionId}) async {
+  Future<void> initialize({
+    required String collectionId,
+    String? initialTemplateId,
+  }) async {
     _collectionId = collectionId;
     await _loadThemePreference();
     cardBrightnessNotifier.value =
         _isDarkMode ? Brightness.dark : Brightness.light;
 
     await _withLoading(() async {
-      final templates =
-          await getAllTemplatesUseCase(collectionId: collectionId);
+      final templates = await getAllTemplatesUseCase(
+        collectionId: collectionId,
+      );
       if (templates.isEmpty) {
         _templates = const [];
         _currentTemplate = null;
@@ -424,9 +425,16 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       } else {
         _templates = List.of(templates);
         var current = _templates.first;
+        if (initialTemplateId != null) {
+          current = _templates.firstWhere(
+            (template) => template.id == initialTemplateId,
+            orElse: () => current,
+          );
+        }
         final migrated = await _migrateLegacyDefaultTemplate(current);
-        if (migrated != current) {
-          _templates[0] = migrated;
+        final currentIndex = _templates.indexWhere((t) => t.id == current.id);
+        if (migrated != current && currentIndex >= 0) {
+          _templates[currentIndex] = migrated;
           current = migrated;
         }
         _currentTemplate = current;
@@ -456,8 +464,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     if (collectionId.isEmpty) return;
 
     await _withLoading(() async {
-      final templates =
-          await getAllTemplatesUseCase(collectionId: collectionId);
+      final templates = await getAllTemplatesUseCase(
+        collectionId: collectionId,
+      );
       if (templates.isEmpty) {
         _templates = const [];
         _currentTemplate = null;
@@ -560,8 +569,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
           await saveTemplateUseCase(template: imported);
         }
 
-        final refreshed =
-            await getAllTemplatesUseCase(collectionId: _collectionId);
+        final refreshed = await getAllTemplatesUseCase(
+          collectionId: _collectionId,
+        );
         if (refreshed.isEmpty) {
           return;
         }
@@ -661,11 +671,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     if (prevId != nextId) {
       _templateTelemetry.info(
         'gallery.active_changed',
-        data: <String, Object?>{
-          'source': source,
-          'from': prevId,
-          'to': nextId,
-        },
+        data: <String, Object?>{'source': source, 'from': prevId, 'to': nextId},
       );
     }
   }
@@ -741,8 +747,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     if (current == null) {
       return;
     }
-    final currentIndex =
-        _templates.indexWhere((template) => template.id == current.id);
+    final currentIndex = _templates.indexWhere(
+      (template) => template.id == current.id,
+    );
     if (currentIndex == -1) {
       return;
     }
@@ -853,12 +860,14 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       await saveTemplateUseCase(template: newTemplate);
 
       // 刷新模板列表
-      final refreshed =
-          await getAllTemplatesUseCase(collectionId: _collectionId);
+      final refreshed = await getAllTemplatesUseCase(
+        collectionId: _collectionId,
+      );
       _templates = refreshed;
 
       // 切换到新模板
-      final saved = _findTemplateInList(refreshed, newTemplate.id) ?? newTemplate;
+      final saved =
+          _findTemplateInList(refreshed, newTemplate.id) ?? newTemplate;
       _currentTemplate = saved;
       _hasUnsavedChanges = false;
       _markRecent(newTemplate.id);
@@ -1183,10 +1192,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     _executeCommand(command);
   }
 
-  void updateRowOrder({
-    required int oldIndex,
-    required int newIndex,
-  }) {
+  void updateRowOrder({required int oldIndex, required int newIndex}) {
     final template = _currentTemplate;
     if (template == null) return;
     if (oldIndex == newIndex) return;
@@ -1284,10 +1290,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     _executeCommand(command);
   }
 
-  void reorderGroups({
-    required int oldIndex,
-    required int newIndex,
-  }) {
+  void reorderGroups({required int oldIndex, required int newIndex}) {
     final template = _currentTemplate;
     if (template == null) return;
     if (oldIndex == newIndex) return;
@@ -1300,10 +1303,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     _executeCommand(command);
   }
 
-  void addPillarToGroup({
-    required String groupId,
-    required PillarType pillar,
-  }) {
+  void addPillarToGroup({required String groupId, required PillarType pillar}) {
     final template = _currentTemplate;
     if (template == null) return;
 
@@ -1333,11 +1333,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     // 检查是否已存在（去重）
     final group = template.chartGroups.firstWhere(
       (g) => g.id == groupId,
-      orElse: () => ChartGroup(
-        id: '',
-        title: '',
-        pillarOrder: const [],
-      ),
+      orElse: () => ChartGroup(id: '', title: '', pillarOrder: const []),
     );
     if (group.id.isEmpty || group.pillarOrder.contains(pillar)) return;
 
@@ -1350,24 +1346,18 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     _executeCommand(command);
   }
 
-  void removePillarFromGroup({
-    required String groupId,
-    required int index,
-  }) {
+  void removePillarFromGroup({required String groupId, required int index}) {
     final template = _currentTemplate;
     if (template == null) return;
 
     // 获取要移除的柱位（用于Command）
     final group = template.chartGroups.firstWhere(
       (g) => g.id == groupId,
-      orElse: () => ChartGroup(
-        id: '',
-        title: '',
-        pillarOrder: const [],
-      ),
+      orElse: () => ChartGroup(id: '', title: '', pillarOrder: const []),
     );
-    if (group.id.isEmpty || index < 0 || index >= group.pillarOrder.length)
+    if (group.id.isEmpty || index < 0 || index >= group.pillarOrder.length) {
       return;
+    }
 
     final removedPillar = group.pillarOrder[index];
 
@@ -1380,10 +1370,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     _executeCommand(command);
   }
 
-  void insertSeparator({
-    required String groupId,
-    required int index,
-  }) {
+  void insertSeparator({required String groupId, required int index}) {
     final template = _currentTemplate;
     if (template == null) return;
 
@@ -1412,10 +1399,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setGroupLocked({
-    required String groupId,
-    required bool locked,
-  }) {
+  void setGroupLocked({required String groupId, required bool locked}) {
     final template = _currentTemplate;
     if (template == null) return;
 
@@ -1504,10 +1488,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     // notifyListeners() is called by _executeCommand
   }
 
-  void setGroupTitle({
-    required String groupId,
-    required String title,
-  }) {
+  void setGroupTitle({required String groupId, required String title}) {
     final trimmed = title.trim();
     if (trimmed.isEmpty) return;
     final template = _currentTemplate;
@@ -1516,11 +1497,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     // 获取旧标题
     final group = template.chartGroups.firstWhere(
       (g) => g.id == groupId,
-      orElse: () => ChartGroup(
-        id: '',
-        title: '',
-        pillarOrder: const [],
-      ),
+      orElse: () => ChartGroup(id: '', title: '', pillarOrder: const []),
     );
     if (group.id.isEmpty || group.title == trimmed) return;
 
@@ -1533,10 +1510,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     _executeCommand(command);
   }
 
-  void setGroupColor({
-    required String groupId,
-    required String colorHex,
-  }) {
+  void setGroupColor({required String groupId, required String colorHex}) {
     final template = _currentTemplate;
     if (template == null) return;
 
@@ -1557,9 +1531,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     _executeCommand(command);
   }
 
-  void resetGroupLayout({
-    required String groupId,
-  }) {
+  void resetGroupLayout({required String groupId}) {
     final template = _currentTemplate;
     if (template == null) return;
 
@@ -1604,10 +1576,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     );
 
     // M4.3.2 - 使用Command模式
-    final command = AddGroupCommand(
-      group: copy,
-      index: index + 1,
-    );
+    final command = AddGroupCommand(group: copy, index: index + 1);
     _executeCommand(command);
 
     _selectedGroupId = copy.id;
@@ -1631,8 +1600,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     if (sourceGroup == null || targetGroup == null) return;
 
     // 验证源索引
-    if (sourceIndex < 0 || sourceIndex >= sourceGroup.pillarOrder.length)
+    if (sourceIndex < 0 || sourceIndex >= sourceGroup.pillarOrder.length) {
       return;
+    }
 
     // 获取要移动的柱位
     final pillar = sourceGroup.pillarOrder[sourceIndex];
@@ -1696,8 +1666,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       await saveTemplateUseCase(template: template);
       _hasUnsavedChanges = false;
       _commandHistory.clear();
-      final refreshed =
-          await getAllTemplatesUseCase(collectionId: _collectionId);
+      final refreshed = await getAllTemplatesUseCase(
+        collectionId: _collectionId,
+      );
       _templates = refreshed;
       _currentTemplate =
           _findTemplateInList(refreshed, template.id) ?? template;
@@ -1741,8 +1712,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
         collectionId: template.collectionId,
         templateId: template.id,
       );
-      final refreshed =
-          await getAllTemplatesUseCase(collectionId: _collectionId);
+      final refreshed = await getAllTemplatesUseCase(
+        collectionId: _collectionId,
+      );
       _templates = refreshed;
       _currentTemplate = refreshed.isEmpty ? null : refreshed.first;
       _isBootstrappingTemplates = refreshed.isEmpty;
@@ -1802,8 +1774,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
         _favoriteTemplateIds.remove(templateId);
         _recentTemplateIds.remove(templateId);
       }
-      final refreshed =
-          await getAllTemplatesUseCase(collectionId: _collectionId);
+      final refreshed = await getAllTemplatesUseCase(
+        collectionId: _collectionId,
+      );
 
       final currentId = _currentTemplate?.id;
       _templates = refreshed;
@@ -1822,7 +1795,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
 
     final ok = _errorMessage == null;
     _templateTelemetry.info(
-      ok ? 'layout_template.bulk_delete_ok' : 'layout_template.bulk_delete_failed',
+      ok
+          ? 'layout_template.bulk_delete_ok'
+          : 'layout_template.bulk_delete_failed',
       data: <String, Object?>{
         'collectionId': _collectionId,
         'count': targets.length,
@@ -1841,14 +1816,13 @@ class FourZhuEditorViewModel extends ChangeNotifier {
   Future<void> resetTemplatesToDefault() async {
     _templateTelemetry.info(
       'layout_template.reset_to_default_start',
-      data: <String, Object?>{
-        'collectionId': _collectionId,
-      },
+      data: <String, Object?>{'collectionId': _collectionId},
     );
 
     await _withLoading(() async {
-      final existing =
-          await getAllTemplatesUseCase(collectionId: _collectionId);
+      final existing = await getAllTemplatesUseCase(
+        collectionId: _collectionId,
+      );
       for (final template in existing) {
         await deleteTemplateUseCase(
           collectionId: _collectionId,
@@ -1856,8 +1830,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
         );
       }
 
-      final refreshed =
-          await getAllTemplatesUseCase(collectionId: _collectionId);
+      final refreshed = await getAllTemplatesUseCase(
+        collectionId: _collectionId,
+      );
       _templates = refreshed;
       _currentTemplate = refreshed.isEmpty ? null : refreshed.first;
       _isBootstrappingTemplates = refreshed.isEmpty;
@@ -1918,8 +1893,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     );
     await _withLoading(() async {
       await saveTemplateUseCase(template: updated);
-      final refreshed =
-          await getAllTemplatesUseCase(collectionId: _collectionId);
+      final refreshed = await getAllTemplatesUseCase(
+        collectionId: _collectionId,
+      );
       _templates = refreshed;
       if (refreshed.isEmpty) {
         _currentTemplate = null;
@@ -2095,7 +2071,8 @@ class FourZhuEditorViewModel extends ChangeNotifier {
 
   /// 检查并迁移旧版默认模版（修复样式跳变问题）
   Future<LayoutTemplate> _migrateLegacyDefaultTemplate(
-      LayoutTemplate template) async {
+    LayoutTemplate template,
+  ) async {
     // 修复：确保十神和藏干神行包含 singleName 的颜色配置
     // 修复：确保主气/中气/余气行包含天干颜色配置
     var updatedRowConfigs = List<RowConfig>.of(template.rowConfigs);
@@ -2152,7 +2129,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
 
     // Helper to merge default Ten Gods config if keys are missing
     Map<String, Color> mergeDefaults(
-        Map<String, Color> current, Map<String, Color> defaults) {
+      Map<String, Color> current,
+      Map<String, Color> defaults,
+    ) {
       final newMap = Map<String, Color>.of(current);
       bool modified = false;
 
@@ -2187,13 +2166,21 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     }
 
     final newPureLight = mergeDefaults(
-        colorMapper.pureLightMapper, defaultTenGods.pureLightMapper);
+      colorMapper.pureLightMapper,
+      defaultTenGods.pureLightMapper,
+    );
     final newColorfulLight = mergeDefaults(
-        colorMapper.colorfulLightMapper, defaultTenGods.colorfulLightMapper);
+      colorMapper.colorfulLightMapper,
+      defaultTenGods.colorfulLightMapper,
+    );
     final newPureDark = mergeDefaults(
-        colorMapper.pureDarkMapper, defaultTenGods.pureDarkMapper);
+      colorMapper.pureDarkMapper,
+      defaultTenGods.pureDarkMapper,
+    );
     final newColorfulDark = mergeDefaults(
-        colorMapper.colorfulDarkMapper, defaultTenGods.colorfulDarkMapper);
+      colorMapper.colorfulDarkMapper,
+      defaultTenGods.colorfulDarkMapper,
+    );
 
     if (newPureLight == colorMapper.pureLightMapper &&
         newColorfulLight == colorMapper.colorfulLightMapper &&
@@ -2217,7 +2204,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
 
     // Helper to fill missing keys from a source map
     Map<String, Color> fillMissing(
-        Map<String, Color> target, Map<String, Color> source) {
+      Map<String, Color> target,
+      Map<String, Color> source,
+    ) {
       final newMap = Map<String, Color>.of(target);
       bool modified = false;
       for (final entry in source.entries) {
@@ -2241,14 +2230,22 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       TianGan.values.take(10).map((g) => MapEntry(g.name, Colors.white70)),
     );
 
-    final newColorfulLight =
-        fillMissing(colorMapper.colorfulLightMapper, defaultColorful);
-    final newColorfulDark =
-        fillMissing(colorMapper.colorfulDarkMapper, defaultColorful);
-    final newPureLight =
-        fillMissing(colorMapper.pureLightMapper, defaultPureLight);
-    final newPureDark =
-        fillMissing(colorMapper.pureDarkMapper, defaultPureDark);
+    final newColorfulLight = fillMissing(
+      colorMapper.colorfulLightMapper,
+      defaultColorful,
+    );
+    final newColorfulDark = fillMissing(
+      colorMapper.colorfulDarkMapper,
+      defaultColorful,
+    );
+    final newPureLight = fillMissing(
+      colorMapper.pureLightMapper,
+      defaultPureLight,
+    );
+    final newPureDark = fillMissing(
+      colorMapper.pureDarkMapper,
+      defaultPureDark,
+    );
 
     if (newColorfulLight == colorMapper.colorfulLightMapper &&
         newColorfulDark == colorMapper.colorfulDarkMapper &&
@@ -2356,10 +2353,12 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     }).toList();
 
     // Use command to update
-    _executeCommand(UpdateChartGroupsCommand(
-      oldGroups: template.chartGroups,
-      newGroups: newGroups,
-    ));
+    _executeCommand(
+      UpdateChartGroupsCommand(
+        oldGroups: template.chartGroups,
+        newGroups: newGroups,
+      ),
+    );
   }
 
   void reorderRow(int oldVisibleIndex, int newVisibleIndex) {
@@ -2406,10 +2405,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       targetConfigIdx -= 1;
     }
 
-    _executeCommand(ReorderRowCommand(
-      oldIndex: oldConfigIdx,
-      newIndex: targetConfigIdx,
-    ));
+    _executeCommand(
+      ReorderRowCommand(oldIndex: oldConfigIdx, newIndex: targetConfigIdx),
+    );
   }
 
   void insertRow(int visibleIndex, RowPayload payload) {
@@ -2461,10 +2459,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       }
     }
 
-    _executeCommand(InsertRowCommand(
-      rowConfig: config,
-      index: targetConfigIdx,
-    ));
+    _executeCommand(
+      InsertRowCommand(rowConfig: config, index: targetConfigIdx),
+    );
   }
 
   void deleteRow(int visibleIndex) {
@@ -2486,10 +2483,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     if (configIndex == -1) return;
 
     final config = template.rowConfigs[configIndex];
-    _executeCommand(DeleteRowCommand(
-      index: configIndex,
-      rowConfig: config,
-    ));
+    _executeCommand(DeleteRowCommand(index: configIndex, rowConfig: config));
   }
 
   /// 计算实际的数据索引（考虑 UI 上可能存在的额外 Title Column）
@@ -2560,13 +2554,15 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       );
     } else {
       // Cross-group move: Use atomic command
-      _executeCommand(MovePillarBetweenGroupsCommand(
-        sourceGroupId: sourceGroupId,
-        targetGroupId: targetGroupId,
-        sourceIndex: sourceLocalIndex,
-        targetIndex: targetLocalIndex,
-        pillar: sourcePillar,
-      ));
+      _executeCommand(
+        MovePillarBetweenGroupsCommand(
+          sourceGroupId: sourceGroupId,
+          targetGroupId: targetGroupId,
+          sourceIndex: sourceLocalIndex,
+          targetIndex: targetLocalIndex,
+          pillar: sourcePillar,
+        ),
+      );
     }
   }
 
@@ -2614,10 +2610,7 @@ class FourZhuEditorViewModel extends ChangeNotifier {
       final groupLen = group.pillarOrder.length;
       if (adjIndex < currentIndex + groupLen) {
         final localIndex = adjIndex - currentIndex;
-        removePillarFromGroup(
-          groupId: group.id,
-          index: localIndex,
-        );
+        removePillarFromGroup(groupId: group.id, index: localIndex);
         return;
       }
       currentIndex += groupLen;
@@ -2646,10 +2639,12 @@ class FourZhuEditorViewModel extends ChangeNotifier {
 
     // Use command to update
     if (!_areRowConfigsEqual(oldConfigs, newConfigs)) {
-      _executeCommand(ReorderRowConfigsCommand(
-        oldRowConfigs: oldConfigs,
-        newRowConfigs: newConfigs,
-      ));
+      _executeCommand(
+        ReorderRowConfigsCommand(
+          oldRowConfigs: oldConfigs,
+          newRowConfigs: newConfigs,
+        ),
+      );
     }
   }
 
@@ -2700,8 +2695,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     final theme = EditableCardThemeBuilder.createDefaultTheme();
     editableThemeNotifier = ValueNotifier<EditableFourZhuCardTheme>(theme);
     cardBrightnessNotifier = ValueNotifier<Brightness>(Brightness.light);
-    colorPreviewModeNotifier =
-        ValueNotifier<ColorPreviewMode>(ColorPreviewMode.colorful);
+    colorPreviewModeNotifier = ValueNotifier<ColorPreviewMode>(
+      ColorPreviewMode.colorful,
+    );
     paddingNotifier = ValueNotifier<EdgeInsets>(theme.card.padding);
     cardPayloadNotifier = ValueNotifier<CardPayload>(
       _buildDefaultCardPayload(
@@ -2876,11 +2872,12 @@ class FourZhuEditorViewModel extends ChangeNotifier {
         currentBorder.enabled != targetEnabled) {
       final newBorder = (currentBorder ??
               BoxBorderStyle(
-                  enabled: true,
-                  width: 1,
-                  lightColor: Colors.black,
-                  darkColor: Colors.white,
-                  radius: 0))
+                enabled: true,
+                width: 1,
+                lightColor: Colors.black,
+                darkColor: Colors.white,
+                radius: 0,
+              ))
           .copyWith(
         width: targetThickness,
         lightColor: targetColor,
@@ -2909,14 +2906,16 @@ class FourZhuEditorViewModel extends ChangeNotifier {
           fontSize: size,
         ),
       );
-      updatedTypography =
-          updatedTypography.copyWith(globalContent: updatedGlobalContent);
+      updatedTypography = updatedTypography.copyWith(
+        globalContent: updatedGlobalContent,
+      );
       typographyChanged = true;
     }
 
     // Sync Row Styles
-    final mapper =
-        Map<RowType, TextStyleConfig>.of(updatedTypography.cellContentMapper);
+    final mapper = Map<RowType, TextStyleConfig>.of(
+      updatedTypography.cellContentMapper,
+    );
     bool mapperChanged = false;
 
     for (final config in template.rowConfigs) {
@@ -3035,8 +3034,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
     });
 
     final newPillarOrderUuid = <String>[];
-    final newPillarMap =
-        Map<String, PillarPayload>.from(currentPayload.pillarMap);
+    final newPillarMap = Map<String, PillarPayload>.from(
+      currentPayload.pillarMap,
+    );
 
     for (final type in flattenedPillars) {
       var uuid = pillarTypeToUuidMap[type];
@@ -3174,7 +3174,9 @@ class FourZhuEditorViewModel extends ChangeNotifier {
   }
 
   LayoutTemplate? _findTemplateInList(
-      List<LayoutTemplate> items, String templateId) {
+    List<LayoutTemplate> items,
+    String templateId,
+  ) {
     for (final template in items) {
       if (template.id == templateId) {
         return template;
@@ -3224,10 +3226,11 @@ class FourZhuEditorViewModel extends ChangeNotifier {
         break;
       case TemplateGalleryCategory.recent:
         final order = _recentTemplateIds.toList();
-        filtered = filtered
-            .where((template) => order.contains(template.id))
-            .toList()
-          ..sort((a, b) => order.indexOf(a.id).compareTo(order.indexOf(b.id)));
+        filtered =
+            filtered.where((template) => order.contains(template.id)).toList()
+              ..sort(
+                (a, b) => order.indexOf(a.id).compareTo(order.indexOf(b.id)),
+              );
         break;
     }
 
@@ -3235,17 +3238,13 @@ class FourZhuEditorViewModel extends ChangeNotifier {
 
     if (keyword.isNotEmpty) {
       result = result
-          .where(
-            (template) => template.name.toLowerCase().contains(keyword),
-          )
+          .where((template) => template.name.toLowerCase().contains(keyword))
           .toList();
     }
 
     switch (_filterState.sortOrder) {
       case TemplateSortOrder.updatedDesc:
-        result.sort(
-          (a, b) => b.updatedAt.compareTo(a.updatedAt),
-        );
+        result.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
         break;
       case TemplateSortOrder.nameAsc:
         result.sort(

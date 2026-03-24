@@ -27,7 +27,14 @@ import '../widgets/four_zhu_card_editor_page/editor_workspace.dart';
 const _defaultCollectionId = 'four_zhu_templates';
 
 class FourZhuEditPage extends StatelessWidget {
-  const FourZhuEditPage({super.key});
+  const FourZhuEditPage({
+    super.key,
+    this.collectionId = _defaultCollectionId,
+    this.initialTemplateId,
+  });
+
+  final String collectionId;
+  final String? initialTemplateId;
 
   @override
   Widget build(BuildContext context) {
@@ -76,8 +83,9 @@ class FourZhuEditPage extends StatelessWidget {
                 : InstallMarketTemplateUseCase(
                     marketGateway: marketGateway,
                     localDataSource: localDataSource,
-                    marketTemplateInstallsDao:
-                        MarketTemplateInstallsDao(ctx.read<AppDatabase>()),
+                    marketTemplateInstallsDao: MarketTemplateInstallsDao(
+                      ctx.read<AppDatabase>(),
+                    ),
                     authScopeProvider: ctx.read<AuthScopeProvider>(),
                   );
 
@@ -88,11 +96,16 @@ class FourZhuEditPage extends StatelessWidget {
               deleteTemplateUseCase: DeleteTemplateUseCase(repository),
               installMarketTemplateUseCase: installMarketTemplateUseCase,
               cardTemplateMetaDao: CardTemplateMetaDao(ctx.read<AppDatabase>()),
-              cardTemplateSettingDao:
-                  CardTemplateSettingDao(ctx.read<AppDatabase>()),
-              cardTemplateSkillUsageDao:
-                  CardTemplateSkillUsageDao(ctx.read<AppDatabase>()),
-            )..initialize(collectionId: _defaultCollectionId);
+              cardTemplateSettingDao: CardTemplateSettingDao(
+                ctx.read<AppDatabase>(),
+              ),
+              cardTemplateSkillUsageDao: CardTemplateSkillUsageDao(
+                ctx.read<AppDatabase>(),
+              ),
+            )..initialize(
+              collectionId: collectionId,
+              initialTemplateId: initialTemplateId,
+            );
           },
         ),
       ],
@@ -187,72 +200,73 @@ class _FourZhuEditViewState extends State<_FourZhuEditView> {
         return Theme(
           data: themeData,
           child: Scaffold(
-              backgroundColor: themeData.scaffoldBackgroundColor,
-              appBar: AppBar(
-                title: const Text("卡片样式编辑"),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
-                ),
+            backgroundColor: themeData.scaffoldBackgroundColor,
+            appBar: AppBar(
+              title: const Text("卡片样式编辑"),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
               ),
-              // appBar: EditorTopBar(
-              //   nameController: _templateNameController,
-              //   onCreateTemplate: () =>
-              //       _showCreateTemplateDialog(context, viewModel),
-              //   // Legacy gallery removed; action is a no-op now
-              //   // onOpenGallery: () {},
-              //   onDeleteTemplate: () => _confirmDelete(context, viewModel),
-              //   onDuplicateTemplate: viewModel.duplicateCurrentTemplate,
-              //   onSaveTemplate: () => _saveWithFeedback(context, viewModel),
-              //   onUndoChanges: () => viewModel.revertChanges(),
-              //   onNameChanged: viewModel.updateTemplateName,
-              // ),
-              body: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    width: 320,
-                    decoration: BoxDecoration(
-                      color: themeData.colorScheme.surfaceContainerHighest,
-                      border: Border.all(
-                        color: themeData.dividerColor.withValues(alpha: 0.12),
+            ),
+            // appBar: EditorTopBar(
+            //   nameController: _templateNameController,
+            //   onCreateTemplate: () =>
+            //       _showCreateTemplateDialog(context, viewModel),
+            //   // Legacy gallery removed; action is a no-op now
+            //   // onOpenGallery: () {},
+            //   onDeleteTemplate: () => _confirmDelete(context, viewModel),
+            //   onDuplicateTemplate: viewModel.duplicateCurrentTemplate,
+            //   onSaveTemplate: () => _saveWithFeedback(context, viewModel),
+            //   onUndoChanges: () => viewModel.revertChanges(),
+            //   onNameChanged: viewModel.updateTemplateName,
+            // ),
+            body: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 320,
+                  decoration: BoxDecoration(
+                    color: themeData.colorScheme.surfaceContainerHighest,
+                    border: Border.all(
+                      color: themeData.dividerColor.withValues(alpha: 0.12),
+                    ),
+                  ),
+                  child: const SidebarExplorer(),
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (viewModel.errorMessage != null)
+                              _ErrorBanner(
+                                message: viewModel.errorMessage!,
+                                onDismissed: viewModel.clearError,
+                              ),
+                            if (viewModel.hasUnsavedChanges)
+                              const _UnsavedBanner(),
+                          ],
+                        ),
                       ),
-                    ),
-                    child: const SidebarExplorer(),
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (viewModel.errorMessage != null)
-                                _ErrorBanner(
-                                  message: viewModel.errorMessage!,
-                                  onDismissed: viewModel.clearError,
-                                ),
-                              if (viewModel.hasUnsavedChanges)
-                                const _UnsavedBanner(),
-                            ],
+                      Expanded(
+                        child: EditorWorkspace(
+                          eightChars: EightChars(
+                            year: JiaZi.JIA_ZI,
+                            month: JiaZi.JIA_ZI,
+                            day: JiaZi.JIA_ZI,
+                            time: JiaZi.JIA_ZI,
                           ),
                         ),
-                        Expanded(
-                          child: EditorWorkspace(
-                            eightChars: EightChars(
-                              year: JiaZi.JIA_ZI,
-                              month: JiaZi.JIA_ZI,
-                              day: JiaZi.JIA_ZI,
-                              time: JiaZi.JIA_ZI,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              )),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
@@ -260,10 +274,7 @@ class _FourZhuEditViewState extends State<_FourZhuEditView> {
 }
 
 class _ErrorBanner extends StatelessWidget {
-  const _ErrorBanner({
-    required this.message,
-    required this.onDismissed,
-  });
+  const _ErrorBanner({required this.message, required this.onDismissed});
 
   final String message;
   final VoidCallback onDismissed;
