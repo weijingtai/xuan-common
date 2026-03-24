@@ -12,7 +12,6 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:logger/logger.dart';
 import 'package:geojson_vi/geojson_vi.dart';
-import 'package:topojson/topojson.dart' as topojson;
 
 import '../datamodel/location.dart';
 
@@ -746,19 +745,14 @@ class _FlutterMapScreenState extends State<FlutterMapScreen>
   }
 
   Future<GeoJSON> fetchTimezonesGeoJSONFromLocal() async {
-    // _l.i("fetchGeoJSON for ${location.lowestGeoLocation.name} by it's code:${location.lowestGeoLocation.code}");
-    // 从本地获取资源
-    String geoJsonString = await rootBundle
-        .loadString('assets/dataset/combined-with-oceans-now.json');
-    // final geoJsonMap =topojson.TopoJson.fromJson(jsonDecode(geoJsonString));
-    // final geoJsonMap = await topojson.parse(topoJsonString);
-    final geoJSON = GeoJSON.fromJSON(geoJsonString);
-    // _l.d(geoJSON);
-    return geoJSON;
-    // final geoJSON = GeoJson.fromMap(geoJsonMap);
-    // final geoJsonData = json.decode(geoJsonString);
-
-    // return convertTimeZonesGeoJSON2Points(geoJsonData);
+    try {
+      final geoJsonString = await rootBundle
+          .loadString('assets/dataset/combined-with-oceans-now.json');
+      return GeoJSON.fromJSON(geoJsonString);
+    } on FlutterError catch (error) {
+      _l.w('Timezone dataset is unavailable: $error');
+      return GeoJSONFeatureCollection([]);
+    }
   }
 
   Future<List<Polygon>> fetchGeoJSONFromLocalStorage(Address location) async {
