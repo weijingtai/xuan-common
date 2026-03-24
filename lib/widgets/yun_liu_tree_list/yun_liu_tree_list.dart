@@ -7,12 +7,14 @@ class YunLiuTreeList extends StatelessWidget {
   final List<YunLiuNode> nodes;
   final bool shrinkWrap;
   final ScrollPhysics? physics;
+  final void Function(YunLiuNode node)? onNodeTap;
 
   const YunLiuTreeList({
     super.key,
     required this.nodes,
     this.shrinkWrap = false,
     this.physics,
+    this.onNodeTap,
   });
 
   @override
@@ -135,6 +137,7 @@ class YunLiuTreeList extends StatelessWidget {
               : Text(node.subtitle, style: subtitleStyle),
           contentPadding: tilePadding,
           dense: !hasCustomHeader,
+          onTap: onNodeTap != null ? () => onNodeTap!(node) : null,
         ),
       );
     }
