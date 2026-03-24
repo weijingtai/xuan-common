@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极致排版天文卡片</title>
+    <style>
+        :root {
+            --primary-black: #2d3436;
+            --secondary-gray: #888888;
+            --accent-red: #eb4d4b;
+            --accent-blue: #4a90e2;
+            --disabled-gray: #f1f3f5;
+            --card-bg: #ffffff;
+            --bg-page: #f8fafc;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            width: 440px;
+            border-radius: 28px;
+            padding: 30px 35px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04);
+            color: var(--primary-black);
+            position: relative;
+        }
+
+        /* 顶部：左右分布 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 5px;
+        }
+
+        /* 左侧公历 */
+        .date-gregorian {
+            font-size: 24px;
+            color: var(--secondary-gray);
+            font-weight: 300;
+            padding-top: 5px;
+        }
+
+        /* 右侧大时间与时辰Tag */
+        .time-group {
+            text-align: right;
+        }
+
+        .big-time {
+            font-size: 42px;
+            /* 字体加大 */
+            font-weight: 800;
+            line-height: 1;
+            font-family: 'Helvetica Neue', Arial;
+            letter-spacing: -1px;
+        }
+
+        .shichen-tag {
+            display: inline-block;
+            background: #f0f0f0;
+            color: var(--secondary-gray);
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-top: 6px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* 农历干支 */
+        .lunar-main {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .term-sub {
+            color: var(--accent-red);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* 日月升落：水平居中对齐 */
+        .astro-center-container {
+            display: flex;
+            justify-content: center;
+            /* 水平居中 */
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .astro-block {
+            flex: 1;
+            max-width: 180px;
+            padding: 14px 18px;
+            border-radius: 12px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .sun-block {
+            background-color: var(--accent-red);
+        }
+
+        .moon-block {
+            background-color: var(--accent-blue);
+        }
+
+        /* 上标、进度条、下标结构 */
+        .block-row-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .block-row-values {
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .progress-line {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-inner {
+            height: 100%;
+            background: white;
+            width: 0%;
+            /* 不可用时为0 */
+        }
+
+        /* 不可用态 */
+        .is-unavailable {
+            background-color: var(--disabled-gray) !important;
+            color: #bdc3c7 !important;
+        }
+
+        .is-unavailable .progress-inner {
+            background: #dcdde1;
+        }
+
+        /* 节气进度条 */
+        .term-progress-box {
+            margin-bottom: 15px;
+        }
+
+        .term-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: var(--secondary-gray);
+        }
+
+        .bar-bg {
+            height: 3px;
+            background: #eee;
+            border-radius: 2px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: var(--accent-red);
+            width: 45%;
+        }
+
+        /* 物候 */
+        .pentads-line {
+            text-align: center;
+            font-size: 14px;
+            color: var(--secondary-gray);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .p-active {
+            color: var(--primary-black);
+            font-weight: 700;
+            border-bottom: 2px solid var(--accent-red);
+            padding-bottom: 1px;
+        }
+
+        /* 极致缩小的 Footer */
+        .footer-minimal {
+            border-top: 1px solid #f8f8f8;
+            padding-top: 12px;
+            text-align: center;
+            font-size: 10px;
+            /* 进一步缩小 */
+            color: #e0e0e0;
+            /* 极淡颜色 */
+        }
+
+        .footer-minimal span {
+            margin: 0 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <div class="header">
+            <div class="date-gregorian">1995年06月13日</div>
+            <div class="time-group">
+                <div class="big-time">01:30</div>
+                <div class="shichen-tag">丑时</div>
+            </div>
+        </div>
+
+        <div class="lunar-main">
+            <span>乙亥年 五月十六</span>
+            <span class="term-sub">仲夏</span>
+        </div>
+
+        <div class="astro-center-container">
+            <div class="astro-block sun-block is-unavailable">
+                <div class="block-row-labels">
+                    <span>日出</span>
+                    <span>日落</span>
+                </div>
+                <div class="progress-line">
+                    <div class="progress-inner"></div>
+                </div>
+                <div class="block-row-values">
+                    <span>06:23</span>
+                    <span>18:22</span>
+                </div>
+            </div>
+
+            <div class="astro-block moon-block is-unavailable">
+                <div class="block-row-labels">
+                    <span>月出</span>
+                    <span>月落</span>
+                </div>
+                <div class="progress-line">
+                    <div class="progress-inner"></div>
+                </div>
+                <div class="block-row-values">
+                    <span>05:50</span>
+                    <span>16:28</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="term-progress-box">
+            <div class="term-labels">
+                <span style="color:var(--accent-red); font-weight:700;">芒种 06/06</span>
+                <span>夏至 06/22</span>
+            </div>
+            <div class="bar-bg">
+                <div class="bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="pentads-line">
+            螳螂生 · <span class="p-active">鵙始鸣</span> · 反舌无声
+        </div>
+
+        <div class="footer-minimal">
+            <span>北京市 朝阳区</span>
+            <span>116°24'E · 39°54'N</span>
+        </div>
+    </div>
+
+</body>
+
+</html>

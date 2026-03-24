@@ -1,4 +1,3 @@
-import 'package:common/database/app_database.dart';
 import 'package:common/database/converters/coordinates_converter.dart';
 import 'package:common/database/converters/jie_qi_info_converter.dart';
 import 'package:common/database/converters/location_converter.dart';
@@ -7,14 +6,10 @@ import 'package:common/datamodel/divination_request_info_datamodel.dart';
 import 'package:common/datamodel/divination_type_data_model.dart';
 import 'package:common/enums.dart';
 import 'package:drift/drift.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'package:uuid/uuid.dart';
 
 import '../../datamodel/seeker_model.dart';
 import '../../datamodel/sub_divination_type_data_model.dart';
 import '../../datamodel/timing_divination_model.dart';
-import '../../models/divination_datetime.dart';
-import 'package:common/enums.dart';
 import '../converters/nullable_location_converter.dart';
 
 @DataClassName('CombinedDivination')
@@ -401,6 +396,9 @@ class TimingDivinations extends Table {
       .nullable()
       .named('info_list_json')();
 
+  TextColumn get currentCalendarUuid =>
+      text().nullable().named('current_calendar_uuid')();
+
   @override
   Set<Column> get primaryKey => {uuid};
 }
@@ -454,6 +452,63 @@ class Seekers extends Table {
       .nullable()
       .map(const NullableLocationConverter())
       .named("location_json")();
+
+  TextColumn get currentCalendarUuid =>
+      text().nullable().named('current_calendar_uuid')();
+
+  @override
+  Set<Column> get primaryKey => {uuid};
+}
+
+@DataClassName('DivinationCalendar')
+class DivinationCalendars extends Table {
+  @override
+  String get tableName => 't_divination_calendars';
+
+  TextColumn get uuid => text().withLength(min: 1).named('uuid')();
+  TextColumn get sourceUuid => text().named('source_uuid')();
+  // seeker, timing_divination
+  TextColumn get sourceType => text().named('source_type')();
+
+  TextColumn get currentTaiYuanUuid =>
+      text().nullable().named('current_tai_yuan_uuid')();
+  TextColumn get currentDaYunUuid =>
+      text().nullable().named('current_da_yun_uuid')();
+
+  @override
+  Set<Column> get primaryKey => {uuid};
+}
+
+@DataClassName('DaYunRecord')
+class DaYunRecords extends Table {
+  @override
+  String get tableName => 't_da_yun_records';
+
+  TextColumn get uuid => text().withLength(min: 1).named('uuid')();
+  TextColumn get sourceUuid => text().named('source_uuid')();
+
+  TextColumn get jieQiType => text().named('jie_qi_type')();
+  TextColumn get precision => text().named('precision')();
+
+  DateTimeColumn get createdAt => dateTime().named('created_at')();
+
+  @override
+  Set<Column> get primaryKey => {uuid};
+}
+
+@DataClassName('TaiYuanRecord')
+class TaiYuanRecords extends Table {
+  @override
+  String get tableName => 't_tai_yuan_records';
+
+  TextColumn get uuid => text().withLength(min: 1).named('uuid')();
+  TextColumn get calendarUuid => text().named('calendar_uuid')();
+
+  TextColumn get strategy => text().named('strategy')();
+  TextColumn get pillar => text().named('pillar')();
+  TextColumn get description => text().nullable().named('description')();
+
+  DateTimeColumn get createdAt => dateTime().named('created_at')();
 
   @override
   Set<Column> get primaryKey => {uuid};

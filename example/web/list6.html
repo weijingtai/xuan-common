@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --cinnabar: #a61b1b;
+            /* 朱砂 */
+            --ink: #333;
+            /* 墨色 */
+            --paper: #fcfaf7;
+            /* 宣纸色 */
+            --gold: #b28f5c;
+            /* 哑金 */
+            --line: #e8e4db;
+            /* 浅墨线 */
+        }
+
+        body {
+            background: #f0ede5;
+            padding: 20px;
+            font-family: "Source Han Serif SC", "SimSun", serif;
+        }
+
+        /* 核心 ListTile 容器 */
+        .list-tile-expanded {
+            width: 100%;
+            max-width: 420px;
+            background: var(--paper);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--line);
+            padding: 20px;
+            position: relative;
+        }
+
+        /* 左侧：垂直的大运标识 */
+        .leading-section {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gan-zhi-big {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--ink);
+            writing-mode: vertical-rl;
+            line-height: 1;
+            letter-spacing: 4px;
+        }
+
+        .index-badge {
+            font-size: 10px;
+            color: #fff;
+            background: var(--cinnabar);
+            padding: 2px 6px;
+            border-radius: 2px;
+            margin-bottom: 10px;
+        }
+
+        /* 右侧内容区 */
+        .content-section {
+            margin-left: 70px;
+            /* 为左侧留出空间 */
+        }
+
+        /* 顶部标题行 */
+        .tile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .ten-god {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--cinnabar);
+        }
+
+        .time-range {
+            font-size: 14px;
+            color: var(--gold);
+            font-family: sans-serif;
+        }
+
+        /* 核心改进：流年流式排列（不再像 Table） */
+        .years-flow {
+            display: flex;
+            flex-wrap: wrap;
+            /* 自动换行，保持流式结构 */
+            gap: 12px 10px;
+        }
+
+        .year-chip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 58px;
+            /* 固定的微小宽度，保持整齐但不封闭 */
+            padding-bottom: 5px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        /* 悬停效果：更有交互感 */
+        .year-chip:hover {
+            transform: translateY(-2px);
+        }
+
+        .chip-ganzhi {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+
+        .chip-god {
+            font-size: 9px;
+            color: var(--cinnabar);
+            opacity: 0.8;
+            margin-top: -2px;
+        }
+
+        .chip-num {
+            font-size: 10px;
+            color: #999;
+            font-family: "Georgia", serif;
+            transform: scale(0.9);
+        }
+
+        /* 装饰用的波浪线或点线 */
+        .divider {
+            width: 100%;
+            height: 1px;
+            background: radial-gradient(circle, var(--line) 1px, transparent 1px);
+            background-size: 4px 1px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="list-tile-expanded">
+        <div class="leading-section">
+            <span class="index-badge">大运四</span>
+            <span class="gan-zhi-big">甲戌</span>
+        </div>
+
+        <div class="content-section">
+            <div class="tile-header">
+                <span class="ten-god">正财格</span>
+                <span class="time-range">2054 - 2063</span>
+            </div>
+
+            <div style="font-size: 12px; color: #666; margin-bottom: 15px;">
+                <span style="color: var(--gold); margin-right: 8px;">藏干:</span>
+                戊(才) 乙(官) 癸(印)
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="years-flow">
+                <div class="year-chip">
+                    <span class="chip-ganzhi">甲戌</span>
+                    <span class="chip-god">才</span>
+                    <span class="chip-num">2054</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">乙亥</span>
+                    <span class="chip-god">财</span>
+                    <span class="chip-num">2055</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">丙子</span>
+                    <span class="chip-god">官</span>
+                    <span class="chip-num">2056</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">丁丑</span>
+                    <span class="chip-god">杀</span>
+                    <span class="chip-num">2057</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">戊寅</span>
+                    <span class="chip-god">印</span>
+                    <span class="chip-num">2058</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">己卯</span>
+                    <span class="chip-god">枭</span>
+                    <span class="chip-num">2059</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">庚辰</span>
+                    <span class="chip-god">劫</span>
+                    <span class="chip-num">2060</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">辛巳</span>
+                    <span class="chip-god">比</span>
+                    <span class="chip-num">2061</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">壬午</span>
+                    <span class="chip-god">伤</span>
+                    <span class="chip-num">2062</span>
+                </div>
+                <div class="year-chip">
+                    <span class="chip-ganzhi">癸未</span>
+                    <span class="chip-god">食</span>
+                    <span class="chip-num">2063</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -30,13 +30,9 @@ import '../helpers/solar_lunar_datetime_helper.dart';
 import '../models/divination_datetime.dart';
 import 'responseive_datetime_dialog.dart';
 import '../viewmodels/timezone_location_viewmodel.dart';
-import 'zi_strategy_settings_card.dart';
-import 'jieqi_phenology_settings_card.dart';
-import 'package:common/features/datetime_details/jieqi_phenology_store.dart';
-import 'package:common/features/datetime_details/zi_strategy_store.dart';
-import 'package:common/features/datetime_details/input_info_params.dart';
-import 'jieqi_entry_settings_card.dart';
-import 'package:common/features/datetime_details/jieqi_entry_strategy_store.dart';
+import 'zi_strategy_settings_capsule.dart';
+import 'jieqi_phenology_settings_capsule.dart';
+import 'jieqi_entry_settings_capsule.dart';
 
 class QueryTimeInputCard extends StatefulWidget {
   // final String defaultTimeZone;
@@ -655,30 +651,9 @@ class _QueryTimeInputCardState extends State<QueryTimeInputCard>
           ),
           const SizedBox(height: 8),
           // 将设置卡片移出内层 Card，独立展示
-          ZiStrategySettingsCard(
-            applyOnChange: false,
-            onStrategyChanged: (s) {
-              ZiStrategyStore.set(s);
-              _timezoneLocationViewModel.selectedTimeNotifier.value =
-                  _timezoneLocationViewModel.selectedTimeNotifier.value;
-            },
-          ),
-          JieQiPhenologySettingsCard(
-            applyOnChange: false,
-            onChanged: (jieQiType, phStrategy) {
-              JieQiPhenologyStore.jieQiType = jieQiType;
-              JieQiPhenologyStore.phenologyStrategy = phStrategy;
-              _timezoneLocationViewModel.selectedTimeNotifier.value =
-                  _timezoneLocationViewModel.selectedTimeNotifier.value;
-            },
-          ),
-          JieQiEntrySettingsCard(
-            applyOnChange: false,
-            onChanged: (p) {
-              _timezoneLocationViewModel.selectedTimeNotifier.value =
-                  _timezoneLocationViewModel.selectedTimeNotifier.value;
-            },
-          ),
+          const ZiStrategySettingsCapsule(),
+          const JieQiPhenologySettingsCapsule(),
+          const JieQiEntrySettingsCapsule(),
         ],
       ),
     );

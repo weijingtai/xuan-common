@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大运流年 · 三层级联</title>
+    <style>
+        :root {
+            --ink: #1a1a1a;
+            --ink-soft: #666;
+            --cinnabar: #a61b1b;
+            --cinnabar-wash: rgba(166, 27, 27, 0.05);
+            --paper: #fdfaf5;
+            --paper-alt: #f5f2ec;
+            --gold: #b28f5c;
+            --gold-wash: rgba(178, 143, 92, 0.12);
+            --border: #e0dcd5;
+            --border-light: #edebe6;
+            --sub: #999;
+            --bg: #f0ede5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: "Source Han Serif SC", "Noto Serif CJK SC", "SimSun", serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ========================================
+           层级标题
+           ======================================== */
+        .tier-label {
+            font-size: 11px;
+            color: var(--sub);
+            letter-spacing: 2px;
+            padding: 12px 20px 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tier-label::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ========================================
+           横向滚动容器
+           ======================================== */
+        .h-scroll {
+            display: flex;
+            gap: 14px;
+            padding: 8px 20px 16px;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .h-scroll::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .h-scroll::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        /* ========================================
+           第一层：大运 Tile
+           ======================================== */
+        .dayun-tile {
+            flex-shrink: 0;
+            width: 380px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dayun-tile:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .dayun-tile.selected {
+            border-color: var(--cinnabar);
+            box-shadow: 0 6px 24px rgba(166, 27, 27, 0.1);
+        }
+
+        /* 大运头部 */
+        .dy-header {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .dy-pillar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 12px;
+            border-right: 2px solid var(--cinnabar);
+            min-width: 52px;
+        }
+
+        .dy-badge {
+            font-size: 9px;
+            color: var(--cinnabar);
+            border: 1px solid var(--cinnabar);
+            padding: 1px 4px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .dayun-tile.selected .dy-badge {
+            background: var(--cinnabar);
+            color: #fff;
+        }
+
+        .dy-gz {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--ink);
+            writing-mode: vertical-rl;
+            letter-spacing: 4px;
+            line-height: 1.1;
+        }
+
+        .dy-info {
+            flex: 1;
+        }
+
+        .dy-god {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--cinnabar);
+            margin-bottom: 4px;
+        }
+
+        .dy-stems {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .dy-stem-tag {
+            font-size: 10px;
+            background: var(--paper-alt);
+            padding: 1px 4px;
+            border-radius: 2px;
+            color: var(--ink-soft);
+        }
+
+        .dy-stem-tag b {
+            color: var(--gold);
+            margin-right: 1px;
+            font-weight: 600;
+        }
+
+        .dy-time {
+            font-size: 11px;
+            color: var(--sub);
+            font-family: sans-serif;
+        }
+
+        /* ========================================
+           流年索引网格 5×2
+           ======================================== */
+        .ln-index-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-top: auto;
+        }
+
+        .ln-idx {
+            display: grid;
+            grid-template-columns: auto auto;
+            grid-template-rows: auto auto;
+            align-items: center;
+            column-gap: 3px;
+            padding: 4px 5px;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .ln-idx:hover {
+            background: var(--cinnabar-wash);
+            border-color: var(--border);
+        }
+
+        .ln-idx.active {
+            background: var(--cinnabar-wash);
+            border-color: var(--cinnabar);
+        }
+
+        .ln-idx-gz {
+            grid-row: 1;
+            grid-column: 1;
+            font-size: 15px;
+            font-weight: 800;
+            color: var(--ink);
+            line-height: 1.1;
+        }
+
+        .ln-idx-gods {
+            grid-row: 1;
+            grid-column: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .ln-idx-gods .tg {
+            font-size: 9px;
+            color: var(--cinnabar);
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .ln-idx-gods .hg {
+            font-size: 9px;
+            color: var(--gold);
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .ln-idx-yr {
+            grid-row: 2;
+            grid-column: 1;
+            font-size: 7.5px;
+            color: var(--sub);
+            font-family: sans-serif;
+            margin-top: 1px;
+        }
+
+        /* ========================================
+           第二层：流年 Detail Tile
+           ======================================== */
+        .tier-2 {
+            display: none;
+        }
+
+        .tier-2.open {
+            display: block;
+        }
+
+        .liunian-tile {
+            flex-shrink: 0;
+            width: 420px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ln-header {
+            display: flex;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .ln-pillar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 12px;
+            border-right: 2px solid var(--gold);
+            min-width: 52px;
+        }
+
+        .ln-yr-badge {
+            font-size: 9px;
+            color: #fff;
+            background: var(--gold);
+            padding: 1px 5px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            border-radius: 2px;
+            font-family: sans-serif;
+        }
+
+        .ln-gz {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--ink);
+            writing-mode: vertical-rl;
+            letter-spacing: 4px;
+            line-height: 1.1;
+        }
+
+        .ln-info {
+            flex: 1;
+        }
+
+        .ln-god-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--cinnabar);
+            margin-bottom: 4px;
+        }
+
+        .ln-hidden {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 6px;
+        }
+
+        .ln-stem-tag {
+            font-size: 11px;
+            background: var(--paper-alt);
+            padding: 2px 6px;
+            border-radius: 2px;
+            color: var(--ink-soft);
+            border: 1px solid var(--border-light);
+        }
+
+        .ln-stem-tag b {
+            color: var(--ink);
+            margin-right: 2px;
+        }
+
+        .ln-time {
+            font-size: 11px;
+            color: var(--sub);
+            font-family: sans-serif;
+        }
+
+        /* 分隔线 */
+        .sep {
+            width: 100%;
+            height: 1px;
+            background: radial-gradient(circle, var(--border) 1px, transparent 1px);
+            background-size: 5px 1px;
+            margin: 10px 0;
+        }
+
+        /* 流月索引 6×2 */
+        .ly-index-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 4px;
+        }
+
+        .ly-idx {
+            display: grid;
+            grid-template-columns: auto auto;
+            grid-template-rows: auto auto;
+            align-items: center;
+            column-gap: 2px;
+            padding: 3px 4px;
+            border-radius: 3px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .ly-idx:hover {
+            background: var(--gold-wash);
+            border-color: var(--border);
+        }
+
+        .ly-idx.active {
+            background: var(--gold-wash);
+            border-color: var(--gold);
+        }
+
+        .ly-idx-gz {
+            grid-row: 1;
+            grid-column: 1;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.1;
+        }
+
+        .ly-idx-gods {
+            grid-row: 1;
+            grid-column: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .ly-idx-gods .tg {
+            font-size: 8px;
+            color: var(--gold);
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .ly-idx-gods .hg {
+            font-size: 8px;
+            color: var(--sub);
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .ly-idx-mon {
+            grid-row: 2;
+            grid-column: 1;
+            font-size: 7px;
+            color: var(--sub);
+            margin-top: 1px;
+        }
+
+        /* ========================================
+           第三层：流月 Detail
+           ======================================== */
+        .tier-3 {
+            display: none;
+        }
+
+        .tier-3.open {
+            display: block;
+        }
+
+        .liuyue-detail {
+            margin: 0 20px 16px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            gap: 14px;
+        }
+
+        .ly-pillar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-right: 12px;
+            border-right: 2px solid var(--border);
+            min-width: 48px;
+        }
+
+        .ly-mon-badge {
+            font-size: 10px;
+            color: var(--gold);
+            border: 1px solid var(--gold);
+            padding: 0 4px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .ly-gz-big {
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--ink);
+            writing-mode: vertical-rl;
+            letter-spacing: 3px;
+        }
+
+        .ly-info {
+            flex: 1;
+        }
+
+        .ly-god-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--cinnabar);
+            margin-bottom: 4px;
+        }
+
+        .ly-hidden {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .ly-hidden-tag {
+            font-size: 11px;
+            background: var(--paper-alt);
+            padding: 2px 6px;
+            border-radius: 2px;
+            color: var(--ink-soft);
+        }
+
+        .ly-hidden-tag b {
+            color: var(--ink);
+            margin-right: 2px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .dayun-tile {
+                width: 92vw;
+            }
+
+            .liunian-tile {
+                width: 92vw;
+            }
+
+            .ly-index-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ====== 第一层：大运 ====== -->
+    <div class="tier-label">大运</div>
+    <div class="h-scroll" id="dayunScroll">
+
+        <!-- 大运 1: 丙午 -->
+        <div class="dayun-tile" onclick="selectDaYun(this, 0)">
+            <div class="dy-header">
+                <div class="dy-pillar">
+                    <span class="dy-badge">大运三</span>
+                    <span class="dy-gz">丙午</span>
+                </div>
+                <div class="dy-info">
+                    <div class="dy-god">正官</div>
+                    <div class="dy-stems">
+                        <span class="dy-stem-tag"><b>丁</b>七杀</span>
+                        <span class="dy-stem-tag"><b>己</b>偏印</span>
+                    </div>
+                    <div class="dy-time">2044 – 2053 · 48~58岁</div>
+                </div>
+            </div>
+            <div class="ln-index-grid" id="grid0"></div>
+        </div>
+
+        <!-- 大运 2: 甲戌 (当前) -->
+        <div class="dayun-tile selected" onclick="selectDaYun(this, 1)">
+            <div class="dy-header">
+                <div class="dy-pillar">
+                    <span class="dy-badge">大运四</span>
+                    <span class="dy-gz">甲戌</span>
+                </div>
+                <div class="dy-info">
+                    <div class="dy-god">正财</div>
+                    <div class="dy-stems">
+                        <span class="dy-stem-tag"><b>戊</b>正财</span>
+                        <span class="dy-stem-tag"><b>辛</b>伤官</span>
+                        <span class="dy-stem-tag"><b>丁</b>劫财</span>
+                    </div>
+                    <div class="dy-time">2054 – 2063 · 58~68岁</div>
+                </div>
+            </div>
+            <div class="ln-index-grid" id="grid1"></div>
+        </div>
+
+        <!-- 大运 3: 乙亥 -->
+        <div class="dayun-tile" onclick="selectDaYun(this, 2)">
+            <div class="dy-header">
+                <div class="dy-pillar">
+                    <span class="dy-badge">大运五</span>
+                    <span class="dy-gz">乙亥</span>
+                </div>
+                <div class="dy-info">
+                    <div class="dy-god">偏财</div>
+                    <div class="dy-stems">
+                        <span class="dy-stem-tag"><b>壬</b>偏印</span>
+                        <span class="dy-stem-tag"><b>甲</b>偏财</span>
+                    </div>
+                    <div class="dy-time">2064 – 2073 · 68~78岁</div>
+                </div>
+            </div>
+            <div class="ln-index-grid" id="grid2"></div>
+        </div>
+    </div>
+
+    <!-- ====== 第二层：流年 ====== -->
+    <div class="tier-2" id="tier2">
+        <div class="tier-label">流年 · <span id="tier2DaYunLabel">—</span></div>
+        <div class="h-scroll" id="liunianScroll"></div>
+    </div>
+
+    <!-- ====== 第三层：流月 ====== -->
+    <div class="tier-3" id="tier3">
+        <div class="tier-label">流月 · <span id="tier3Label">—</span></div>
+        <div class="liuyue-detail" id="liuyueDetail"></div>
+    </div>
+
+    <script>
+        // === Mock Data ===
+        const dayunData = [
+            { // 大运三 丙午
+                liunian: [
+                    { gz: '甲寅', god: '偏财', yr: '2044', age: '48岁', hidden: [['甲', '偏财'], ['丙', '正官'], ['戊', '正印']] },
+                    { gz: '乙卯', god: '正财', yr: '2045', age: '49岁', hidden: [['乙', '正财']] },
+                    { gz: '丙辰', god: '正官', yr: '2046', age: '50岁', hidden: [['戊', '正印'], ['乙', '正财'], ['癸', '偏印']] },
+                    { gz: '丁巳', god: '七杀', yr: '2047', age: '51岁', hidden: [['丙', '正官'], ['戊', '正印'], ['庚', '劫财']] },
+                    { gz: '戊午', god: '正印', yr: '2048', age: '52岁', hidden: [['丁', '七杀'], ['己', '偏印']] },
+                    { gz: '己未', god: '偏印', yr: '2049', age: '53岁', hidden: [['己', '偏印'], ['丁', '七杀'], ['乙', '正财']] },
+                    { gz: '庚申', god: '劫财', yr: '2050', age: '54岁', hidden: [['庚', '劫财'], ['壬', '伤官'], ['戊', '正印']] },
+                    { gz: '辛酉', god: '比肩', yr: '2051', age: '55岁', hidden: [['辛', '比肩']] },
+                    { gz: '壬戌', god: '伤官', yr: '2052', age: '56岁', hidden: [['戊', '正印'], ['辛', '比肩'], ['丁', '七杀']] },
+                    { gz: '癸亥', god: '食神', yr: '2053', age: '57岁', hidden: [['壬', '伤官'], ['甲', '偏财']] },
+                ]
+            },
+            { // 大运四 甲戌
+                liunian: [
+                    { gz: '甲戌', god: '正财', yr: '2054', age: '58岁', hidden: [['戊', '正财'], ['辛', '伤官'], ['丁', '劫财']] },
+                    { gz: '乙亥', god: '偏财', yr: '2055', age: '59岁', hidden: [['壬', '偏印'], ['甲', '偏财']] },
+                    { gz: '丙子', god: '正官', yr: '2056', age: '60岁', hidden: [['癸', '正印']] },
+                    { gz: '丁丑', god: '七杀', yr: '2057', age: '61岁', hidden: [['己', '偏财'], ['癸', '正印'], ['辛', '伤官']] },
+                    { gz: '戊寅', god: '正印', yr: '2058', age: '62岁', hidden: [['甲', '偏财'], ['丙', '正官'], ['戊', '正印']] },
+                    { gz: '己卯', god: '偏印', yr: '2059', age: '63岁', hidden: [['乙', '正财']] },
+                    { gz: '庚辰', god: '劫财', yr: '2060', age: '64岁', hidden: [['戊', '正印'], ['乙', '正财'], ['癸', '偏印']] },
+                    { gz: '辛巳', god: '比肩', yr: '2061', age: '65岁', hidden: [['丙', '正官'], ['戊', '正印'], ['庚', '劫财']] },
+                    { gz: '壬午', god: '伤官', yr: '2062', age: '66岁', hidden: [['丁', '七杀'], ['己', '偏印']] },
+                    { gz: '癸未', god: '食神', yr: '2063', age: '67岁', hidden: [['己', '偏印'], ['丁', '七杀'], ['乙', '正财']] },
+                ]
+            },
+            { // 大运五 乙亥
+                liunian: [
+                    { gz: '甲申', god: '偏财', yr: '2064', age: '68岁', hidden: [['庚', '劫财'], ['壬', '偏印'], ['戊', '正印']] },
+                    { gz: '乙酉', god: '正财', yr: '2065', age: '69岁', hidden: [['辛', '比肩']] },
+                    { gz: '丙戌', god: '正官', yr: '2066', age: '70岁', hidden: [['戊', '正印'], ['辛', '比肩'], ['丁', '七杀']] },
+                    { gz: '丁亥', god: '七杀', yr: '2067', age: '71岁', hidden: [['壬', '偏印'], ['甲', '偏财']] },
+                    { gz: '戊子', god: '正印', yr: '2068', age: '72岁', hidden: [['癸', '偏印']] },
+                    { gz: '己丑', god: '偏印', yr: '2069', age: '73岁', hidden: [['己', '偏印'], ['癸', '偏印'], ['辛', '比肩']] },
+                    { gz: '庚寅', god: '劫财', yr: '2070', age: '74岁', hidden: [['甲', '偏财'], ['丙', '正官'], ['戊', '正印']] },
+                    { gz: '辛卯', god: '比肩', yr: '2071', age: '75岁', hidden: [['乙', '正财']] },
+                    { gz: '壬辰', god: '伤官', yr: '2072', age: '76岁', hidden: [['戊', '正印'], ['乙', '正财'], ['癸', '偏印']] },
+                    { gz: '癸巳', god: '食神', yr: '2073', age: '77岁', hidden: [['丙', '正官'], ['戊', '正印'], ['庚', '劫财']] },
+                ]
+            }
+        ];
+
+        // 流月 mock (同一套数据)
+        const monthLabels = ['正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '冬月', '腊月'];
+        const monthGzList = ['丙寅', '丁卯', '戊辰', '己巳', '庚午', '辛未', '壬申', '癸酉', '甲戌', '乙亥', '丙子', '丁丑'];
+        const monthGods = ['正官', '七杀', '正印', '偏印', '劫财', '比肩', '伤官', '食神', '正财', '偏财', '正官', '七杀'];
+        const monthHidden = [
+            [['甲', '偏财'], ['丙', '正官'], ['戊', '正印']],
+            [['乙', '正财']],
+            [['戊', '正印'], ['乙', '正财'], ['癸', '偏印']],
+            [['丙', '正官'], ['戊', '正印'], ['庚', '劫财']],
+            [['丁', '七杀'], ['己', '偏印']],
+            [['己', '偏印'], ['丁', '七杀'], ['乙', '正财']],
+            [['庚', '劫财'], ['壬', '伤官'], ['戊', '正印']],
+            [['辛', '比肩']],
+            [['戊', '正印'], ['辛', '比肩'], ['丁', '七杀']],
+            [['壬', '偏印'], ['甲', '偏财']],
+            [['癸', '偏印']],
+            [['己', '偏印'], ['癸', '偏印'], ['辛', '比肩']],
+        ];
+
+        // 十神简称映射
+        function shortGod(g) {
+            const map = { '正财': '财', '偏财': '才', '正官': '官', '七杀': '杀', '正印': '印', '偏印': '枭', '比肩': '比', '劫财': '劫', '伤官': '伤', '食神': '食' };
+            return map[g] || g.substring(0, 1);
+        }
+
+        // === 初始化：渲染流年索引网格 ===
+        function renderLnGrid(gridId, dayunIdx) {
+            const grid = document.getElementById(gridId);
+            const items = dayunData[dayunIdx].liunian;
+            grid.innerHTML = items.map((ln, i) => {
+                const tg = shortGod(ln.god);
+                const hg = ln.hidden.length > 0 ? shortGod(ln.hidden[0][1]) : '';
+                return `
+                    <div class="ln-idx" onclick="event.stopPropagation(); selectLiuNian(this, ${dayunIdx}, ${i})">
+                        <span class="ln-idx-gz">${ln.gz}</span>
+                        <div class="ln-idx-gods"><span class="tg">${tg}</span><span class="hg">${hg}</span></div>
+                        <span class="ln-idx-yr">${ln.yr}</span>
+                    </div>`;
+            }).join('');
+        }
+
+        renderLnGrid('grid0', 0);
+        renderLnGrid('grid1', 1);
+        renderLnGrid('grid2', 2);
+
+        // === 选中大运 ===
+        function selectDaYun(tileEl, idx) {
+            document.querySelectorAll('.dayun-tile').forEach(t => t.classList.remove('selected'));
+            tileEl.classList.add('selected');
+            document.querySelectorAll('.ln-idx').forEach(c => c.classList.remove('active'));
+            document.getElementById('tier2').classList.remove('open');
+            document.getElementById('tier3').classList.remove('open');
+        }
+
+        // === 选中流年 ===
+        function selectLiuNian(chipEl, dayunIdx, lnIdx) {
+            const parentTile = chipEl.closest('.dayun-tile');
+            document.querySelectorAll('.dayun-tile').forEach(t => t.classList.remove('selected'));
+            parentTile.classList.add('selected');
+            document.querySelectorAll('.ln-idx').forEach(c => c.classList.remove('active'));
+            chipEl.classList.add('active');
+
+            const daYunGz = parentTile.querySelector('.dy-gz').textContent;
+            document.getElementById('tier2DaYunLabel').textContent = daYunGz + '大运';
+
+            const ln = dayunData[dayunIdx].liunian[lnIdx];
+            const scroll = document.getElementById('liunianScroll');
+            scroll.innerHTML = '';
+
+            const tile = document.createElement('div');
+            tile.className = 'liunian-tile';
+
+            const hiddenHtml = ln.hidden.map(([s, l]) =>
+                `<span class="ln-stem-tag"><b>${s}</b>${l}</span>`
+            ).join('');
+
+            const lyChips = monthGzList.map((mgz, i) => {
+                const tg = shortGod(monthGods[i]);
+                const hg = monthHidden[i].length > 0 ? shortGod(monthHidden[i][0][1]) : '';
+                return `
+                    <div class="ly-idx" onclick="selectLiuYue(this, ${i}, '${ln.yr}')">
+                        <span class="ly-idx-gz">${mgz}</span>
+                        <div class="ly-idx-gods"><span class="tg">${tg}</span><span class="hg">${hg}</span></div>
+                        <span class="ly-idx-mon">${monthLabels[i]}</span>
+                    </div>`;
+            }).join('');
+
+            tile.innerHTML = `
+                <div class="ln-header">
+                    <div class="ln-pillar">
+                        <span class="ln-yr-badge">${ln.yr}</span>
+                        <span class="ln-gz">${ln.gz}</span>
+                    </div>
+                    <div class="ln-info">
+                        <div class="ln-god-title">${ln.god}</div>
+                        <div class="ln-hidden">${hiddenHtml}</div>
+                        <div class="ln-time">${ln.yr}年 · ${ln.age}</div>
+                    </div>
+                </div>
+                <div class="sep"></div>
+                <div class="ly-index-grid">${lyChips}</div>
+            `;
+            scroll.appendChild(tile);
+
+            document.getElementById('tier2').classList.add('open');
+            document.getElementById('tier3').classList.remove('open');
+            setTimeout(() => {
+                document.getElementById('tier2').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+        }
+
+        // === 选中流月 ===
+        function selectLiuYue(chipEl, monthIdx, year) {
+            document.querySelectorAll('.ly-idx').forEach(c => c.classList.remove('active'));
+            chipEl.classList.add('active');
+
+            document.getElementById('tier3Label').textContent = `${year}年 · ${monthLabels[monthIdx]}`;
+
+            const detail = document.getElementById('liuyueDetail');
+            const hiddenHtml = monthHidden[monthIdx].map(([s, l]) =>
+                `<span class="ly-hidden-tag"><b>${s}</b>${l}</span>`
+            ).join('');
+            detail.innerHTML = `
+                <div class="ly-pillar">
+                    <span class="ly-mon-badge">${monthLabels[monthIdx]}</span>
+                    <span class="ly-gz-big">${monthGzList[monthIdx]}</span>
+                </div>
+                <div class="ly-info">
+                    <div class="ly-god-title">${monthGods[monthIdx]}</div>
+                    <div class="ly-hidden">${hiddenHtml}</div>
+                </div>
+            `;
+
+            document.getElementById('tier3').classList.add('open');
+            setTimeout(() => {
+                document.getElementById('tier3').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+        }
+    </script>
+
+</body>
+
+</html>

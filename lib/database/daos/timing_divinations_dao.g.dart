@@ -6,4 +6,13 @@ part of 'timing_divinations_dao.dart';
 mixin _$TimingDivinationsDaoMixin on DatabaseAccessor<AppDatabase> {
   $TimingDivinationsTable get timingDivinations =>
       attachedDatabase.timingDivinations;
+  TimingDivinationsDaoManager get managers => TimingDivinationsDaoManager(this);
+}
+
+class TimingDivinationsDaoManager {
+  final _$TimingDivinationsDaoMixin _db;
+  TimingDivinationsDaoManager(this._db);
+  $$TimingDivinationsTableTableManager get timingDivinations =>
+      $$TimingDivinationsTableTableManager(
+          _db.attachedDatabase, _db.timingDivinations);
 }

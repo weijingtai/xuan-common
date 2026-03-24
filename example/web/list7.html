@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --ink: #1a1a1a;
+            --cinnabar: #a61b1b;
+            /* 朱砂红 */
+            --paper: #f9f7f2;
+            /* 宣纸白 */
+            --gold: #b28f5c;
+            /* 哑金 */
+            --border: #e0ddd5;
+            --sub-text: #888;
+        }
+
+        body {
+            background: #f0ede5;
+            padding: 20px;
+            font-family: "Source Han Serif SC", "SimSun", serif;
+        }
+
+        /* 现代中式卡片 */
+        .master-tile {
+            width: 100%;
+            max-width: 480px;
+            background: var(--paper);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 24px 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.04);
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 左侧：大运立柱（固定位） */
+        .dayun-pillar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-right: 2px solid var(--cinnabar);
+            padding-right: 16px;
+            min-width: 70px;
+        }
+
+        .dayun-index {
+            font-size: 11px;
+            color: var(--cinnabar);
+            border: 1px solid var(--cinnabar);
+            padding: 1px 4px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .dayun-ganzhi {
+            font-size: 36px;
+            line-height: 1.1;
+            font-weight: 900;
+            color: var(--ink);
+            writing-mode: vertical-rl;
+            letter-spacing: 6px;
+        }
+
+        /* 右侧：复合内容区 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 大运头部信息 */
+        .dayun-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .dayun-summary {
+            font-size: 18px;
+            color: var(--cinnabar);
+            font-weight: bold;
+        }
+
+        .dayun-time {
+            font-size: 13px;
+            color: var(--sub-text);
+            font-family: sans-serif;
+        }
+
+        /* 流年展示区：流式排版 */
+        .liunian-flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px 12px;
+        }
+
+        /* 流年单元（不再是表格，而是信息簇） */
+        .liunian-unit {
+            display: flex;
+            flex-direction: column;
+            width: calc(20% - 10px);
+            /* 5列排布 */
+            min-width: 65px;
+            position: relative;
+        }
+
+        /* 时间标签：年份+年龄 */
+        .unit-time {
+            font-size: 10px;
+            color: var(--gold);
+            font-family: sans-serif;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* 干支+十神 组合区 */
+        .unit-main {
+            display: flex;
+            align-items: flex-start;
+            gap: 2px;
+            margin-bottom: 4px;
+        }
+
+        .unit-ganzhi {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--ink);
+        }
+
+        .unit-god-top {
+            font-size: 10px;
+            color: var(--cinnabar);
+            background: rgba(166, 27, 27, 0.05);
+            padding: 0 2px;
+            border-radius: 2px;
+            transform: scale(0.9);
+        }
+
+        /* 藏干十神区（重点微调：垂直小标签） */
+        .unit-hidden {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .hidden-item {
+            font-size: 9px;
+            color: var(--sub-text);
+            display: flex;
+            justify-content: space-between;
+            background: #f0eee8;
+            padding: 0 3px;
+            border-radius: 1px;
+        }
+
+        .hidden-item b {
+            color: var(--ink);
+            font-weight: normal;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="master-tile">
+        <div class="dayun-pillar">
+            <span class="dayun-index">大运四</span>
+            <span class="dayun-ganzhi">甲戌</span>
+        </div>
+
+        <div class="main-content">
+            <div class="dayun-header">
+                <span class="dayun-summary">正财格 <small
+                        style="font-size: 12px; font-weight: normal; color: #666;">(戊乙癸)</small></span>
+                <span class="dayun-time">2054 - 2063<br>58岁 - 68岁</span>
+            </div>
+
+            <div class="liunian-flow">
+                <div class="liunian-unit">
+                    <div class="unit-time">2054 / 58岁</div>
+                    <div class="unit-main">
+                        <span class="unit-ganzhi">甲戌</span>
+                        <span class="unit-god-top">财</span>
+                    </div>
+                    <div class="unit-hidden">
+                        <div class="hidden-item"><b>戊</b>才</div>
+                        <div class="hidden-item"><b>辛</b>伤</div>
+                        <div class="hidden-item"><b>丁</b>劫</div>
+                    </div>
+                </div>
+
+                <div class="liunian-unit">
+                    <div class="unit-time">2055 / 59岁</div>
+                    <div class="unit-main">
+                        <span class="unit-ganzhi">乙亥</span>
+                        <span class="unit-god-top">才</span>
+                    </div>
+                    <div class="unit-hidden">
+                        <div class="hidden-item"><b>壬</b>枭</div>
+                        <div class="hidden-item"><b>甲</b>才</div>
+                    </div>
+                </div>
+
+                <div class="liunian-unit">
+                    <div class="unit-time">2056 / 60岁</div>
+                    <div class="unit-main">
+                        <span class="unit-ganzhi">丙子</span>
+                        <span class="unit-god-top">官</span>
+                    </div>
+                    <div class="unit-hidden">
+                        <div class="hidden-item"><b>癸</b>印</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

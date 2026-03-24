@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>玲珑格栅中式 Widget</title>
+    <style>
+        :root {
+            --wood-dark: #3d2b1f;
+            /* 檀木黑 */
+            --silk-white: rgba(255, 255, 255, 0.9);
+            /* 绢丝白 */
+            --gold-leaf: #c5a059;
+            /* 描金 */
+            --ink-grey: #555;
+            --active-bg: rgba(197, 160, 89, 0.15);
+        }
+
+        body {
+            background-color: #2c2c2c;
+            /* 深色背景更显高级 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: "STKaiti", "KaiTi", serif;
+        }
+
+        /* --- 屏风卡片容器 --- */
+        .screen-card {
+            width: 320px;
+            background: var(--silk-white);
+            border: 6px solid var(--wood-dark);
+            outline: 2px solid var(--gold-leaf);
+            /* 双重边框增加仪式感 */
+            outline-offset: -4px;
+            position: relative;
+            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 装饰角花 */
+        .screen-card::after {
+            content: "卍";
+            /* 传统万字纹装饰感 */
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            color: var(--gold-leaf);
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        /* --- 头部区域 --- */
+        .screen-header {
+            padding: 15px;
+            background: var(--wood-dark);
+            color: var(--gold-leaf);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 2px solid var(--gold-leaf);
+        }
+
+        .screen-header h2 {
+            margin: 5px 0;
+            font-size: 1.2rem;
+            letter-spacing: 4px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-deco {
+            width: 60px;
+            height: 1px;
+            background: var(--gold-leaf);
+            position: relative;
+        }
+
+        .header-deco::before,
+        .header-deco::after {
+            content: "◆";
+            position: absolute;
+            top: -6px;
+            font-size: 8px;
+        }
+
+        .header-deco::before {
+            left: -10px;
+        }
+
+        .header-deco::after {
+            right: -10px;
+        }
+
+        /* --- 列表区域 --- */
+        .screen-body {
+            max-height: 400px;
+            transition: max-height 0.5s ease, opacity 0.5s ease;
+            overflow: hidden;
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0V0zm2 2h36v36H2V2z' fill='%23c5a059' fill-opacity='0.05'/%3E%3C/svg%3E");
+            /* 隐约的格栅纹路 */
+        }
+
+        /* 折叠状态的特殊变换：不仅高度变0，还带有一点旋转 */
+        .screen-card.collapsed .screen-body {
+            max-height: 0;
+            opacity: 0;
+            transform: skewX(2deg);
+        }
+
+        .grid-item {
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .grid-item:last-child {
+            border-bottom: none;
+        }
+
+        .grid-item:hover {
+            background: var(--active-bg);
+            padding-left: 25px;
+            /* 悬停时的位移感 */
+        }
+
+        /* 八卦/阴阳鱼单选框 */
+        .taiji-radio {
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--wood-dark);
+            border-radius: 50%;
+            margin-right: 15px;
+            position: relative;
+            transition: transform 0.4s;
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        input[type="radio"]:checked+.taiji-radio {
+            background: var(--wood-dark);
+            transform: rotate(180deg);
+        }
+
+        input[type="radio"]:checked+.taiji-radio::after {
+            content: "☯";
+            color: var(--gold-leaf);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+        }
+
+        .label-text {
+            color: var(--wood-dark);
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .desc-text {
+            font-size: 0.75rem;
+            color: var(--ink-grey);
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* 推荐标志：竖排小签 */
+        .rec-tag {
+            margin-left: auto;
+            background: var(--gold-leaf);
+            color: #fff;
+            padding: 2px 4px;
+            font-size: 0.7rem;
+            writing-mode: vertical-rl;
+            letter-spacing: 1px;
+            border-radius: 0 0 4px 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="screen-card" id="screenWidget">
+        <div class="screen-header" onclick="toggleScreen()">
+            <div class="header-deco"></div>
+            <h2>交節定法</h2>
+            <div style="font-size: 0.7rem; opacity: 0.8;">( 點擊啟閉 )</div>
+        </div>
+
+        <div class="screen-body">
+            <label class="grid-item">
+                <input type="radio" name="calc" value="1">
+                <div class="taiji-radio"></div>
+                <div>
+                    <span class="label-text">依時辰</span>
+                    <span class="desc-text">傳統十二建除法</span>
+                </div>
+            </label>
+
+            <label class="grid-item">
+                <input type="radio" name="calc" value="2" checked>
+                <div class="taiji-radio"></div>
+                <div>
+                    <span class="label-text">依分鐘</span>
+                    <span class="desc-text">紫金山天文台精算</span>
+                </div>
+                <div class="rec-tag">最準</div>
+            </label>
+
+            <label class="grid-item">
+                <input type="radio" name="calc" value="3">
+                <div class="taiji-radio"></div>
+                <div>
+                    <span class="label-text">依秒時</span>
+                    <span class="desc-text">極致精密釐定</span>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        function toggleScreen() {
+            document.getElementById('screenWidget').classList.toggle('collapsed');
+        }
+    </script>
+</body>
+
+</html>

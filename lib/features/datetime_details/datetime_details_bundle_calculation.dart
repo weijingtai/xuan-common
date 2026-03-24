@@ -1,6 +1,4 @@
 import 'package:common/datamodel/location.dart' as my;
-import 'package:common/models/chinese_date_info.dart';
-import 'package:common/helpers/solar_lunar_datetime_helper.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'calculation_strategy_config.dart';
 import 'input_info_params.dart';
@@ -101,7 +99,6 @@ class DateTimeDetailsBundleCalculation {
     params.validate();
 
     try {
-      // 使用全局运行期策略覆盖配置中的子时策略（开发阶段默认行为）
       config = config.copyWith(ziStrategy: ZiStrategyStore.current);
       // 1. 基础时区处理 - 获取UTC时间和ChineseDateInfo
       final timezoneData = await TimezoneProcessor.process(
@@ -141,6 +138,11 @@ class DateTimeDetailsBundleCalculation {
       // 4. 构建最终对象
       return DateTimeDetailsBundle.internal(
         calculationConfig: config,
+        location: params.location,
+        coordinates: params.coordinates,
+        isDST: tzDateTime.timeZone.isDst,
+        removeDSTDatetime: dstData?.removeDSTDatetime,
+        removeDSTChineseInfo: dstData?.removeDSTChineseInfo,
         meanSolarDatetime: solarTimeData?.meanSolarDatetime,
         meanSolarChineseInfo: solarTimeData?.meanSolarChineseInfo,
         trueSolarDatetime: solarTimeData?.trueSolarDatetime,
@@ -150,7 +152,9 @@ class DateTimeDetailsBundleCalculation {
         utcDatetime: timezoneData.utcDateTime,
         timezoneStr: params.timezoneStr,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Calculation Error Details: $e');
+      print('Stack Trace: $stackTrace');
       throw BirthDateTimeCalculationException(
         '计算出生时间详情时发生错误: ${e.toString()}',
         originalError: e,
@@ -158,20 +162,6 @@ class DateTimeDetailsBundleCalculation {
     }
   }
 
-  /// 构建计算元数据
-  static CalculationMetadata _buildCalculationMetadata(
-    TimezoneProcessResult timezoneData,
-    DSTProcessResult? dstData,
-    SolarTimeProcessResult? solarTimeData,
-  ) {
-    return CalculationMetadata(
-      calculationTime: DateTime.now(),
-      timezoneInfo: timezoneData.getSummary(),
-      dstInfo: dstData?.getSummary() ?? {'isDST': false, 'processed': false},
-      solarTimeInfo: solarTimeData?.getSummary() ?? {'processed': false},
-      version: '1.0.0', // 专业版本
-    );
-  }
 }
 
 /// 计算异常类

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>现代中式大运流年</title>
+    <style>
+        :root {
+            --paper-bg: #f9f6f2;
+            /* 象牙质感 */
+            --ink-black: #1a1a1a;
+            /* 墨色 */
+            --cinnabar: #b22222;
+            /* 朱砂 */
+            --gold: #c5a059;
+            /* 哑金 */
+            --border-light: #e0dcd5;
+        }
+
+        body {
+            background-color: #f0ede5;
+            font-family: "PingFang SC", "Hiragino Sans GB", serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .list-container {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* 第一版卡片结构的重塑 */
+        .list-tile {
+            background: var(--paper-bg);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            /* 减小圆角，更显方正大气 */
+            padding: 16px;
+            display: flex;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+            transition: 0.3s;
+        }
+
+        /* 模拟中式窗棂边框装饰 */
+        .list-tile::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--cinnabar);
+            opacity: 0.8;
+        }
+
+        /* 左侧：序号与核心干支 */
+        .tile-left {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-right: 15px;
+            border-right: 1px solid var(--border-light);
+            min-width: 65px;
+        }
+
+        .index-seal {
+            font-size: 10px;
+            color: var(--cinnabar);
+            border: 1px solid var(--cinnabar);
+            padding: 1px 4px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .gan-zhi {
+            font-size: 26px;
+            font-weight: bold;
+            color: var(--ink-black);
+            font-family: "Kaiti", serif;
+            /* 增加书法感 */
+            line-height: 1.1;
+        }
+
+        /* 中间：十神与藏干 (核心改进点：结构化) */
+        .tile-middle {
+            flex-grow: 1;
+            padding: 0 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .ten-god-main {
+            font-size: 16px;
+            color: var(--cinnabar);
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+
+        .ten-god-main::after {
+            content: "";
+            flex-grow: 1;
+            height: 1px;
+            background: linear-gradient(to right, var(--border-light), transparent);
+            margin-left: 10px;
+        }
+
+        .hidden-stems {
+            display: flex;
+            gap: 8px;
+        }
+
+        .stem-item {
+            font-size: 12px;
+            color: var(--ink-black);
+            background: #eeebe3;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        .stem-item b {
+            color: var(--gold);
+            margin-right: 2px;
+        }
+
+        /* 右侧：时间与点击暗示 */
+        .tile-right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 90px;
+        }
+
+        .year-range {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--ink-black);
+            margin-bottom: 4px;
+        }
+
+        .age-text {
+            font-size: 12px;
+            color: var(--gold);
+        }
+
+        /* 箭头的现代处理 */
+        .chevron {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--border-light);
+            font-size: 18px;
+        }
+
+        /* 当前大运的高亮效果 */
+        .list-tile.active {
+            background-color: #fff;
+            border-color: var(--cinnabar);
+            box-shadow: 0 8px 20px rgba(178, 34, 34, 0.1);
+        }
+
+        .list-tile.active .index-seal {
+            background-color: var(--cinnabar);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="list-container">
+        <div class="list-tile active">
+            <div class="tile-left">
+                <div class="index-seal">大运一</div>
+                <div class="gan-zhi">甲辰</div>
+            </div>
+            <div class="tile-middle">
+                <div class="ten-god-main">正财</div>
+                <div class="hidden-stems">
+                    <span class="stem-item"><b>戊</b>财</span>
+                    <span class="stem-item"><b>乙</b>官</span>
+                    <span class="stem-item"><b>癸</b>印</span>
+                </div>
+            </div>
+            <div class="tile-right">
+                <div class="year-range">2024 - 2033</div>
+                <div class="age-text">28岁 - 38岁</div>
+            </div>
+            <div class="chevron">›</div>
+        </div>
+
+        <div class="list-tile">
+            <div class="tile-left">
+                <div class="index-seal" style="border-color: #aaa; color: #aaa;">大运二</div>
+                <div class="gan-zhi">乙巳</div>
+            </div>
+            <div class="tile-middle">
+                <div class="ten-god-main" style="color: var(--ink-black);">偏财</div>
+                <div class="hidden-stems">
+                    <span class="stem-item"><b>丙</b>食</span>
+                    <span class="stem-item"><b>戊</b>财</span>
+                    <span class="stem-item"><b>庚</b>杀</span>
+                </div>
+            </div>
+            <div class="tile-right">
+                <div class="year-range">2034 - 2043</div>
+                <div class="age-text">38岁 - 48岁</div>
+            </div>
+            <div class="chevron">›</div>
+        </div>
+
+        <div class="list-tile">
+            <div class="tile-left">
+                <div class="index-seal" style="border-color: #aaa; color: #aaa;">大运三</div>
+                <div class="gan-zhi">丙午</div>
+            </div>
+            <div class="tile-middle">
+                <div class="ten-god-main" style="color: var(--ink-black);">正官</div>
+                <div class="hidden-stems">
+                    <span class="stem-item"><b>丁</b>官</span>
+                    <span class="stem-item"><b>己</b>才</span>
+                </div>
+            </div>
+            <div class="tile-right">
+                <div class="year-range">2044 - 2053</div>
+                <div class="age-text">48岁 - 58岁</div>
+            </div>
+            <div class="chevron">›</div>
+        </div>
+    </div>
+
+</body>
+
+</html>

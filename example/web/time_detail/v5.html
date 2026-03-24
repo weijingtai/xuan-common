@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时令天文综合卡片</title>
+    <style>
+        :root {
+            --primary-black: #333333;
+            --secondary-gray: #999999;
+            --accent-red: #eb4d4b;
+            /* 对应红色占位块 */
+            --accent-orange: #f0932b;
+            /* 对应橙色占位块 */
+            --bg-gray: #f2f4f6;
+            --card-bg: #ffffff;
+            --tag-bg: #f0f0f0;
+            --progress-gray: #eeeeee;
+        }
+
+        body {
+            background-color: var(--bg-gray);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            width: 520px;
+            border-radius: 28px;
+            padding: 35px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            color: var(--primary-black);
+        }
+
+        /* 第一行：日期与标准时间 */
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .date-gregorian {
+            font-size: 28px;
+            font-weight: 300;
+            color: var(--secondary-gray);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-std {
+            background: var(--tag-bg);
+            color: var(--secondary-gray);
+            font-size: 14px;
+            padding: 2px 10px;
+            border-radius: 6px;
+        }
+
+        .time-now {
+            font-size: 26px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 第二行：农历干支 */
+        .row-lunar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .lunar-text {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .season-tag {
+            color: #c05b5b;
+            font-size: 18px;
+        }
+
+        .badge-pill {
+            background: #fff1f1;
+            color: #c05b5b;
+            font-size: 14px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        /* 第三行：日月升落占位块 (重点重构) */
+        .row-astro {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .astro-block {
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* 红色占位块：日升落 */
+        .sun-block {
+            background-color: var(--accent-red);
+        }
+
+        /* 橙色占位块：月升落 */
+        .moon-block {
+            background-color: var(--accent-orange);
+        }
+
+        .astro-label {
+            font-size: 13px;
+            opacity: 0.9;
+            font-weight: 400;
+            margin-bottom: 2px;
+        }
+
+        .astro-time {
+            font-size: 18px;
+            letter-spacing: 0.5px;
+        }
+
+        /* 第四行：节气进度条 */
+        .row-progress {
+            margin-bottom: 25px;
+        }
+
+        .progress-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .term-active {
+            color: #c05b5b;
+            font-weight: 600;
+        }
+
+        .term-next {
+            color: var(--secondary-gray);
+        }
+
+        .bar-bg {
+            height: 6px;
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: #c05b5b;
+            width: 45%;
+            border-radius: 3px;
+        }
+
+        /* 第五行：三候物候 */
+        .row-pentads {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            color: var(--secondary-gray);
+            font-size: 15px;
+            margin-bottom: 25px;
+        }
+
+        .pentad-active {
+            color: var(--primary-black);
+            border-bottom: 2px solid #c05b5b;
+            padding-bottom: 2px;
+        }
+
+        /* 第六行：灰色脚注 (城市与经纬度) */
+        .row-footer {
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            font-size: 12px;
+            color: var(--secondary-gray);
+            border: 1px solid #f0f0f0;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-family: monospace;
+        }
+
+        .city-label {
+            font-weight: 600;
+            color: var(--primary-black);
+            margin-right: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <div class="row-header">
+            <div class="date-gregorian">
+                1995年06月13日
+                <span class="badge-std">标准时间</span>
+            </div>
+            <div class="time-now">
+                <span style="opacity:0.3">🕒</span> 01:30
+            </div>
+        </div>
+
+        <div class="row-lunar">
+            <div class="lunar-text">乙亥年 五月十六日 丑时</div>
+            <span class="season-tag">仲夏</span>
+            <span class="badge-pill">午</span>
+        </div>
+
+        <div class="row-astro">
+            <div class="astro-block sun-block">
+                <div>
+                    <div class="astro-label">日出</div>
+                    <div class="astro-time">06:23</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="astro-label">日落</div>
+                    <div class="astro-time">18:22</div>
+                </div>
+            </div>
+            <div class="astro-block moon-block">
+                <div>
+                    <div class="astro-label">月出</div>
+                    <div class="astro-time">05:50</div>
+                </div>
+                <div style="text-align: right;">
+                    <div class="astro-label">月落</div>
+                    <div class="astro-time">16:28</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row-progress">
+            <div class="progress-labels">
+                <span class="term-active">芒种 <small>06/06</small></span>
+                <span class="term-next">夏至 <small>06/22</small></span>
+            </div>
+            <div class="bar-bg">
+                <div class="bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="row-pentads">
+            <span>螳螂生</span>
+            <span style="opacity:0.3">·</span>
+            <span class="pentad-active">鵙始鸣</span>
+            <span style="opacity:0.3">·</span>
+            <span>反舌无声</span>
+        </div>
+
+        <div class="row-footer">
+            <div class="footer-content">
+                <span><span class="city-label">城市</span> 北京市 朝阳区</span>
+                <span><span class="city-label">坐标</span> 116°24'E, 39°54'N</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -84,10 +84,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  mockito: ^5.4.4
   build_runner: ^2.10.5
   drift_dev:  ^2.30.1
   persistence_drift:
-    path: ../persistence_drift
+    git:
+      url: https://github.com/weijingtai/xuan-storage.git
+      path: drift
 #  uses-material-design: true
 #  generator: true
 
@@ -104,9 +107,9 @@ flutter:
       fonts:
         - asset: fonts/NotoSansSC-Regular.ttf
   assets:
-    - ../assets/dataset/
-    - ../assets/dataset/geo/
-    - ../assets/sql/
+    - assets/dataset/
+    - assets/dataset/geo/
+    - assets/sql/
     - assets/colors/zhongguose.pb
     - assets/colors/forbidden_city.pb
     - assets/templates/
@@ -155,3 +158,9 @@ flutter:
     androidX: true
     androidPackage: com.wjthub.common
     iosBundleIdentifier: com.wjthub.common
+
+dependency_overrides:
+  persistence_core:
+    git:
+      url: https://github.com/weijingtai/xuan-storage.git
+      path: core

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极简中式胶囊组件</title>
+    <style>
+        :root {
+            --wood-black: #1a120e;
+            /* 乌木黑 */
+            --gold-leaf: #d4af37;
+            /* 描金 */
+            --paper-white: #faf7f0;
+            /* 宣纸色 */
+            --vermilion: #b22222;
+            /* 朱砂 */
+            --ink-fade: rgba(26, 18, 14, 0.6);
+        }
+
+        body {
+            background-color: #e8e4d9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: "STKaiti", "KaiTi", serif;
+        }
+
+        /* --- 胶囊组件容器 --- */
+        .pillar-widget {
+            width: 340px;
+            background: var(--paper-white);
+            border-radius: 24px;
+            border: 1.5px solid var(--wood-black);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        /* --- 缩小后的 Pillar (胶囊) 状态 --- */
+        .pillar-widget.collapsed {
+            width: 120px;
+            /* 极窄宽度 */
+            border-radius: 40px;
+            background: var(--wood-black);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- 头部交互区 --- */
+        .widget-header {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            min-height: 24px;
+        }
+
+        .pillar-widget.collapsed .widget-header {
+            padding: 8px 12px;
+            justify-content: center;
+        }
+
+        .header-title {
+            font-weight: bold;
+            color: var(--wood-black);
+            font-size: 1rem;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* 收缩后的动态文字样式 */
+        .pillar-widget.collapsed .header-title {
+            color: var(--gold-leaf);
+            font-size: 0.85rem;
+            letter-spacing: 0;
+        }
+
+        /* --- 展开的内容区 --- */
+        .widget-content {
+            padding: 4px 12px 16px 12px;
+            max-height: 400px;
+            opacity: 1;
+            transition: all 0.4s ease;
+        }
+
+        .pillar-widget.collapsed .widget-content {
+            max-height: 0;
+            opacity: 0;
+            padding: 0;
+            pointer-events: none;
+        }
+
+        /* --- 选项卡片设计 --- */
+        .option-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid transparent;
+        }
+
+        /* 隐藏原生 Radio */
+        input[type="radio"] {
+            display: none;
+        }
+
+        /* --- 太极 Icon 设计 --- */
+        .taiji-icon {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.4s;
+            background: #fff;
+            position: relative;
+        }
+
+        /* 选中态：变成旋转的太极 */
+        input[type="radio"]:checked+.option-item .taiji-icon {
+            border-color: var(--wood-black);
+            transform: rotate(180deg);
+            background: linear-gradient(to bottom, var(--wood-black) 50%, var(--paper-white) 50%);
+        }
+
+        /* 太极内部的小点 */
+        input[type="radio"]:checked+.option-item .taiji-icon::before,
+        input[type="radio"]:checked+.option-item .taiji-icon::after {
+            content: "";
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        input[type="radio"]:checked+.option-item .taiji-icon::before {
+            top: 3px;
+            background: var(--paper-white);
+        }
+
+        input[type="radio"]:checked+.option-item .taiji-icon::after {
+            bottom: 3px;
+            background: var(--wood-black);
+        }
+
+        /* 选中后的卡片文字 */
+        input[type="radio"]:checked+.option-item {
+            background: #fff;
+            border-color: var(--gold-leaf);
+            box-shadow: 0 4px 10px rgba(212, 175, 55, 0.1);
+        }
+
+        .option-text b {
+            display: block;
+            font-size: 0.95rem;
+            color: var(--wood-black);
+        }
+
+        .option-text span {
+            font-size: 0.75rem;
+            color: var(--ink-fade);
+        }
+
+        /* 状态标记：推荐 */
+        .badge-rec {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--vermilion);
+            border: 1px solid var(--vermilion);
+            padding: 1px 4px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="pillar-widget" id="widget">
+        <div class="widget-header" onclick="toggleWidget()">
+            <div class="header-title" id="displayTitle">交節方案</div>
+        </div>
+
+        <div class="widget-content">
+            <label>
+                <input type="radio" name="timing" value="時辰" onchange="updateTitle('時辰')">
+                <div class="option-item">
+                    <div class="taiji-icon"></div>
+                    <div class="option-text">
+                        <b>按時辰交節</b>
+                        <span>依傳統子午流注計時</span>
+                    </div>
+                </div>
+            </label>
+
+            <label>
+                <input type="radio" name="timing" value="分鐘" checked onchange="updateTitle('分鐘')">
+                <div class="option-item">
+                    <div class="taiji-icon"></div>
+                    <div class="option-text">
+                        <b>按分鐘交節</b>
+                        <span>現代天文精密演算</span>
+                    </div>
+                    <div class="badge-rec">推崇</div>
+                </div>
+            </label>
+
+            <label>
+                <input type="radio" name="timing" value="秒鐘" onchange="updateTitle('秒鐘')">
+                <div class="option-item">
+                    <div class="taiji-icon"></div>
+                    <div class="option-text">
+                        <b>按秒鐘交節</b>
+                        <span>極致嚴準，釐定彈指</span>
+                    </div>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        let currentSelection = "分鐘";
+
+        function toggleWidget() {
+            const widget = document.getElementById('widget');
+            const title = document.getElementById('displayTitle');
+
+            widget.classList.toggle('collapsed');
+
+            if (widget.classList.contains('collapsed')) {
+                // 缩小状态：显示 交节·[方案]
+                title.innerText = `交節 · ${currentSelection}`;
+            } else {
+                // 展开状态：恢复 标题
+                title.innerText = '交節方案設置';
+            }
+        }
+
+        function updateTitle(val) {
+            currentSelection = val;
+            const widget = document.getElementById('widget');
+            const title = document.getElementById('displayTitle');
+
+            // 如果是在收缩状态下通过某种方式改变了（虽然逻辑上不会），也同步更新
+            if (widget.classList.contains('collapsed')) {
+                title.innerText = `交節 · ${val}`;
+            }
+        }
+
+        // 初始化
+        updateTitle('分鐘');
+    </script>
+</body>
+
+</html>

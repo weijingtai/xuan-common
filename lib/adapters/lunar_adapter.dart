@@ -180,6 +180,8 @@ class JieQiResult {
 
   String getName() => _name;
 
+  DateTime get dateTime => _dateTime;
+
   SolarResult getSolar() => SolarResult(_dateTime);
 }
 
@@ -188,6 +190,8 @@ class SolarResult {
   final DateTime _dateTime;
 
   SolarResult(this._dateTime);
+
+  DateTime get dateTime => _dateTime;
 
   String toYmdHms() {
     return DateFormat("yyyy-MM-dd HH:mm:ss").format(_dateTime);

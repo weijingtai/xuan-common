@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时令信息卡片</title>
+    <style>
+        :root {
+            --primary-black: #333333;
+            --secondary-gray: #999999;
+            --accent-red: #c05b5b;
+            --bg-gray: #f2f4f6;
+            --card-bg: #ffffff;
+            --tag-gray-bg: #f0f0f0;
+            --tag-red-bg: #fff1f1;
+        }
+
+        body {
+            background-color: var(--bg-gray);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* 卡片容器 */
+        .card {
+            background: var(--card-bg);
+            width: 480px;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+            color: var(--primary-black);
+        }
+
+        /* 第一行：公历日期与时间 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .date-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--secondary-gray);
+            font-size: 26px;
+            font-weight: 300;
+        }
+
+        .badge-std {
+            background: var(--tag-gray-bg);
+            color: var(--secondary-gray);
+            font-size: 14px;
+            padding: 2px 10px;
+            border-radius: 6px;
+        }
+
+        .time-box {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .clock-icon {
+            opacity: 0.5;
+            width: 22px;
+            height: 22px;
+        }
+
+        /* 第二行：农历干支与标签 */
+        .main-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .chinese-date {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .tag-season {
+            color: var(--accent-red);
+            font-size: 18px;
+            margin-left: 5px;
+        }
+
+        .badge-red {
+            background: var(--tag-red-bg);
+            color: var(--accent-red);
+            font-size: 14px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #eee;
+            margin-bottom: 25px;
+        }
+
+        /* 进度条区域 */
+        .solar-term-container {
+            margin-bottom: 20px;
+        }
+
+        .solar-term-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .term-start {
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+
+        .term-end {
+            color: var(--secondary-gray);
+        }
+
+        .progress-bg {
+            height: 8px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-red);
+            width: 40%;
+            /* 模拟进度 */
+            border-radius: 4px;
+        }
+
+        /* 底部三候 */
+        .footer-pentads {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            color: var(--secondary-gray);
+            font-size: 15px;
+        }
+
+        .pentad-item {
+            padding-bottom: 2px;
+        }
+
+        .pentad-active {
+            color: var(--primary-black);
+            border-bottom: 2px solid var(--accent-red);
+        }
+
+        .dot {
+            font-size: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <div class="header">
+            <div class="date-box">
+                <span>1995年06月13日</span>
+                <span class="badge-std">标准时间</span>
+            </div>
+            <div class="time-box">
+                <span class="clock-icon">🕒</span>
+                <span>01:30</span>
+            </div>
+        </div>
+
+        <div class="main-info">
+            <div class="chinese-date">乙亥年 五月十六日 丑时</div>
+            <span class="tag-season">仲夏</span>
+            <span class="badge-red">午</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="solar-term-container">
+            <div class="solar-term-labels">
+                <span class="term-start">芒种 <small>06/06</small></span>
+                <span class="term-end">夏至 <small>06/22</small></span>
+            </div>
+            <div class="progress-bg">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="footer-pentads">
+            <span class="pentad-item">螳螂生</span>
+            <span class="dot">·</span>
+            <span class="pentad-item pentad-active">鵙始鸣</span>
+            <span class="dot">·</span>
+            <span class="pentad-item">反舌无声</span>
+        </div>
+    </div>
+
+</body>
+
+</html>

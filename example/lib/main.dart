@@ -6,7 +6,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:common/pages/four_zhu_edit_page.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -16,11 +15,24 @@ import 'package:common/datasource/sync_local_appliers.dart';
 import 'package:persistence_core/persistence_core.dart';
 import 'package:persistence_firebase/persistence_firebase.dart';
 
-import 'dev_yun_liu_table.dart';
+import 'new_seeker_ui_demo.dart';
 import 'firebase_options.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:sweph/sweph.dart' hide kIsWeb;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 初始化时区数据
+  tz.initializeTimeZones();
+
+  // 初始化瑞士星历表 (Sweph)
+  try {
+    await Sweph.init();
+  } catch (e) {
+    debugPrint('Sweph initialization failed: $e');
+  }
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -207,8 +219,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
           useMaterial3: true,
         ),
-        // home: const AuthGate(),
-        home: const DevYunLiuTable(),
+        home: const AuthGate(),
       ),
     );
   }
@@ -232,7 +243,7 @@ class AuthGate extends StatelessWidget {
         final scopeUid = active.activeAppUserId;
         if (scopeUid == null || scopeUid.isEmpty) return const AuthPage();
 
-        return _SyncShell(scopeUid: scopeUid, child: const FourZhuEditPage());
+        return _SyncShell(scopeUid: scopeUid, child: const NewSeekerUiDemo());
       },
     );
   }

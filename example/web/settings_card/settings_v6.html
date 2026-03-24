@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>极简中式 Pillar Widget</title>
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --gold: #d4af37;
+            --paper: #fcfaf2;
+            --vermilion: #b22222;
+            --pillar-h: 36px;
+            /* 收缩后的极窄高度 */
+        }
+
+        body {
+            background-color: #d1ccc0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: "STKaiti", "KaiTi", serif;
+        }
+
+        /* --- 核心容器 --- */
+        .widget-pillar {
+            width: 320px;
+            background: var(--paper);
+            border: 1.5px solid var(--ink-black);
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            /* 对高度、宽度、圆角、背景色进行全量平滑过渡 */
+            transition:
+                width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                border-radius 0.5s ease,
+                background-color 0.4s ease;
+            height: 280px;
+            /* 展开态高度 */
+        }
+
+        /* --- 收缩态 (Capsule Pillar) --- */
+        .widget-pillar.collapsed {
+            width: 140px;
+            /* 宽度大幅减小 */
+            height: var(--pillar-h);
+            /* 高度大幅减小 */
+            border-radius: 20px;
+            /* 保持胶囊圆润感 */
+            background-color: var(--ink-black);
+            border-color: var(--gold);
+            cursor: pointer;
+        }
+
+        /* --- 头部标题栏 --- */
+        .header {
+            height: var(--pillar-h);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 15px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .header-text {
+            color: var(--ink-black);
+            font-weight: bold;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            transition: color 0.4s;
+        }
+
+        .widget-pillar.collapsed .header-text {
+            color: var(--gold);
+            font-size: 0.8rem;
+        }
+
+        /* --- 选项列表 --- */
+        .content {
+            padding: 5px 15px 15px 15px;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .widget-pillar.collapsed .content {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        /* --- 太极 Icon (重点优化) --- */
+        .taiji-box {
+            width: 18px;
+            height: 18px;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            margin-right: 12px;
+            position: relative;
+            transition: all 0.4s;
+        }
+
+        /* 选中态太极样式 */
+        input[type="radio"]:checked+.option .taiji-box {
+            border-color: var(--ink-black);
+            background: linear-gradient(to bottom, var(--ink-black) 50%, #fff 50%);
+            transform: rotate(180deg);
+        }
+
+        /* 阴阳鱼眼 */
+        input[type="radio"]:checked+.option .taiji-box::before,
+        input[type="radio"]:checked+.option .taiji-box::after {
+            content: "";
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        input[type="radio"]:checked+.option .taiji-box::before {
+            top: 2px;
+            background: #fff;
+        }
+
+        input[type="radio"]:checked+.option .taiji-box::after {
+            bottom: 2px;
+            background: var(--ink-black);
+        }
+
+        .option b {
+            font-size: 0.9rem;
+            color: var(--ink-black);
+        }
+
+        /* 胶囊状态下的文本更新 */
+        .pillar-label {
+            display: none;
+        }
+
+        .widget-pillar.collapsed .full-label {
+            display: none;
+        }
+
+        .widget-pillar.collapsed .pillar-label {
+            display: inline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="widget-pillar" id="pillar">
+        <div class="header" onclick="togglePillar()">
+            <span class="header-text">
+                <span class="full-label">交節方案設置</span>
+                <span class="pillar-label" id="capsuleText">交節 · 分鐘</span>
+            </span>
+        </div>
+
+        <div class="content">
+            <label>
+                <input type="radio" name="plan" value="時辰" onchange="sync('時辰')">
+                <div class="option">
+                    <div class="taiji-box"></div>
+                    <b>按時辰交節</b>
+                </div>
+            </label>
+
+            <label>
+                <input type="radio" name="plan" value="分鐘" checked onchange="sync('分鐘')">
+                <div class="option">
+                    <div class="taiji-box"></div>
+                    <b>按分鐘交節</b>
+                </div>
+            </label>
+
+            <label>
+                <input type="radio" name="plan" value="秒鐘" onchange="sync('秒鐘')">
+                <div class="option">
+                    <div class="taiji-box"></div>
+                    <b>按秒鐘交節</b>
+                </div>
+            </label>
+        </div>
+    </div>
+
+    <script>
+        let selectedName = "分鐘";
+
+        function togglePillar() {
+            document.getElementById('pillar').classList.toggle('collapsed');
+        }
+
+        function sync(name) {
+            selectedName = name;
+            document.getElementById('capsuleText').innerText = `交節 · ${name}`;
+
+            // 选中后延迟一小会收缩，增加交互感
+            setTimeout(() => {
+                document.getElementById('pillar').classList.add('collapsed');
+            }, 300);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新中式命理UI</title>
+    <style>
+        :root {
+            --seal-red: #B03030;
+            /* 沉稳的朱砂红 */
+            --ink-black: #333333;
+            /* 墨黑色 */
+            --gold-leaf: #9A8352;
+            /* 哑光金 */
+            --paper-white: #F9F8F6;
+            /* 宣纸白 */
+            --line-color: #E6E2D9;
+            /* 隔断线 */
+        }
+
+        body {
+            background-color: #EFEDE8;
+            font-family: "PingFang SC", "STHeiti", sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .list-view {
+            width: 100%;
+            max-width: 420px;
+            background: var(--paper-white);
+            border: 1px solid var(--line-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 列表项总体布局 */
+        .list-tile {
+            display: flex;
+            align-items: center;
+            padding: 20px 15px;
+            border-bottom: 1px solid var(--line-color);
+            transition: background 0.3s;
+            position: relative;
+        }
+
+        .list-tile:last-child {
+            border-bottom: none;
+        }
+
+        /* 左侧：印章式干支 */
+        .seal-box {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--seal-red);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-right: 18px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .seal-box .gan-zhi {
+            color: var(--seal-red);
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1.1;
+            letter-spacing: 2px;
+        }
+
+        /* 编号：极简处理，不再抢戏 */
+        .index-number {
+            position: absolute;
+            top: -10px;
+            left: -5px;
+            background: var(--seal-red);
+            color: white;
+            font-size: 10px;
+            padding: 0 4px;
+            transform: scale(0.8);
+        }
+
+        /* 中间：核心信息区 */
+        .content-area {
+            flex-grow: 1;
+        }
+
+        .main-row {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 6px;
+        }
+
+        .ten-god {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ink-black);
+            margin-right: 10px;
+        }
+
+        .year-text {
+            font-size: 14px;
+            color: var(--ink-black);
+            font-family: "Times New Roman", serif;
+            letter-spacing: 0.5px;
+        }
+
+        /* 底部：辅助属性区 */
+        .sub-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .attribute {
+            font-size: 12px;
+            color: var(--gold-leaf);
+            display: flex;
+            align-items: center;
+        }
+
+        .attribute span {
+            color: #999;
+            margin-right: 3px;
+        }
+
+        /* 右侧：年龄标签 */
+        .age-tag {
+            text-align: right;
+            border-left: 1px solid var(--line-color);
+            padding-left: 15px;
+            min-width: 60px;
+        }
+
+        .age-value {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--gold-leaf);
+            display: block;
+        }
+
+        .age-label {
+            font-size: 10px;
+            color: #BBB;
+            text-transform: uppercase;
+        }
+
+        /* 当前状态标识 */
+        .current-tag {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 30px 30px 0;
+            border-color: transparent var(--seal-red) transparent transparent;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="list-view">
+        <div class="list-tile">
+            <div class="current-tag"></div>
+            <div class="seal-box">
+                <span class="index-number">01</span>
+                <div class="gan-zhi">甲<br>辰</div>
+            </div>
+            <div class="content-area">
+                <div class="main-row">
+                    <span class="ten-god">正财</span>
+                    <span class="year-text">2024 — 2033</span>
+                </div>
+                <div class="sub-row">
+                    <div class="attribute"><span>戊</span>正财</div>
+                    <div class="attribute"><span>乙</span>正官</div>
+                    <div class="attribute"><span>癸</span>正印</div>
+                </div>
+            </div>
+            <div class="age-tag">
+                <span class="age-value">28-38</span>
+                <span class="age-label">Ages</span>
+            </div>
+        </div>
+
+        <div class="list-tile">
+            <div class="seal-box">
+                <span class="index-number">02</span>
+                <div class="gan-zhi">甲<br>寅</div>
+            </div>
+            <div class="content-area">
+                <div class="main-row">
+                    <span class="ten-god">偏财</span>
+                    <span class="year-text">2034 — 2043</span>
+                </div>
+                <div class="sub-row">
+                    <div class="attribute"><span>甲</span>偏财</div>
+                    <div class="attribute"><span>丙</span>食神</div>
+                    <div class="attribute"><span>戊</span>七杀</div>
+                </div>
+            </div>
+            <div class="age-tag">
+                <span class="age-value">38-48</span>
+                <span class="age-label">Ages</span>
+            </div>
+        </div>
+
+        <div class="list-tile">
+            <div class="seal-box">
+                <span class="index-number">03</span>
+                <div class="gan-zhi">甲<br>子</div>
+            </div>
+            <div class="content-area">
+                <div class="main-row">
+                    <span class="ten-god">伤官</span>
+                    <span class="year-text">2044 — 2053</span>
+                </div>
+                <div class="sub-row">
+                    <div class="attribute"><span>癸</span>正印</div>
+                </div>
+            </div>
+            <div class="age-tag">
+                <span class="age-value">48-58</span>
+                <span class="age-label">Ages</span>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

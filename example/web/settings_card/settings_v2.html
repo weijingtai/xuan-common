@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>中式排盘设置 Widget</title>
+    <style>
+        :root {
+            --paper-bg: #f9f4e8;
+            /* 宣纸色 */
+            --ink-black: #2c2c2c;
+            /* 墨色 */
+            --vermilion: #b22222;
+            /* 朱砂红 */
+            --jade-green: #3a5f5a;
+            /* 黛绿 */
+            --border-color: #d1c7a7;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: #e0d8c3;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: "Microsoft YaHei", "SimSun", serif;
+        }
+
+        /* --- Widget 容器 --- */
+        .widget-card {
+            width: 350px;
+            background: var(--paper-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+        }
+
+        /* 顶部装饰条 (回纹简意) */
+        .widget-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: repeating-linear-gradient(90deg, var(--vermilion), var(--vermilion) 10px, transparent 10px, transparent 15px);
+        }
+
+        /* --- 头部区域 --- */
+        .widget-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(209, 199, 167, 0.5);
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sundial-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--ink-black);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .sundial-icon::after {
+            content: "";
+            position: absolute;
+            width: 2px;
+            height: 8px;
+            background: var(--vermilion);
+            left: 50%;
+            top: 2px;
+            transform-origin: bottom;
+            transform: rotate(45deg);
+        }
+
+        .header-title h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--ink-black);
+            letter-spacing: 2px;
+        }
+
+        .toggle-btn {
+            font-size: 0.8rem;
+            color: var(--vermilion);
+            border: 1px solid var(--vermilion);
+            padding: 2px 8px;
+            border-radius: 2px;
+            transition: 0.3s;
+        }
+
+        /* --- 列表区域 --- */
+        .widget-body {
+            max-height: 500px;
+            /* 展开高度 */
+            transition: max-height 0.6s ease-in-out;
+            overflow: hidden;
+        }
+
+        /* 折叠状态 */
+        .widget-card.collapsed .widget-body {
+            max-height: 0;
+        }
+
+        .option-item {
+            padding: 15px 25px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+            position: relative;
+        }
+
+        .option-item:hover {
+            background: rgba(178, 34, 34, 0.05);
+        }
+
+        /* 自定义单选框 (印章风格) */
+        .radio-custom {
+            width: 18px;
+            height: 18px;
+            border: 1px solid var(--border-color);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        input[type="radio"] {
+            display: none;
+        }
+
+        input[type="radio"]:checked+.radio-custom {
+            border-color: var(--vermilion);
+            background-color: rgba(178, 34, 34, 0.1);
+        }
+
+        input[type="radio"]:checked+.radio-custom::after {
+            content: "定";
+            font-size: 10px;
+            color: var(--vermilion);
+            font-weight: bold;
+        }
+
+        .text-group h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--ink-black);
+            font-weight: 500;
+        }
+
+        .text-group p {
+            margin: 5px 0 0;
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .recommend-tag {
+            color: var(--vermilion);
+            font-size: 0.75rem;
+            margin-left: 8px;
+            font-weight: normal;
+        }
+
+        /* 底部卷轴木条视觉 */
+        .widget-footer {
+            height: 12px;
+            background: linear-gradient(to bottom, var(--paper-bg), #dcd3ba);
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* 动效：展开时像卷轴下落 */
+        .widget-card:not(.collapsed) {
+            animation: paper-drop 0.4s ease-out;
+        }
+
+        @keyframes paper-drop {
+            0% {
+                transform: translateY(-5px);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="widget-card" id="myWidget">
+        <div class="widget-header" onclick="toggleWidget()">
+            <div class="header-title">
+                <div class="sundial-icon"></div>
+                <h2>曆法設置：交節方案</h2>
+            </div>
+            <div class="toggle-btn" id="statusText">收起</div>
+        </div>
+
+        <div class="widget-body">
+            <label class="option-item">
+                <input type="radio" name="timing" value="shichen">
+                <span class="radio-custom"></span>
+                <div class="text-group">
+                    <h3>按時辰交節</h3>
+                    <p>兩小時一段；與子時日界有關。</p>
+                </div>
+            </label>
+
+            <label class="option-item">
+                <input type="radio" name="timing" value="hour">
+                <span class="radio-custom"></span>
+                <div class="text-group">
+                    <h3>按小時交節</h3>
+                    <p>標準鐘點判定，均分十二時。</p>
+                </div>
+            </label>
+
+            <label class="option-item">
+                <input type="radio" name="timing" value="minute" checked>
+                <span class="radio-custom"></span>
+                <div class="text-group">
+                    <h3>按分鐘交節 <span class="recommend-tag">【首選】</span></h3>
+                    <p>依當代曆象精算，釐定至分。</p>
+                </div>
+            </label>
+
+            <label class="option-item">
+                <input type="radio" name="timing" value="second">
+                <span class="radio-custom"></span>
+                <div class="text-group">
+                    <h3>按秒交節</h3>
+                    <p>極致嚴准，精確至彈指之間。</p>
+                </div>
+            </label>
+
+            <div class="widget-footer"></div>
+        </div>
+    </div>
+
+    <script>
+        function toggleWidget() {
+            const widget = document.getElementById('myWidget');
+            const statusText = document.getElementById('statusText');
+
+            widget.classList.toggle('collapsed');
+
+            if (widget.classList.contains('collapsed')) {
+                statusText.innerText = '展開';
+            } else {
+                statusText.innerText = '收起';
+            }
+        }
+    </script>
+</body>
+
+</html>

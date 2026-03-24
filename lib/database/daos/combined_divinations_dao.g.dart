@@ -9,4 +9,21 @@ mixin _$CombinedDivinationsDaoMixin on DatabaseAccessor<AppDatabase> {
   $DivinationsTable get divinations => attachedDatabase.divinations;
   $CombinedDivinationsTable get combinedDivinations =>
       attachedDatabase.combinedDivinations;
+  CombinedDivinationsDaoManager get managers =>
+      CombinedDivinationsDaoManager(this);
+}
+
+class CombinedDivinationsDaoManager {
+  final _$CombinedDivinationsDaoMixin _db;
+  CombinedDivinationsDaoManager(this._db);
+  $$DivinationTypesTableTableManager get divinationTypes =>
+      $$DivinationTypesTableTableManager(
+          _db.attachedDatabase, _db.divinationTypes);
+  $$SeekersTableTableManager get seekers =>
+      $$SeekersTableTableManager(_db.attachedDatabase, _db.seekers);
+  $$DivinationsTableTableManager get divinations =>
+      $$DivinationsTableTableManager(_db.attachedDatabase, _db.divinations);
+  $$CombinedDivinationsTableTableManager get combinedDivinations =>
+      $$CombinedDivinationsTableTableManager(
+          _db.attachedDatabase, _db.combinedDivinations);
 }

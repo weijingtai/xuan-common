@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Celestial Timing Card</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f9;
+            --card-bg: #ffffff;
+            --primary-text: #1a202c;
+            --secondary-text: #718096;
+            --accent-blue: #4a90e2;
+            --accent-purple: #805ad5;
+            --sun-color: #f6ad55;
+            --moon-color: #90cdf4;
+            --border-radius: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* 卡片容器 */
+        .card {
+            background: var(--card-bg);
+            width: 360px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 24px;
+            color: var(--primary-text);
+        }
+
+        /* 顶部标题与日期 */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .title-group h2 {
+            font-size: 18px;
+            margin: 0 0 4px 0;
+            color: var(--primary-text);
+            letter-spacing: 0.5px;
+        }
+
+        .date-main {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .badge-solar {
+            background: #f0f5ff;
+            color: var(--accent-blue);
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #d6e4ff;
+        }
+
+        /* 次要参数区（灰区） */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: var(--secondary-text);
+            margin-bottom: 2px;
+        }
+
+        .info-value {
+            font-size: 13px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        /* 核心数据区（日出/日落） */
+        .results-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timing-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .icon-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+        }
+
+        .sun-bg { background: #fffaf0; color: var(--sun-color); }
+        .moon-bg { background: #f0f9ff; color: var(--moon-color); }
+
+        .timing-content {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .timing-label {
+            font-size: 12px;
+            color: var(--secondary-text);
+        }
+
+        .timing-time {
+            font-size: 16px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 分割线 */
+        .divider {
+            height: 1px;
+            background: #edf2f7;
+            margin: 4px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="card-header">
+        <div class="title-group">
+            <h2>日月出没</h2>
+            <div class="date-main">2026/03/17 06:05 AM</div>
+        </div>
+        <span class="badge-solar">惊蛰</span>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <span class="info-label">真太阳时</span>
+            <span class="info-value">05:50 AM</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">阴历</span>
+            <span class="info-value">丙午年 正月廿九</span>
+        </div>
+        <div class="info-item" style="grid-column: span 2;">
+            <span class="info-label">观测坐标</span>
+            <span class="info-value">116°E24'27, 39°N54'15</span>
+        </div>
+    </div>
+
+    <div class="results-section">
+        <div class="result-row">
+            <div class="timing-box">
+                <div class="icon-circle sun-bg">☀</div>
+                <div class="timing-content">
+                    <span class="timing-label">日出</span>
+                    <span class="timing-time">06:23</span>
+                </div>
+            </div>
+            <div class="timing-box">
+                <div class="icon-circle sun-bg">🌇</div>
+                <div class="timing-content">
+                    <span class="timing-label">日落</span>
+                    <span class="timing-time">18:22</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="result-row">
+            <div class="timing-box">
+                <div class="icon-circle moon-bg">🌙</div>
+                <div class="timing-content">
+                    <span class="timing-label">月出</span>
+                    <span class="timing-time">05:50</span>
+                </div>
+            </div>
+            <div class="timing-box">
+                <div class="icon-circle moon-bg">🌑</div>
+                <div class="timing-content">
+                    <span class="timing-label">月落</span>
+                    <span class="timing-time">16:28</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

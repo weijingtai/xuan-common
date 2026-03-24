@@ -161,12 +161,11 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
             final gridW = (panelW - (innerPad * 2)).clamp(0.0, double.infinity);
             final cellW =
                 (gridW - (gridCrossSpacing * (gridCrossAxisCount - 1))) /
-                gridCrossAxisCount;
+                    gridCrossAxisCount;
             final cellH = (cellW / cellAspectRatio).clamp(0.0, double.infinity);
             final gridH = (cellH * 2) + gridMainSpacing;
 
-            final total =
-                (innerPad * 2) +
+            final total = (innerPad * 2) +
                 topBarH +
                 gapTop +
                 gridH +
@@ -176,8 +175,7 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
           }()
         : 0.0;
 
-    final calendarH =
-        headerH +
+    final calendarH = headerH +
         topGap +
         weekH +
         midGap +
@@ -311,22 +309,20 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                 children: [
                   _buildDaYunTabs(isPhone: isPhone),
                   const SizedBox(height: 12),
-                  Expanded(
-                    child: TabBarView(
-                      controller: _daYunTabController,
-                      physics: const PageScrollPhysics(),
-                      children: List<Widget>.generate(
-                        _daYun.length,
-                        (daYunIndex) => _buildDaYunTable(
-                          daYunIndex: daYunIndex,
-                          monthAxisW: monthAxisW,
-                          headerH: headerH,
-                          cellW: cellW,
-                          cellH: cellH,
-                          isPhone: isPhone,
-                        ),
-                      ),
-                    ),
+                  AnimatedBuilder(
+                    animation: _daYunTabController,
+                    builder: (context, child) {
+                      final index =
+                          _pendingDaYunIndex ?? _daYunTabController.index;
+                      return _buildDaYunTable(
+                        daYunIndex: index,
+                        monthAxisW: monthAxisW,
+                        headerH: headerH,
+                        cellW: cellW,
+                        cellH: cellH,
+                        isPhone: isPhone,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -479,10 +475,10 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                               );
                               final hidden =
                                   <({TianGan gan, EnumTenGods tenGod})>[
-                                    ...hiddenRaw.map(
-                                      (e) => (gan: e.gan, tenGod: e.hiddenGods),
-                                    ),
-                                  ];
+                                ...hiddenRaw.map(
+                                  (e) => (gan: e.gan, tenGod: e.hiddenGods),
+                                ),
+                              ];
                               while (hidden.length < 3) {
                                 hidden.add((
                                   gan: TianGan.JIA,
@@ -583,20 +579,20 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                 width: double.infinity,
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      horizontal: 4,
-                                                      vertical: 5,
-                                                    ),
+                                                  horizontal: 4,
+                                                  vertical: 5,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: selected
                                                       ? cinnabar
                                                       : InkTheme.neutralGray,
                                                   borderRadius:
                                                       const BorderRadius.only(
-                                                        topLeft:
-                                                            Radius.circular(16),
-                                                        topRight:
-                                                            Radius.circular(16),
-                                                      ),
+                                                    topLeft:
+                                                        Radius.circular(16),
+                                                    topRight:
+                                                        Radius.circular(16),
+                                                  ),
                                                   border: Border.all(
                                                     color: Colors.white
                                                         .withAlpha(40),
@@ -644,11 +640,11 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                 child: Padding(
                                                   padding:
                                                       const EdgeInsets.fromLTRB(
-                                                        6,
-                                                        4,
-                                                        6,
-                                                        0,
-                                                      ),
+                                                    6,
+                                                    4,
+                                                    6,
+                                                    0,
+                                                  ),
                                                   child: Align(
                                                     alignment:
                                                         Alignment.topCenter,
@@ -669,8 +665,8 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                                   for (final c
                                                                       in pillar
                                                                           .split(
-                                                                            '',
-                                                                          ))
+                                                                    '',
+                                                                  ))
                                                                     Text(
                                                                       c,
                                                                       style:
@@ -697,9 +693,10 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                                 : 0.5,
                                                             child: Padding(
                                                               padding:
-                                                                  const EdgeInsets.only(
-                                                                    left: 10,
-                                                                  ),
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                left: 10,
+                                                              ),
                                                               child: Column(
                                                                 mainAxisSize:
                                                                     MainAxisSize
@@ -713,28 +710,36 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                                         MainAxisSize
                                                                             .min,
                                                                     children: [
-                                                                      Transform.scale(
+                                                                      Transform
+                                                                          .scale(
                                                                         scale:
                                                                             0.8,
-                                                                        child: Container(
-                                                                          padding: const EdgeInsets.symmetric(
+                                                                        child:
+                                                                            Container(
+                                                                          padding:
+                                                                              const EdgeInsets.symmetric(
                                                                             horizontal:
                                                                                 1,
                                                                             vertical:
                                                                                 0,
                                                                           ),
-                                                                          decoration: BoxDecoration(
-                                                                            border: Border.all(
+                                                                          decoration:
+                                                                              BoxDecoration(
+                                                                            border:
+                                                                                Border.all(
                                                                               color: cinnabar,
                                                                               width: 1,
                                                                             ),
-                                                                            borderRadius: BorderRadius.circular(
+                                                                            borderRadius:
+                                                                                BorderRadius.circular(
                                                                               1,
                                                                             ),
                                                                           ),
-                                                                          child: Text(
+                                                                          child:
+                                                                              Text(
                                                                             '干',
-                                                                            style: TextStyle(
+                                                                            style:
+                                                                                TextStyle(
                                                                               fontSize: 8,
                                                                               height: 1,
                                                                               color: cinnabar,
@@ -764,11 +769,10 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                                   const SizedBox(
                                                                     height: 3,
                                                                   ),
-                                                                  for (
-                                                                    var j = 0;
-                                                                    j < 3;
-                                                                    j++
-                                                                  ) ...[
+                                                                  for (var j =
+                                                                          0;
+                                                                      j < 3;
+                                                                      j++) ...[
                                                                     Row(
                                                                       mainAxisSize:
                                                                           MainAxisSize
@@ -777,7 +781,8 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                                         SizedBox(
                                                                           width:
                                                                               14,
-                                                                          child: Text(
+                                                                          child:
+                                                                              Text(
                                                                             hidden[j].gan.name,
                                                                             style:
                                                                                 stemStyle,
@@ -818,19 +823,19 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                 width: double.infinity,
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      vertical: 6,
-                                                    ),
+                                                  vertical: 6,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: selected
                                                       ? cinnabar
                                                       : InkTheme.neutralGray,
                                                   borderRadius:
                                                       const BorderRadius.only(
-                                                        bottomLeft:
-                                                            Radius.circular(16),
-                                                        bottomRight:
-                                                            Radius.circular(16),
-                                                      ),
+                                                    bottomLeft:
+                                                        Radius.circular(16),
+                                                    bottomRight:
+                                                        Radius.circular(16),
+                                                  ),
                                                   boxShadow: [
                                                     BoxShadow(
                                                       color: Colors.black
@@ -868,7 +873,8 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                                           color: cinnabar,
                                                         )
                                                       : BoxDecoration(
-                                                          gradient: LinearGradient(
+                                                          gradient:
+                                                              LinearGradient(
                                                             begin: Alignment
                                                                 .topLeft,
                                                             end: Alignment
@@ -924,33 +930,27 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
     required double cellH,
     required bool isPhone,
   }) {
-    return ScrollConfiguration(
-      behavior: InkScrollBehavior(),
-      child: SingleChildScrollView(
-        controller: _verticalControllers[daYunIndex],
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildMonthAxis(
-              daYunIndex: daYunIndex,
-              monthAxisW: monthAxisW,
-              headerH: headerH,
-              cellW: cellW,
-              cellH: cellH,
-              isPhone: isPhone,
-            ),
-            Expanded(
-              child: _buildYearArea(
-                daYunIndex: daYunIndex,
-                cellW: cellW,
-                cellH: cellH,
-                headerH: headerH,
-                isPhone: isPhone,
-              ),
-            ),
-          ],
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildMonthAxis(
+          daYunIndex: daYunIndex,
+          monthAxisW: monthAxisW,
+          headerH: headerH,
+          cellW: cellW,
+          cellH: cellH,
+          isPhone: isPhone,
         ),
-      ),
+        Expanded(
+          child: _buildYearArea(
+            daYunIndex: daYunIndex,
+            cellW: cellW,
+            cellH: cellH,
+            headerH: headerH,
+            isPhone: isPhone,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1014,8 +1014,7 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
             curve: Curves.easeOutCubic,
             child: SizedBox(
               width: monthAxisW,
-              height:
-                  _expandedMonthByDaYun[daYunIndex] == m &&
+              height: _expandedMonthByDaYun[daYunIndex] == m &&
                       _expandedYearByDaYun[daYunIndex] != null
                   ? _calendarExpandedRowHeight(
                       yearsWidth: _yearsPerDaYun * cellW,
@@ -1096,13 +1095,11 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                             height: headerH,
                             child: DaYunHeaderCell(
                               year: _yearAt(daYunIndex, i),
-                              age:
-                                  28 +
+                              age: 28 +
                                   (_yearAt(daYunIndex, i) - _yearStartBase),
                               yearGanZhi: _jiaZiOfYear(_yearAt(daYunIndex, i)),
-                              ganGod:
-                                  EnumTenGods.values[(daYunIndex + i) %
-                                      EnumTenGods.values.length],
+                              ganGod: EnumTenGods.values[
+                                  (daYunIndex + i) % EnumTenGods.values.length],
                               hiddenGans: YunLiuHelper.hiddenGansForSeed(
                                 (daYunIndex * 37) + (i * 11),
                               ),
@@ -1155,8 +1152,7 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
     Color? backgroundColor,
     required bool isPhone,
   }) {
-    final isExpanded =
-        _expandedMonthByDaYun[daYunIndex] == monthIndex &&
+    final isExpanded = _expandedMonthByDaYun[daYunIndex] == monthIndex &&
         _expandedYearByDaYun[daYunIndex] == yearIndex;
 
     final year = _yearAt(daYunIndex, yearIndex);
@@ -1427,15 +1423,14 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                 );
                 final cellW =
                     (gridW - (gridCrossSpacing * (gridCrossAxisCount - 1))) /
-                    gridCrossAxisCount;
+                        gridCrossAxisCount;
                 final cellH = (cellW / cellAspectRatio).clamp(
                   0.0,
                   double.infinity,
                 );
                 final gridH = (cellH * 2) + gridMainSpacing;
 
-                final total =
-                    (innerPad * 2) +
+                final total = (innerPad * 2) +
                     topBarH +
                     gapTop +
                     gridH +
@@ -1532,9 +1527,8 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
             boundary = candidates.first;
           }
 
-          final boundaryIndex = boundary == null
-              ? null
-              : indexForTime(boundary.at);
+          final boundaryIndex =
+              boundary == null ? null : indexForTime(boundary.at);
           final boundaryLabel = boundary == null
               ? null
               : '${boundary.jq.name} ${hhmmss(boundary.at)}';
@@ -1624,16 +1618,16 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                                   ),
                                   backgroundColor:
                                       WidgetStateProperty.resolveWith((states) {
-                                        if (states.contains(
-                                          WidgetState.selected,
-                                        )) {
-                                          return YunLiuHelper.getStrategyColor(
-                                            _shiChenZiStrategy,
-                                            isWash: true,
-                                          );
-                                        }
-                                        return Colors.white.withAlpha(170);
-                                      }),
+                                    if (states.contains(
+                                      WidgetState.selected,
+                                    )) {
+                                      return YunLiuHelper.getStrategyColor(
+                                        _shiChenZiStrategy,
+                                        isWash: true,
+                                      );
+                                    }
+                                    return Colors.white.withAlpha(170);
+                                  }),
                                   overlayColor: WidgetStateProperty.resolveWith(
                                     (states) {
                                       if (states.contains(
@@ -1704,11 +1698,11 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                             itemCount: twelve.length,
                             gridDelegate:
                                 const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: gridCrossAxisCount,
-                                  crossAxisSpacing: gridCrossSpacing,
-                                  mainAxisSpacing: gridMainSpacing,
-                                  childAspectRatio: cellAspectRatio,
-                                ),
+                              crossAxisCount: gridCrossAxisCount,
+                              crossAxisSpacing: gridCrossSpacing,
+                              mainAxisSpacing: gridMainSpacing,
+                              childAspectRatio: cellAspectRatio,
+                            ),
                             itemBuilder: (context, i) {
                               final item = twelve[i];
                               return LiuGanZhiMiniCell(
@@ -1823,9 +1817,8 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
                     child: InkWell(
                       onTap: () {
                         final parts = calendarId.split('-');
-                        final daYunIndex = parts.isNotEmpty
-                            ? int.tryParse(parts[0])
-                            : null;
+                        final daYunIndex =
+                            parts.isNotEmpty ? int.tryParse(parts[0]) : null;
                         setState(() {
                           _selectedDateByCalendar.remove(calendarId);
                           if (daYunIndex != null &&
@@ -2054,13 +2047,12 @@ class _InkFiveDimYunLiuTableState extends State<InkFiveDimYunLiuTable>
 
     var monthStr =
         SolarLunarDateTimeHelper.intMonth2ChineseMap[info.lunarMonth] ??
-        '${info.lunarMonth}';
+            '${info.lunarMonth}';
     if (info.lunarMonth == 1) monthStr = '一';
     if (info.lunarMonth == 11) monthStr = '十一';
     if (info.lunarMonth == 12) monthStr = '十二';
 
-    final dayStr =
-        SolarLunarDateTimeHelper.intDay2ChineseMap[info.lunarDay] ??
+    final dayStr = SolarLunarDateTimeHelper.intDay2ChineseMap[info.lunarDay] ??
         '${info.lunarDay}';
 
     final sb = StringBuffer();
