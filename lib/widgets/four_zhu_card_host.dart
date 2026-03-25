@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:persistence_core/persistence_core.dart';
 import 'package:provider/provider.dart';
@@ -29,6 +31,23 @@ import '../pages/four_zhu_edit_page.dart';
 import '../repositories/layout_template_repository_impl.dart';
 import '../themes/editable_four_zhu_card_theme.dart';
 import '../viewmodels/four_zhu_editor_view_model.dart';
+import 'settings_capsules/precision_settings_capsule.dart';
+import 'settings_capsules/shared_settings_components.dart';
+import 'zi_strategy_settings_capsule.dart';
+import 'jieqi_entry_settings_capsule.dart';
+
+enum FourZhuHostDeviceClass { phone, tablet, desktop }
+
+enum FourZhuHostControlsSurface { anchoredPopup, dialog, bottomSheet }
+
+typedef FourZhuHostDeviceClassifier = FourZhuHostDeviceClass Function(
+    BuildContext context);
+
+typedef FourZhuHostControlsSurfaceResolver = FourZhuHostControlsSurface
+    Function(
+  BuildContext context,
+  FourZhuHostDeviceClass deviceClass,
+);
 
 class FourZhuCardHost extends StatefulWidget {
   const FourZhuCardHost({
@@ -40,6 +59,8 @@ class FourZhuCardHost extends StatefulWidget {
     this.showSettingsButton = true,
     this.showThemeSwitcher = true,
     this.showFieldSwitcher = true,
+    this.deviceClassifier,
+    this.controlsSurfaceResolver,
   });
 
   final EightChars eightChars;
@@ -49,13 +70,27 @@ class FourZhuCardHost extends StatefulWidget {
   final bool showSettingsButton;
   final bool showThemeSwitcher;
   final bool showFieldSwitcher;
+  final FourZhuHostDeviceClassifier? deviceClassifier;
+  final FourZhuHostControlsSurfaceResolver? controlsSurfaceResolver;
 
   @override
   State<FourZhuCardHost> createState() => _FourZhuCardHostState();
 }
 
 class _FourZhuCardHostState extends State<FourZhuCardHost> {
+  static const double _phoneBreakpoint = 600;
+  static const double _tabletBreakpoint = 1024;
+  static const CapsuleColorScheme _capsuleColors = CapsuleColorScheme(
+    woodDark: Color(0xFF2A1B15),
+    goldLeaf: Color(0xFFD4AF37),
+    paperLight: Color(0xFFFDFAF2),
+    vermilion: Color(0xFFA62C2B),
+    inkText: Color(0xFF333333),
+  );
+
   FourZhuEditorViewModel? _editorViewModel;
+  AppDatabase? _ownedDatabase;
+  AuthScopeProvider? _authScopeProvider;
   late final ValueNotifier<EditableFourZhuCardTheme> _themeNotifier;
   late final ValueNotifier<CardPayload> _cardPayloadNotifier;
   late final ValueNotifier<EdgeInsets> _paddingNotifier;
@@ -66,9 +101,18 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   List<LayoutTemplate> _templates = const [];
   Set<RowType> _toggleableRows = const <RowType>{};
   Set<RowType> _visibleRows = const <RowType>{};
+  bool _hasInitializedVisibleRows = false;
+  bool _showColumnHeaderRow = true;
+  bool _showRowTitleColumn = true;
+  bool _hasInitializedTitleVisibility = false;
   bool _isInitialized = false;
   bool _isBusy = false;
-  Object? _lastTemplateSyncToken;
+  bool _isDesktopControlsExpanded = false;
+  bool _isHovered = false;
+  Object? _lastTemplateSyncToken = null;
+  final OverlayPortalController _desktopControlsOverlayController =
+      OverlayPortalController();
+  final GlobalKey _desktopControlsAnchorKey = GlobalKey();
 
   @override
   void initState() {
@@ -165,14 +209,17 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
 
   void _ensureEditorViewModel() {
     if (_editorViewModel != null) return;
+    final database = _resolveDatabase();
+    _authScopeProvider ??=
+        _tryRead<AuthScopeProvider>() ?? const _FallbackAuthScopeProvider();
     final localDataSource = LayoutTemplateLocalDataSource(
-      context.read<AppDatabase>(),
+      database,
       outboxStore: _tryRead<OutboxStore>(),
       logger: _tryRead<SyncLogger>(),
     );
     final repository = LayoutTemplateRepositoryImpl(
       localDataSource,
-      authScopeProvider: context.read<AuthScopeProvider>(),
+      authScopeProvider: _authScopeProvider!,
     );
     final marketGateway = _tryRead<MarketGateway>();
     final installMarketTemplateUseCase = marketGateway == null
@@ -180,10 +227,8 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
         : InstallMarketTemplateUseCase(
             marketGateway: marketGateway,
             localDataSource: localDataSource,
-            marketTemplateInstallsDao: MarketTemplateInstallsDao(
-              context.read<AppDatabase>(),
-            ),
-            authScopeProvider: context.read<AuthScopeProvider>(),
+            marketTemplateInstallsDao: MarketTemplateInstallsDao(database),
+            authScopeProvider: _authScopeProvider!,
           );
 
     final vm = FourZhuEditorViewModel(
@@ -192,17 +237,21 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
       saveTemplateUseCase: SaveTemplateUseCase(repository),
       deleteTemplateUseCase: DeleteTemplateUseCase(repository),
       installMarketTemplateUseCase: installMarketTemplateUseCase,
-      cardTemplateMetaDao: CardTemplateMetaDao(context.read<AppDatabase>()),
-      cardTemplateSettingDao: CardTemplateSettingDao(
-        context.read<AppDatabase>(),
-      ),
-      cardTemplateSkillUsageDao: CardTemplateSkillUsageDao(
-        context.read<AppDatabase>(),
-      ),
+      cardTemplateMetaDao: CardTemplateMetaDao(database),
+      cardTemplateSettingDao: CardTemplateSettingDao(database),
+      cardTemplateSkillUsageDao: CardTemplateSkillUsageDao(database),
     );
     vm.addListener(_handleEditorVmChanged);
     _editorViewModel = vm;
     unawaited(_reloadEditorState(reinitialize: true));
+  }
+
+  AppDatabase _resolveDatabase() {
+    final injected = _tryRead<AppDatabase>();
+    if (injected != null) {
+      return injected;
+    }
+    return _ownedDatabase ??= AppDatabase();
   }
 
   T? _tryRead<T>() {
@@ -254,11 +303,16 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     if (vm == null) return;
 
     final template = vm.currentTemplate;
+    final visibleRowsToken = _visibleRows.map((row) => row.name).toList()
+      ..sort();
     final syncToken = Object.hash(
       template?.id,
       widget.eightChars,
       widget.gender,
       vm.templates.length,
+      Object.hashAll(visibleRowsToken),
+      _showColumnHeaderRow,
+      _showRowTitleColumn,
       forceResetVisibleRows,
     );
     if (!forceResetVisibleRows && _lastTemplateSyncToken == syncToken) {
@@ -276,13 +330,12 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     final toggleableRows = FourZhuCardHostResolver.collectToggleableRows(
       template,
     );
-    final nextVisibleRows = forceResetVisibleRows || _visibleRows.isEmpty
+    final nextVisibleRows = forceResetVisibleRows || !_hasInitializedVisibleRows
         ? toggleableRows
         : _visibleRows.intersection(toggleableRows);
     _toggleableRows = toggleableRows;
-    _visibleRows = nextVisibleRows.isEmpty && toggleableRows.isNotEmpty
-        ? toggleableRows
-        : nextVisibleRows;
+    _visibleRows = nextVisibleRows;
+    _hasInitializedVisibleRows = true;
 
     final resolved = FourZhuCardHostResolver.resolve(
       template: template,
@@ -291,7 +344,16 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
       visibleRowsOverride: _visibleRows,
     );
 
-    _themeNotifier.value = resolved.theme;
+    if (forceResetVisibleRows || !_hasInitializedTitleVisibility) {
+      _showColumnHeaderRow = resolved.theme.displayHeaderRow;
+      _showRowTitleColumn = resolved.theme.displayRowTitleColumn;
+      _hasInitializedTitleVisibility = true;
+    }
+
+    _themeNotifier.value = resolved.theme.copyWith(
+      displayHeaderRow: _showColumnHeaderRow,
+      displayRowTitleColumn: _showRowTitleColumn,
+    );
     _paddingNotifier.value = resolved.padding;
     _cardPayloadNotifier.value = resolved.payload;
     _toggleableRows = resolved.toggleableRows;
@@ -299,6 +361,7 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   }
 
   Future<void> _openSettings() async {
+    _setDesktopControlsExpanded(false);
     final templateId = _currentTemplate?.id;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -317,6 +380,159 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     await vm.selectTemplate(templateId, source: 'host_theme_switcher');
   }
 
+  FourZhuHostDeviceClass _classifyDevice(BuildContext context) {
+    final classifier = widget.deviceClassifier;
+    if (classifier != null) {
+      return classifier(context);
+    }
+
+    final mediaQuery = MediaQuery.of(context);
+    final width = mediaQuery.size.width;
+    final shortestSide = mediaQuery.size.shortestSide;
+
+    if (shortestSide < _phoneBreakpoint || width < _phoneBreakpoint) {
+      return FourZhuHostDeviceClass.phone;
+    }
+
+    // Default classification is size-first so web tablets and narrow
+    // desktop-like canvases do not accidentally fall back to desktop popup UX.
+    if (width < _tabletBreakpoint || shortestSide < _tabletBreakpoint) {
+      return FourZhuHostDeviceClass.tablet;
+    }
+
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      return FourZhuHostDeviceClass.tablet;
+    }
+
+    return FourZhuHostDeviceClass.desktop;
+  }
+
+  FourZhuHostControlsSurface _resolveControlsSurface(BuildContext context) {
+    final deviceClass = _classifyDevice(context);
+    final resolver = widget.controlsSurfaceResolver;
+    if (resolver != null) {
+      return resolver(context, deviceClass);
+    }
+
+    switch (deviceClass) {
+      case FourZhuHostDeviceClass.phone:
+        return FourZhuHostControlsSurface.bottomSheet;
+      case FourZhuHostDeviceClass.tablet:
+        return FourZhuHostControlsSurface.dialog;
+      case FourZhuHostDeviceClass.desktop:
+        return FourZhuHostControlsSurface.anchoredPopup;
+    }
+  }
+
+  Future<void> _showControlsSurface() async {
+    final surface = _resolveControlsSurface(context);
+    switch (surface) {
+      case FourZhuHostControlsSurface.anchoredPopup:
+        return;
+      case FourZhuHostControlsSurface.dialog:
+        await _showControlsDialog();
+        return;
+      case FourZhuHostControlsSurface.bottomSheet:
+        await _showControlsBottomSheet();
+        return;
+    }
+  }
+
+  _HostControlsPanel _buildControlsPanel({
+    required String currentTemplateId,
+    VoidCallback? onRequestClose,
+  }) {
+    final themeOptions = FourZhuCardHostResolver.buildThemeOptions(_templates);
+    return _HostControlsPanel(
+      currentTemplateId: currentTemplateId,
+      themeOptions: widget.showThemeSwitcher ? themeOptions : const [],
+      toggleableRows:
+          widget.showFieldSwitcher ? _toggleableRows.toList() : const [],
+      visibleRows: _visibleRows,
+      showColumnHeaderRow: _showColumnHeaderRow,
+      showRowTitleColumn: _showRowTitleColumn,
+      onThemeSelected: (templateId) {
+        onRequestClose?.call();
+        unawaited(_switchTheme(templateId));
+      },
+      onRowToggled: _toggleRow,
+      onToggleHeaderRow: _toggleHeaderRow,
+      onToggleRowTitleColumn: _toggleRowTitleColumn,
+    );
+  }
+
+  void _handleControlsTriggerTap() {
+    final surface = _resolveControlsSurface(context);
+    switch (surface) {
+      case FourZhuHostControlsSurface.anchoredPopup:
+        _setDesktopControlsExpanded(!_isDesktopControlsExpanded);
+        return;
+      case FourZhuHostControlsSurface.dialog:
+      case FourZhuHostControlsSurface.bottomSheet:
+        unawaited(_showControlsSurface());
+        return;
+    }
+  }
+
+  void _setDesktopControlsExpanded(bool isExpanded) {
+    if (_isDesktopControlsExpanded == isExpanded) return;
+    setState(() {
+      _isDesktopControlsExpanded = isExpanded;
+    });
+    if (isExpanded) {
+      _desktopControlsOverlayController.show();
+    } else {
+      _desktopControlsOverlayController.hide();
+    }
+  }
+
+  Future<void> _showControlsDialog() async {
+    final template = _currentTemplate;
+    if (template == null) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 24,
+          ),
+          child: _HostControlsSurface(
+            child: _buildControlsPanel(
+              currentTemplateId: template.id,
+              onRequestClose: () => Navigator.of(dialogContext).pop(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showControlsBottomSheet() async {
+    final template = _currentTemplate;
+    if (template == null) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(12, 12, 12, bottomInset + 12),
+          child: _HostControlsSurface(
+            borderRadius: BorderRadius.circular(28),
+            child: _buildControlsPanel(
+              currentTemplateId: template.id,
+              onRequestClose: () => Navigator.of(sheetContext).pop(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _toggleRow(RowType rowType, bool isSelected) {
     final nextRows = Set<RowType>.from(_visibleRows);
     if (isSelected) {
@@ -324,7 +540,32 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     } else {
       nextRows.remove(rowType);
     }
-    _visibleRows = nextRows;
+    setState(() {
+      _visibleRows = nextRows;
+      _hasInitializedVisibleRows = true;
+    });
+    _syncResolvedState(forceResetVisibleRows: false);
+  }
+
+  void _toggleHeaderRow(bool isSelected) {
+    _themeNotifier.value = _themeNotifier.value.copyWith(
+      displayHeaderRow: isSelected,
+    );
+    setState(() {
+      _showColumnHeaderRow = isSelected;
+      _hasInitializedTitleVisibility = true;
+    });
+    _syncResolvedState(forceResetVisibleRows: false);
+  }
+
+  void _toggleRowTitleColumn(bool isSelected) {
+    _themeNotifier.value = _themeNotifier.value.copyWith(
+      displayRowTitleColumn: isSelected,
+    );
+    setState(() {
+      _showRowTitleColumn = isSelected;
+      _hasInitializedTitleVisibility = true;
+    });
     _syncResolvedState(forceResetVisibleRows: false);
   }
 
@@ -332,6 +573,7 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   void dispose() {
     _editorViewModel?.removeListener(_handleEditorVmChanged);
     _editorViewModel?.dispose();
+    _ownedDatabase?.close();
     _themeNotifier.dispose();
     _cardPayloadNotifier.dispose();
     _paddingNotifier.dispose();
@@ -352,107 +594,650 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     }
 
     final themeOptions = FourZhuCardHostResolver.buildThemeOptions(_templates);
+    final showControls =
+        (widget.showFieldSwitcher && _toggleableRows.isNotEmpty) ||
+            (widget.showThemeSwitcher && themeOptions.length > 1);
+    final controlsSurface = _resolveControlsSurface(context);
+    final useAnchoredDesktopControls = showControls &&
+        controlsSurface == FourZhuHostControlsSurface.anchoredPopup;
+    if (!useAnchoredDesktopControls && _isDesktopControlsExpanded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _setDesktopControlsExpanded(false);
+        }
+      });
+    }
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: EditableFourZhuCardV3(
-            dayGanZhi: widget.eightChars.day,
-            brightnessNotifier: _brightnessNotifier,
-            colorPreviewModeNotifier: _colorPreviewModeNotifier,
-            themeNotifier: _themeNotifier,
-            cardPayloadNotifier: _cardPayloadNotifier,
-            paddingNotifier: _paddingNotifier,
-            rowStrategyMapper:
-                _editorViewModel?.rowStrategyMapper ??
-                const <RowType, RowComputationStrategy>{},
-            pillarStrategyMapper:
-                _editorViewModel?.pillarStrategyMapper ??
-                const <PillarType, PillarComputationStrategy>{},
-            gender: widget.gender,
-            showGrip: false,
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 320),
+        decoration: BoxDecoration(
+          color: _isHovered
+              ? (_brightnessNotifier.value == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.03)
+                  : const Color(0xFFF8FAFC).withValues(alpha: 0.8))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: _isHovered
+                ? (_brightnessNotifier.value == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : const Color(0xFFE2E8F0))
+                : Colors.transparent,
+            width: 1,
+          ),
+          boxShadow: _isHovered
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 15,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : null,
+        ),
+        padding: const EdgeInsets.all(12),
+        child: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              EditableFourZhuCardV3(
+                dayGanZhi: widget.eightChars.day,
+                brightnessNotifier: _brightnessNotifier,
+                colorPreviewModeNotifier: _colorPreviewModeNotifier,
+                themeNotifier: _themeNotifier,
+                cardPayloadNotifier: _cardPayloadNotifier,
+                paddingNotifier: _paddingNotifier,
+                rowStrategyMapper: _editorViewModel?.rowStrategyMapper ??
+                    const <RowType, RowComputationStrategy>{},
+                pillarStrategyMapper: _editorViewModel?.pillarStrategyMapper ??
+                    const <PillarType, PillarComputationStrategy>{},
+                gender: widget.gender,
+                showGrip: false,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const ZiStrategySettingsCapsule(
+                        viewMode: JieQiEntryCapsuleMode.tiny,
+                      ),
+                      const SizedBox(width: 8),
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final double panelWidth = math
+                              .min(
+                                math.max(
+                                  constraints.hasBoundedWidth
+                                      ? constraints.maxWidth
+                                      : MediaQuery.of(context).size.width,
+                                  0,
+                                ),
+                                420.0,
+                              )
+                              .toDouble();
+                          return SizedBox(
+                            height: 32,
+                            child: OverlayPortal(
+                              controller: _desktopControlsOverlayController,
+                              overlayChildBuilder: (overlayContext) {
+                                final renderBox = _desktopControlsAnchorKey
+                                    .currentContext
+                                    ?.findRenderObject() as RenderBox?;
+                                if (renderBox == null) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                final overlaySize =
+                                    MediaQuery.of(overlayContext).size;
+                                final anchorOffset =
+                                    renderBox.localToGlobal(Offset.zero);
+                                final anchorSize = renderBox.size;
+                                const horizontalMargin = 12.0;
+                                final maxLeft = math.max(
+                                  horizontalMargin,
+                                  overlaySize.width -
+                                      panelWidth -
+                                      horizontalMargin,
+                                );
+                                final left = (anchorOffset.dx +
+                                        (anchorSize.width - panelWidth) / 2)
+                                    .clamp(horizontalMargin, maxLeft)
+                                    .toDouble();
+                                final top =
+                                    anchorOffset.dy + anchorSize.height + 12;
+
+                                return SizedBox.expand(
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      GestureDetector(
+                                        behavior: HitTestBehavior.translucent,
+                                        onTap: () =>
+                                            _setDesktopControlsExpanded(false),
+                                        child: const SizedBox.expand(),
+                                      ),
+                                      Positioned(
+                                        left: left,
+                                        top: top,
+                                        child: Material(
+                                          type: MaterialType.transparency,
+                                          child: AnimatedSwitcher(
+                                            duration: const Duration(
+                                                milliseconds: 320),
+                                            switchInCurve: Curves.easeOutCubic,
+                                            switchOutCurve: Curves.easeInCubic,
+                                            transitionBuilder:
+                                                (child, animation) {
+                                              final curved = CurvedAnimation(
+                                                parent: animation,
+                                                curve: Curves.easeInOutCubic,
+                                              );
+                                              return FadeTransition(
+                                                opacity: curved,
+                                                child: SizeTransition(
+                                                  sizeFactor: curved,
+                                                  axisAlignment: -1,
+                                                  child: child,
+                                                ),
+                                              );
+                                            },
+                                            child: useAnchoredDesktopControls &&
+                                                    _isDesktopControlsExpanded
+                                                ? _HostControlsSurface(
+                                                    key: ValueKey<String>(
+                                                      'host-panel-${template.id}',
+                                                    ),
+                                                    width: panelWidth,
+                                                    child: _buildControlsPanel(
+                                                      currentTemplateId:
+                                                          template.id,
+                                                      onRequestClose: () =>
+                                                          _setDesktopControlsExpanded(
+                                                        false,
+                                                      ),
+                                                    ),
+                                                  )
+                                                : const SizedBox.shrink(
+                                                    key: ValueKey<String>(
+                                                      'host-panel-hidden',
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                              child: KeyedSubtree(
+                                key: _desktopControlsAnchorKey,
+                                child: _ThemeDock(
+                                  title: template.name,
+                                  colors: _capsuleColors,
+                                  showSettingsIcon: showControls,
+                                  onTap: showControls
+                                      ? _handleControlsTriggerTap
+                                      : null,
+                                  onSettingsTap: showControls
+                                      ? _handleControlsTriggerTap
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  if (widget.showSettingsButton)
+                    _HostSettingsButton(
+                      onTap: _openSettings,
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
-        if ((widget.showFieldSwitcher && _toggleableRows.isNotEmpty) ||
-            (widget.showThemeSwitcher && themeOptions.length > 1))
-          Positioned(
-            top: -10,
-            left: 20,
-            right: 48,
-            child: _HostControlsBar(
-              currentTemplateId: template.id,
-              themeOptions: widget.showThemeSwitcher ? themeOptions : const [],
-              toggleableRows: widget.showFieldSwitcher
-                  ? _toggleableRows.toList()
-                  : const [],
-              visibleRows: _visibleRows,
-              onThemeSelected: _switchTheme,
-              onRowToggled: _toggleRow,
-            ),
-          ),
-        if (widget.showSettingsButton)
-          Positioned(
-            right: -4,
-            bottom: -4,
-            child: FloatingActionButton.small(
-              heroTag: '${widget.collectionId}:${template.id}:settings',
-              onPressed: _openSettings,
-              child: const Icon(Icons.settings),
-            ),
-          ),
-      ],
+      ),
     );
   }
 }
 
-class _HostControlsBar extends StatelessWidget {
-  const _HostControlsBar({
+class _FallbackAuthScopeProvider implements AuthScopeProvider {
+  const _FallbackAuthScopeProvider();
+
+  @override
+  Future<String> getScopeUid() async => 'four_zhu_card_host_local';
+}
+
+class _ThemeDock extends StatelessWidget {
+  static const double _inlineActionSize = 20;
+
+  const _ThemeDock({
+    required this.title,
+    required this.colors,
+    required this.showSettingsIcon,
+    this.onTap,
+    this.onSettingsTap,
+  });
+
+  final String title;
+  final CapsuleColorScheme colors;
+  final bool showSettingsIcon;
+  final VoidCallback? onTap;
+  final VoidCallback? onSettingsTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0.92),
+            const Color(0xFFF0F1F5).withValues(alpha: 0.88),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: const Color(0xFFD5D7DE).withValues(alpha: 0.9),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.white.withValues(alpha: 0.65),
+            blurRadius: 0,
+            offset: const Offset(0, 1),
+            spreadRadius: -0.2,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Removed empty SizedBox that was causing asymmetry
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 160),
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF3B3D45),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.1,
+                      ),
+                    ),
+                  ),
+                ),
+                if (showSettingsIcon) ...[
+                  const SizedBox(width: 6),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: const Color(0xFFF7F7FA).withValues(alpha: 0.92),
+                      border: Border.all(
+                        color: const Color(0xFFDADCE3).withValues(alpha: 0.9),
+                      ),
+                    ),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: onSettingsTap,
+                      child: const SizedBox(
+                        width: _inlineActionSize,
+                        height: _inlineActionSize,
+                        child: Icon(
+                          Icons.tune_rounded,
+                          color: Color(0xFF616574),
+                          size: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HostSettingsButton extends StatelessWidget {
+  const _HostSettingsButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0.95),
+            const Color(0xFFEDEEF3).withValues(alpha: 0.92),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: const Color(0xFFD5D7DE).withValues(alpha: 0.9),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: const Padding(
+            padding: EdgeInsets.all(8),
+            child: Icon(
+              Icons.settings_rounded,
+              color: Color(0xFF4A4D57),
+              size: 15,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HostControlsSurface extends StatelessWidget {
+  const _HostControlsSurface({
+    super.key,
+    required this.child,
+    this.borderRadius = const BorderRadius.all(Radius.circular(24)),
+    this.width,
+  });
+
+  final Widget child;
+  final BorderRadius borderRadius;
+  final double? width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      elevation: 12,
+      color: _FourZhuCardHostState._capsuleColors.paperLight,
+      shadowColor: Colors.black.withValues(alpha: 0.18),
+      shape: RoundedRectangleBorder(
+        borderRadius: borderRadius,
+        side: BorderSide(
+          color: _FourZhuCardHostState._capsuleColors.woodDark,
+          width: 2,
+        ),
+      ),
+      child: SizedBox(
+        width: width,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 520,
+            maxHeight: 560,
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HostControlsPanel extends StatelessWidget {
+  const _HostControlsPanel({
     required this.currentTemplateId,
     required this.themeOptions,
     required this.toggleableRows,
     required this.visibleRows,
+    required this.showColumnHeaderRow,
+    required this.showRowTitleColumn,
     required this.onThemeSelected,
     required this.onRowToggled,
+    required this.onToggleHeaderRow,
+    required this.onToggleRowTitleColumn,
   });
 
   final String currentTemplateId;
   final List<FourZhuCardThemeOption> themeOptions;
   final List<RowType> toggleableRows;
   final Set<RowType> visibleRows;
+  final bool showColumnHeaderRow;
+  final bool showRowTitleColumn;
   final ValueChanged<String> onThemeSelected;
   final void Function(RowType rowType, bool isSelected) onRowToggled;
+  final ValueChanged<bool> onToggleHeaderRow;
+  final ValueChanged<bool> onToggleRowTitleColumn;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      elevation: 3,
-      borderRadius: BorderRadius.circular(18),
-      color: theme.colorScheme.surface.withValues(alpha: 0.96),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
+    final hasThemeChoices = themeOptions.length > 1;
+    final hasFieldControls = toggleableRows.isNotEmpty;
+
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 520),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _HostControlsSectionHeader(
+            title: '主题',
+            summary: themeOptions
+                    .any((option) => option.templateId == currentTemplateId)
+                ? themeOptions
+                    .firstWhere(
+                      (option) => option.templateId == currentTemplateId,
+                    )
+                    .label
+                : null,
+          ),
+          if (hasThemeChoices) ...[
+            const SizedBox(height: 14),
             for (final option in themeOptions)
-              ChoiceChip(
-                label: Text(option.label),
+              _ThemeOptionCard(
+                title: option.label,
                 selected: option.templateId == currentTemplateId,
-                onSelected: (_) => onThemeSelected(option.templateId),
-              ),
-            for (final rowType in toggleableRows)
-              FilterChip(
-                label: Text(FourZhuCardHostResolver.rowLabelFor(rowType)),
-                selected: visibleRows.contains(rowType),
-                onSelected: (value) => onRowToggled(rowType, value),
+                showLeadingIndicator: false,
+                onTap: () => onThemeSelected(option.templateId),
               ),
           ],
+          const SizedBox(height: 10),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: _FourZhuCardHostState._capsuleColors.woodDark.withValues(
+              alpha: 0.16,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _HostControlsSectionHeader(
+            title: '标题',
+            summary:
+                '${(showColumnHeaderRow ? 1 : 0) + (showRowTitleColumn ? 1 : 0)}/2',
+          ),
+          const SizedBox(height: 14),
+          _ThemeOptionCard(
+            title: '列标题',
+            selected: showColumnHeaderRow,
+            onTap: () => onToggleHeaderRow(!showColumnHeaderRow),
+          ),
+          _ThemeOptionCard(
+            title: '行标题',
+            selected: showRowTitleColumn,
+            onTap: () => onToggleRowTitleColumn(!showRowTitleColumn),
+          ),
+          if (hasFieldControls) ...[
+            const SizedBox(height: 10),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: _FourZhuCardHostState._capsuleColors.woodDark.withValues(
+                alpha: 0.16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _HostControlsSectionHeader(
+              title: '显示',
+              summary: '${visibleRows.length}/${toggleableRows.length}',
+            ),
+            const SizedBox(height: 14),
+            for (final rowType in toggleableRows)
+              _ThemeOptionCard(
+                title: FourZhuCardHostResolver.rowLabelFor(rowType),
+                selected: visibleRows.contains(rowType),
+                onTap: () =>
+                    onRowToggled(rowType, !visibleRows.contains(rowType)),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HostControlsSectionHeader extends StatelessWidget {
+  const _HostControlsSectionHeader({
+    required this.title,
+    this.summary,
+  });
+
+  final String title;
+  final String? summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: _FourZhuCardHostState._capsuleColors.woodDark,
+            fontSize: 16,
+            letterSpacing: 0.5,
+          ),
+        ),
+        if (summary != null && summary!.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Flexible(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _HostSummaryTag(
+                label: summary!,
+                tagColor: _FourZhuCardHostState._capsuleColors.woodDark,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _HostSummaryTag extends StatelessWidget {
+  const _HostSummaryTag({
+    required this.label,
+    required this.tagColor,
+  });
+
+  final String label;
+  final Color tagColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 6,
+        vertical: 2.5,
+      ),
+      decoration: BoxDecoration(
+        color: tagColor.withValues(alpha: 0.12),
+        border: Border.all(
+          color: tagColor.withValues(alpha: 0.5),
+          width: 0.6,
+        ),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: tagColor,
+          fontSize: 11.5,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.4,
+          height: 1.1,
         ),
       ),
+    );
+  }
+}
+
+class _ThemeOptionCard extends StatelessWidget {
+  const _ThemeOptionCard({
+    required this.title,
+    required this.selected,
+    required this.onTap,
+    this.showLeadingIndicator = true,
+  });
+
+  final String title;
+  final bool selected;
+  final VoidCallback onTap;
+  final bool showLeadingIndicator;
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsOptionCard(
+      title: title,
+      subtitle: '',
+      selected: selected,
+      onTap: onTap,
+      showLeadingIndicator: showLeadingIndicator,
+      vermilion: _FourZhuCardHostState._capsuleColors.vermilion,
+      inkText: _FourZhuCardHostState._capsuleColors.inkText,
+      paperLight: _FourZhuCardHostState._capsuleColors.paperLight,
+      woodDark: _FourZhuCardHostState._capsuleColors.woodDark,
+      goldLeaf: _FourZhuCardHostState._capsuleColors.goldLeaf,
     );
   }
 }

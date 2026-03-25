@@ -70,14 +70,22 @@ class LayoutTemplateLocalDataSource implements LocalApplier {
 
     if (!enqueueOutbox) return;
 
+    final store = _outboxStore;
+    if (store == null) {
+      _logger.warn(
+        'layout_template.outbox_skip_no_store',
+        data: <String, Object?>{
+          'templateId': template.id,
+          'collectionId': template.collectionId,
+          'opType': _opTypeUpsert,
+        },
+      );
+      return;
+    }
+
     final resolvedScopeUid = scopeUid;
     if (resolvedScopeUid == null || resolvedScopeUid.isEmpty) {
       throw StateError('scopeUid is required when enqueueOutbox is true');
-    }
-
-    final store = _outboxStore;
-    if (store == null) {
-      throw StateError('OutboxStore is required when enqueueOutbox is true');
     }
 
     final nowUtc = DateTime.now().toUtc();
@@ -147,14 +155,22 @@ class LayoutTemplateLocalDataSource implements LocalApplier {
 
     if (!enqueueOutbox) return;
 
+    final store = _outboxStore;
+    if (store == null) {
+      _logger.warn(
+        'layout_template.outbox_skip_no_store',
+        data: <String, Object?>{
+          'templateId': templateId,
+          'collectionId': collectionId,
+          'opType': _opTypeSoftDelete,
+        },
+      );
+      return;
+    }
+
     final resolvedScopeUid = scopeUid;
     if (resolvedScopeUid == null || resolvedScopeUid.isEmpty) {
       throw StateError('scopeUid is required when enqueueOutbox is true');
-    }
-
-    final store = _outboxStore;
-    if (store == null) {
-      throw StateError('OutboxStore is required when enqueueOutbox is true');
     }
 
     final resolvedPayload = payloadJson;
@@ -230,7 +246,8 @@ class LayoutTemplateLocalDataSource implements LocalApplier {
       return (_db.select(_db.layoutTemplates)
             ..where(
               (t) =>
-                  t.collectionId.equals(collectionId) & t.uuid.equals(templateId),
+                  t.collectionId.equals(collectionId) &
+                  t.uuid.equals(templateId),
             ))
           .getSingleOrNull();
     }
@@ -385,8 +402,8 @@ class LayoutTemplateLocalDataSource implements LocalApplier {
           if (change.opType == _opTypeSoftDelete) {
             final deletedAt =
                 parseUtc(payload['deletedAt']) ?? change.serverTimeUtc?.toUtc();
-            final remoteDeletedAt =
-                deletedAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+            final remoteDeletedAt = deletedAt ??
+                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
             if (localRow == null) {
               outcomes.add(

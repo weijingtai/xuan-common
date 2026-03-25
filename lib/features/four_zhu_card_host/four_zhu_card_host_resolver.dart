@@ -77,8 +77,7 @@ class FourZhuCardHostResolver {
     Set<RowType>? visibleRowsOverride,
   }) {
     final toggleableRows = collectToggleableRows(template);
-    final effectiveVisibleRows =
-        visibleRowsOverride == null || visibleRowsOverride.isEmpty
+    final effectiveVisibleRows = visibleRowsOverride == null
         ? toggleableRows
         : visibleRowsOverride.intersection(toggleableRows);
 
@@ -122,20 +121,19 @@ class FourZhuCardHostResolver {
         currentBorder.enabled != targetEnabled) {
       nextTheme = nextTheme.copyWith(
         card: nextTheme.card.copyWith(
-          border:
-              (currentBorder ??
-                      BoxBorderStyle(
-                        enabled: true,
-                        width: 1,
-                        lightColor: Colors.black,
-                        darkColor: Colors.white,
-                        radius: 0,
-                      ))
-                  .copyWith(
-                    width: cardStyle.dividerThickness,
-                    lightColor: targetColor,
-                    enabled: targetEnabled,
-                  ),
+          border: (currentBorder ??
+                  BoxBorderStyle(
+                    enabled: true,
+                    width: 1,
+                    lightColor: Colors.black,
+                    darkColor: Colors.white,
+                    radius: 0,
+                  ))
+              .copyWith(
+            width: cardStyle.dividerThickness,
+            lightColor: targetColor,
+            enabled: targetEnabled,
+          ),
         ),
       );
     }

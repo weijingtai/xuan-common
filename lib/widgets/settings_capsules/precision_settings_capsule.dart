@@ -121,7 +121,7 @@ class _PrecisionSettingsCapsuleState<T>
   bool get _isTiny => widget.viewMode == CapsuleViewMode.tiny;
   bool get _isTinyCollapsed => _isTiny && !_isHovered;
 
-  double get _triggerRadius => _isTinyCollapsed ? 14 : 25;
+  double get _triggerRadius => _isTinyCollapsed ? 14 : 19;
   double get _triggerWidth => widget.tinyCollapsedWidth;
   // double get _triggerWidth =>
   // _isTinyCollapsed ? widget.tinyCollapsedWidth : widget.collapsedWidth;
@@ -297,7 +297,7 @@ class _PrecisionSettingsCapsuleState<T>
     final double targetExpandedHeight = _cachedPanelHeight;
 
     final double currentHeight =
-        isExpanded ? targetExpandedHeight : (_isTinyCollapsed ? 28 : 50);
+        isExpanded ? targetExpandedHeight : (_isTinyCollapsed ? 28 : 38);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
@@ -313,9 +313,9 @@ class _PrecisionSettingsCapsuleState<T>
         border: Border.all(color: cs.woodDark, width: borderWidth),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isExpanded ? 0.25 : 0.18),
-            blurRadius: isExpanded ? 32 : 12,
-            offset: Offset(0, isExpanded ? 12 : 4),
+            color: Colors.black.withValues(alpha: isExpanded ? 0.25 : 0.15),
+            blurRadius: isExpanded ? 24 : 8,
+            offset: Offset(0, isExpanded ? 8 : 2),
           ),
         ],
       ),
@@ -367,13 +367,13 @@ class _PrecisionSettingsCapsuleState<T>
   // ── 药丸内容 ─────────────────────────────────────────────────
 
   Widget _buildTriggerContent() {
-    final double fixedHeight = _isTinyCollapsed ? 28 : 50;
+    final double fixedHeight = _isTinyCollapsed ? 28 : 38;
     return SizedBox(
       height: fixedHeight,
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: _isTinyCollapsed ? 0 : 14,
-          vertical: _isTinyCollapsed ? 4 : 12,
+          horizontal: _isTinyCollapsed ? 0 : 12,
+          vertical: _isTinyCollapsed ? 4 : 7,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -387,8 +387,8 @@ class _PrecisionSettingsCapsuleState<T>
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: cs.goldLeaf.withValues(alpha: 0.75),
-                    fontSize: 14,
-                    letterSpacing: 0.5,
+                    fontSize: 12.5,
+                    letterSpacing: 0.4,
                   ),
                 ),
               ),

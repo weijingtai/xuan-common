@@ -117,6 +117,23 @@ void main() {
       expect(record.payloadJson, isNotEmpty);
     });
 
+    test(
+      'upsertTemplate preserves local write when outbox store is unavailable',
+      () async {
+        final template = buildTemplate();
+
+        await dataSource.upsertTemplate(
+          template,
+          enqueueOutbox: true,
+          scopeUid: collectionId,
+        );
+
+        final stored = await dataSource.loadTemplates(collectionId);
+        expect(stored, hasLength(1));
+        expect(stored.single.template, equals(template));
+      },
+    );
+
     test('softDeleteTemplate enqueues outbox record when enabled', () async {
       final template = buildTemplate();
       final outbox = _RecordingOutboxStore();
@@ -372,7 +389,8 @@ class _RecordingOutboxStore implements OutboxStore {
     return (() async* {
       yield await backlogCount(scopeUid);
       yield* _controllerFor(scopeUid).stream;
-    })().distinct();
+    })()
+        .distinct();
   }
 
   @override

@@ -17,7 +17,7 @@ class SettingsPrecisionTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tagFontSize = isTinyCollapsed ? 13.0 : (isPillar ? 13.0 : 12.0);
+    final tagFontSize = isTinyCollapsed ? 11.0 : (isPillar ? 11.5 : 10.5);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
       decoration: BoxDecoration(
@@ -28,12 +28,12 @@ class SettingsPrecisionTag extends StatelessWidget {
             color: isTinyCollapsed
                 ? Colors.transparent
                 : tagColor.withValues(alpha: 0.5),
-            width: isTinyCollapsed ? 0 : 0.8),
-        borderRadius: BorderRadius.circular(4),
+            width: isTinyCollapsed ? 0 : 0.6),
+        borderRadius: BorderRadius.circular(3),
       ),
       padding: EdgeInsets.symmetric(
-        horizontal: isTinyCollapsed ? 0 : (isPillar ? 8 : 6),
-        vertical: isTinyCollapsed ? 0 : 3.0,
+        horizontal: isTinyCollapsed ? 0 : (isPillar ? 6 : 5),
+        vertical: isTinyCollapsed ? 0 : 2.0,
       ),
       child: AnimatedDefaultTextStyle(
         duration: const Duration(milliseconds: 400),
@@ -61,6 +61,7 @@ class SettingsOptionCard extends StatelessWidget {
   final Color paperLight;
   final Color woodDark;
   final Color goldLeaf;
+  final bool showLeadingIndicator;
 
   const SettingsOptionCard({
     super.key,
@@ -74,6 +75,7 @@ class SettingsOptionCard extends StatelessWidget {
     required this.paperLight,
     required this.woodDark,
     required this.goldLeaf,
+    this.showLeadingIndicator = true,
   });
 
   /// 方案 A：动态测量高度契约
@@ -133,12 +135,14 @@ class SettingsOptionCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
               child: Row(
                 children: [
-                  TaijiRadio(
-                    selected: selected,
-                    darkColor: selected ? goldLeaf : woodDark,
-                    lightColor: Colors.white,
-                  ),
-                  const SizedBox(width: 12),
+                  if (showLeadingIndicator) ...[
+                    TaijiRadio(
+                      selected: selected,
+                      darkColor: selected ? goldLeaf : woodDark,
+                      lightColor: Colors.white,
+                    ),
+                    const SizedBox(width: 12),
+                  ],
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,18 +150,20 @@ class SettingsOptionCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            SizedBox(
-                              height: 20, // 固定标题高度
-                              child: Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textScaler: TextScaler.noScaling,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: inkText,
-                                  height: 1.0,
+                            Expanded(
+                              child: SizedBox(
+                                height: 20, // 固定标题高度
+                                child: Text(
+                                  title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textScaler: TextScaler.noScaling,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: inkText,
+                                    height: 1.0,
+                                  ),
                                 ),
                               ),
                             ),

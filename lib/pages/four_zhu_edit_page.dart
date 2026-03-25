@@ -26,7 +26,7 @@ import '../widgets/four_zhu_card_editor_page/editor_workspace.dart';
 
 const _defaultCollectionId = 'four_zhu_templates';
 
-class FourZhuEditPage extends StatelessWidget {
+class FourZhuEditPage extends StatefulWidget {
   const FourZhuEditPage({
     super.key,
     this.collectionId = _defaultCollectionId,
@@ -37,38 +37,56 @@ class FourZhuEditPage extends StatelessWidget {
   final String? initialTemplateId;
 
   @override
+  State<FourZhuEditPage> createState() => _FourZhuEditPageState();
+}
+
+class _FourZhuEditPageState extends State<FourZhuEditPage> {
+  AppDatabase? _ownedDatabase;
+  AuthScopeProvider? _authScopeProvider;
+
+  AppDatabase _resolveDatabase() {
+    try {
+      return context.read<AppDatabase>();
+    } catch (_) {
+      return _ownedDatabase ??= AppDatabase();
+    }
+  }
+
+  T? _tryRead<T>() {
+    try {
+      return context.read<T>();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ownedDatabase?.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final database = _resolveDatabase();
+    _authScopeProvider ??=
+        _tryRead<AuthScopeProvider>() ?? const _FallbackAuthScopeProvider();
+
     return MultiProvider(
       providers: [
         Provider<LayoutTemplateLocalDataSource>(
-          create: (ctx) {
-            OutboxStore? outboxStore;
-            try {
-              outboxStore = ctx.read<OutboxStore>();
-            } catch (_) {
-              outboxStore = null;
-            }
-
-            SyncLogger? logger;
-            try {
-              logger = ctx.read<SyncLogger>();
-            } catch (_) {
-              logger = null;
-            }
-
-            return LayoutTemplateLocalDataSource(
-              ctx.read<AppDatabase>(),
-              outboxStore: outboxStore,
-              logger: logger,
-            );
-          },
+          create: (_) => LayoutTemplateLocalDataSource(
+            database,
+            outboxStore: _tryRead<OutboxStore>(),
+            logger: _tryRead<SyncLogger>(),
+          ),
         ),
         ChangeNotifierProvider<FourZhuEditorViewModel>(
           create: (ctx) {
             final localDataSource = ctx.read<LayoutTemplateLocalDataSource>();
             final repository = LayoutTemplateRepositoryImpl(
               localDataSource,
-              authScopeProvider: ctx.read<AuthScopeProvider>(),
+              authScopeProvider: _authScopeProvider!,
             );
 
             MarketGateway? marketGateway;
@@ -84,9 +102,9 @@ class FourZhuEditPage extends StatelessWidget {
                     marketGateway: marketGateway,
                     localDataSource: localDataSource,
                     marketTemplateInstallsDao: MarketTemplateInstallsDao(
-                      ctx.read<AppDatabase>(),
+                      database,
                     ),
-                    authScopeProvider: ctx.read<AuthScopeProvider>(),
+                    authScopeProvider: _authScopeProvider!,
                   );
 
             return FourZhuEditorViewModel(
@@ -95,23 +113,26 @@ class FourZhuEditPage extends StatelessWidget {
               saveTemplateUseCase: SaveTemplateUseCase(repository),
               deleteTemplateUseCase: DeleteTemplateUseCase(repository),
               installMarketTemplateUseCase: installMarketTemplateUseCase,
-              cardTemplateMetaDao: CardTemplateMetaDao(ctx.read<AppDatabase>()),
-              cardTemplateSettingDao: CardTemplateSettingDao(
-                ctx.read<AppDatabase>(),
-              ),
-              cardTemplateSkillUsageDao: CardTemplateSkillUsageDao(
-                ctx.read<AppDatabase>(),
-              ),
+              cardTemplateMetaDao: CardTemplateMetaDao(database),
+              cardTemplateSettingDao: CardTemplateSettingDao(database),
+              cardTemplateSkillUsageDao: CardTemplateSkillUsageDao(database),
             )..initialize(
-              collectionId: collectionId,
-              initialTemplateId: initialTemplateId,
-            );
+                collectionId: widget.collectionId,
+                initialTemplateId: widget.initialTemplateId,
+              );
           },
         ),
       ],
       child: const _FourZhuEditView(),
     );
   }
+}
+
+class _FallbackAuthScopeProvider implements AuthScopeProvider {
+  const _FallbackAuthScopeProvider();
+
+  @override
+  Future<String> getScopeUid() async => 'four_zhu_edit_page_local';
 }
 
 class _FourZhuEditView extends StatefulWidget {
