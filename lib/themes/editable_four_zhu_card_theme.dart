@@ -12,6 +12,7 @@ import '../features/four_zhu_card/widgets/editable_fourzhu_card/models/cell_styl
 
 part 'editable_four_zhu_card_theme.g.dart';
 
+/// Shared Four Zhu card theme/model source retained during bridge extraction.
 /// EditableCardThemeBuilder
 /// 负责从 EditableFourZhuCardTheme 构建各个 Section 的工具类
 class EditableCardThemeBuilder {
