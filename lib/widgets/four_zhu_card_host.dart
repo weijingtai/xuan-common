@@ -30,7 +30,6 @@ import '../features/shared_card_template/market/market_gateway.dart';
 import '../models/eight_chars.dart';
 import '../models/drag_payloads.dart';
 import '../models/layout_template.dart';
-import '../models/text_style_config.dart';
 import '../themes/editable_four_zhu_card_theme.dart';
 import 'settings_capsules/precision_settings_capsule.dart';
 import 'settings_capsules/shared_settings_components.dart';
@@ -101,7 +100,6 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
       _cardPayloadBridgeNotifier;
   late final ValueNotifier<EdgeInsets> _paddingNotifier;
   late final ValueNotifier<Brightness> _brightnessNotifier;
-  late final ValueNotifier<ColorPreviewMode> _colorPreviewModeNotifier;
   late final ValueNotifier<card_color_mode.TextColorMode>
       _cardColorPreviewModeNotifier;
 
@@ -133,6 +131,7 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     _cardThemeNotifier = ValueNotifier(
       FourZhuCardCompat.toCardTheme(_themeNotifier.value),
     );
+    _themeNotifier.addListener(_syncCardThemeBridge);
     _cardPayloadNotifier = ValueNotifier(
       FourZhuCardHostResolver.resolve(
         template: LayoutTemplate(
@@ -197,13 +196,11 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     _cardPayloadBridgeNotifier = ValueNotifier(
       FourZhuCardCompat.toCardPayload(_cardPayloadNotifier.value),
     );
+    _cardPayloadNotifier.addListener(_syncCardPayloadBridge);
     _paddingNotifier = ValueNotifier(const EdgeInsets.all(12));
     _brightnessNotifier = ValueNotifier(Brightness.light);
-    _colorPreviewModeNotifier = ValueNotifier(ColorPreviewMode.colorful);
     _cardColorPreviewModeNotifier = ValueNotifier(
-      FourZhuCardCompat.toCardColorPreviewMode(
-        _colorPreviewModeNotifier.value,
-      ),
+      card_color_mode.TextColorMode.colorful,
     );
   }
 
@@ -211,10 +208,19 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _brightnessNotifier.value = Theme.of(context).brightness;
-    _cardColorPreviewModeNotifier.value = FourZhuCardCompat.toCardColorPreviewMode(
-      _colorPreviewModeNotifier.value,
-    );
     _ensureHostRuntime();
+  }
+
+  void _syncCardThemeBridge() {
+    _cardThemeNotifier.value = FourZhuCardCompat.toCardTheme(
+      _themeNotifier.value,
+    );
+  }
+
+  void _syncCardPayloadBridge() {
+    _cardPayloadBridgeNotifier.value = FourZhuCardCompat.toCardPayload(
+      _cardPayloadNotifier.value,
+    );
   }
 
   @override
@@ -364,14 +370,8 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
       displayHeaderRow: _showColumnHeaderRow,
       displayRowTitleColumn: _showRowTitleColumn,
     );
-    _cardThemeNotifier.value = FourZhuCardCompat.toCardTheme(
-      _themeNotifier.value,
-    );
     _paddingNotifier.value = resolved.padding;
     _cardPayloadNotifier.value = resolved.payload;
-    _cardPayloadBridgeNotifier.value = FourZhuCardCompat.toCardPayload(
-      _cardPayloadNotifier.value,
-    );
     _toggleableRows = resolved.toggleableRows;
     setState(() {});
   }
@@ -566,9 +566,6 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     _themeNotifier.value = _themeNotifier.value.copyWith(
       displayHeaderRow: isSelected,
     );
-    _cardThemeNotifier.value = FourZhuCardCompat.toCardTheme(
-      _themeNotifier.value,
-    );
     setState(() {
       _showColumnHeaderRow = isSelected;
       _hasInitializedTitleVisibility = true;
@@ -579,9 +576,6 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   void _toggleRowTitleColumn(bool isSelected) {
     _themeNotifier.value = _themeNotifier.value.copyWith(
       displayRowTitleColumn: isSelected,
-    );
-    _cardThemeNotifier.value = FourZhuCardCompat.toCardTheme(
-      _themeNotifier.value,
     );
     setState(() {
       _showRowTitleColumn = isSelected;
@@ -595,13 +589,14 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     _hostRuntime?.removeListener(_handleEditorVmChanged);
     _hostRuntime?.dispose();
     _ownedDatabase?.close();
+    _themeNotifier.removeListener(_syncCardThemeBridge);
+    _cardPayloadNotifier.removeListener(_syncCardPayloadBridge);
     _themeNotifier.dispose();
     _cardPayloadNotifier.dispose();
     _cardThemeNotifier.dispose();
     _cardPayloadBridgeNotifier.dispose();
     _paddingNotifier.dispose();
     _brightnessNotifier.dispose();
-    _colorPreviewModeNotifier.dispose();
     _cardColorPreviewModeNotifier.dispose();
     super.dispose();
   }
