@@ -1,7 +1,6 @@
 import 'package:xuan_four_zhu_card/enums/enum_gender.dart' as card_gender;
 import 'package:xuan_four_zhu_card/enums/enum_jia_zi.dart' as card_jiazi;
-import 'package:xuan_four_zhu_card/enums/layout_template_enums.dart'
-    as card_layout;
+import 'package:xuan_four_zhu_card/enums.dart' as card_enums;
 import 'package:xuan_four_zhu_card/models/pillar_content.dart' as card_pillar;
 import 'package:xuan_four_zhu_card/models/row_strategy.dart' as card_strategy;
 import 'package:xuan_four_zhu_host/xuan_four_zhu_host.dart' as host_pkg;
@@ -26,11 +25,11 @@ class CommonFourZhuHostRuntime implements host_pkg.FourZhuHostRuntime {
   LayoutTemplate? get currentTemplate => viewModel.currentTemplate;
 
   @override
-  Map<card_layout.RowType, card_strategy.RowComputationStrategy>
+  Map<card_enums.RowType, card_strategy.RowComputationStrategy>
       get rowStrategyMapper => _adaptRowStrategyMapper(viewModel.rowStrategyMapper);
 
   @override
-  Map<card_layout.PillarType, card_strategy.PillarComputationStrategy>
+  Map<card_enums.PillarType, card_strategy.PillarComputationStrategy>
       get pillarStrategyMapper =>
           _adaptPillarStrategyMapper(viewModel.pillarStrategyMapper);
 
@@ -67,25 +66,25 @@ class CommonFourZhuHostRuntime implements host_pkg.FourZhuHostRuntime {
   void dispose() => viewModel.dispose();
 }
 
-Map<card_layout.RowType, card_strategy.RowComputationStrategy>
+Map<card_enums.RowType, card_strategy.RowComputationStrategy>
     _adaptRowStrategyMapper(
   Map<RowType, RowComputationStrategy> source,
 ) {
   return source.map(
     (key, value) => MapEntry(
-      card_layout.RowType.values.byName(key.name),
+      card_enums.RowType.values.byName(key.name),
       _CommonToCardRowStrategyAdapter(value),
     ),
   );
 }
 
-Map<card_layout.PillarType, card_strategy.PillarComputationStrategy>
+Map<card_enums.PillarType, card_strategy.PillarComputationStrategy>
     _adaptPillarStrategyMapper(
   Map<PillarType, PillarComputationStrategy> source,
 ) {
   return source.map(
     (key, value) => MapEntry(
-      card_layout.PillarType.values.byName(key.name),
+      card_enums.PillarType.values.byName(key.name),
       _CommonToCardPillarStrategyAdapter(value),
     ),
   );
@@ -98,8 +97,8 @@ class _CommonToCardRowStrategyAdapter
   final RowComputationStrategy delegate;
 
   @override
-  card_layout.RowType get rowType =>
-      card_layout.RowType.values.byName(delegate.rowType.name);
+  card_enums.RowType get rowType =>
+      card_enums.RowType.values.byName(delegate.rowType.name);
 
   @override
   String get defaultLabel => delegate.defaultLabel;
@@ -119,7 +118,7 @@ class _CommonToCardRowStrategyAdapter
       ),
     );
     return card_strategy.RowComputationResult(
-      rowType: card_layout.RowType.values.byName(result.rowType.name),
+      rowType: card_enums.RowType.values.byName(result.rowType.name),
       rowLabel: result.rowLabel,
       perPillarValues: result.perPillarValues,
     );
@@ -146,8 +145,8 @@ class _CommonToCardPillarStrategyAdapter
   final PillarComputationStrategy delegate;
 
   @override
-  card_layout.PillarType get pillarType =>
-      card_layout.PillarType.values.byName(delegate.pillarType.name);
+  card_enums.PillarType get pillarType =>
+      card_enums.PillarType.values.byName(delegate.pillarType.name);
 
   @override
   String get defaultLabel => delegate.defaultLabel;
@@ -168,11 +167,11 @@ class _CommonToCardPillarStrategyAdapter
       ),
     );
     return card_strategy.PillarComputationResult(
-      pillarType: card_layout.PillarType.values.byName(result.pillarType.name),
+      pillarType: card_enums.PillarType.values.byName(result.pillarType.name),
       pillarLabel: result.pillarLabel,
       perRowValues: result.perRowValues.map(
         (key, value) => MapEntry(
-          card_layout.RowType.values.byName(key.name),
+          card_enums.RowType.values.byName(key.name),
           value,
         ),
       ),
@@ -181,7 +180,7 @@ class _CommonToCardPillarStrategyAdapter
 
   @override
   String? computeSingleValue(
-    card_layout.RowType rowType,
+    card_enums.RowType rowType,
     card_jiazi.JiaZi pillarJiaZi,
     card_jiazi.JiaZi dayJiaZi,
     card_gender.Gender gender, {

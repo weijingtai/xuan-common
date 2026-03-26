@@ -19,20 +19,21 @@ import '../domain/usecases/layout_templates/get_all_templates_use_case.dart';
 import '../domain/usecases/layout_templates/get_template_by_id_use_case.dart';
 import '../domain/usecases/layout_templates/save_template_use_case.dart';
 import '../enums/enum_gender.dart';
-import '../enums/layout_template_enums.dart';
+import '../enums/layout_template_enums.dart' as common_layout;
 import '../features/four_zhu_card/widgets/editable_fourzhu_card/editable_fourzhu_card_impl.dart';
+import '../features/four_zhu_card_host/common_four_zhu_host_editor_launcher.dart';
+import '../features/four_zhu_card_host/common_four_zhu_host_runtime.dart';
 import '../features/four_zhu_card_host/four_zhu_card_host_resolver.dart';
 import '../features/shared_card_template/market/market_gateway.dart';
 import '../features/shared_card_template/usecase/install_market_template_usecase.dart';
 import '../models/eight_chars.dart';
 import '../models/drag_payloads.dart';
 import '../models/layout_template.dart';
-import '../models/row_strategy.dart';
 import '../models/text_style_config.dart';
-import '../pages/four_zhu_edit_page.dart';
 import '../repositories/layout_template_repository_impl.dart';
 import '../themes/editable_four_zhu_card_theme.dart';
 import '../viewmodels/four_zhu_editor_view_model.dart';
+import '../models/row_strategy.dart';
 import 'settings_capsules/precision_settings_capsule.dart';
 import 'settings_capsules/shared_settings_components.dart';
 import 'zi_strategy_settings_capsule.dart';
@@ -91,6 +92,8 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   );
 
   FourZhuEditorViewModel? _editorViewModel;
+  CommonFourZhuHostRuntime? _hostRuntime;
+  CommonFourZhuHostEditorLauncher? _editorLauncher;
   AppDatabase? _ownedDatabase;
   AuthScopeProvider? _authScopeProvider;
   late final ValueNotifier<EditableFourZhuCardTheme> _themeNotifier;
@@ -101,8 +104,10 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
 
   LayoutTemplate? _currentTemplate;
   List<LayoutTemplate> _templates = const [];
-  Set<RowType> _toggleableRows = const <RowType>{};
-  Set<RowType> _visibleRows = const <RowType>{};
+  Set<common_layout.RowType> _toggleableRows =
+      const <common_layout.RowType>{};
+  Set<common_layout.RowType> _visibleRows =
+      const <common_layout.RowType>{};
   bool _hasInitializedVisibleRows = false;
   bool _showColumnHeaderRow = true;
   bool _showRowTitleColumn = true;
@@ -192,7 +197,7 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _brightnessNotifier.value = Theme.of(context).brightness;
-    _ensureEditorViewModel();
+    _ensureHostRuntime();
   }
 
   @override
@@ -210,8 +215,11 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     }
   }
 
-  void _ensureEditorViewModel() {
-    if (_editorViewModel != null) return;
+  void _ensureHostRuntime() {
+    if (_hostRuntime != null) {
+      _editorLauncher ??= CommonFourZhuHostEditorLauncher(context);
+      return;
+    }
     final database = _resolveDatabase();
     _authScopeProvider ??=
         _tryRead<AuthScopeProvider>() ?? const _FallbackAuthScopeProvider();
@@ -244,8 +252,11 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
       cardTemplateSettingDao: CardTemplateSettingDao(database),
       cardTemplateSkillUsageDao: CardTemplateSkillUsageDao(database),
     );
-    vm.addListener(_handleEditorVmChanged);
     _editorViewModel = vm;
+    final runtime = CommonFourZhuHostRuntime(vm);
+    runtime.addListener(_handleEditorVmChanged);
+    _hostRuntime = runtime;
+    _editorLauncher ??= CommonFourZhuHostEditorLauncher(context);
     unawaited(_reloadEditorState(reinitialize: true));
   }
 
@@ -266,21 +277,21 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   }
 
   Future<void> _reloadEditorState({required bool reinitialize}) async {
-    final vm = _editorViewModel;
-    if (vm == null || _isBusy) return;
+    final runtime = _hostRuntime;
+    if (runtime == null || _isBusy) return;
     _isBusy = true;
     try {
       if (reinitialize) {
-        await vm.initialize(
+        await runtime.initialize(
           collectionId: widget.collectionId,
           initialTemplateId: widget.initialTemplateId,
         );
       } else {
-        await vm.refreshTemplates();
+        await runtime.refresh();
         if (widget.initialTemplateId != null &&
-            vm.currentTemplate?.id != widget.initialTemplateId &&
-            vm.templates.any((item) => item.id == widget.initialTemplateId)) {
-          await vm.selectTemplate(
+            runtime.currentTemplate?.id != widget.initialTemplateId &&
+            runtime.templates.any((item) => item.id == widget.initialTemplateId)) {
+          await runtime.selectTemplate(
             widget.initialTemplateId!,
             source: 'host_refresh',
           );
@@ -302,17 +313,17 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   }
 
   void _syncResolvedState({required bool forceResetVisibleRows}) {
-    final vm = _editorViewModel;
-    if (vm == null) return;
+    final runtime = _hostRuntime;
+    if (runtime == null) return;
 
-    final template = vm.currentTemplate;
+    final template = runtime.currentTemplate;
     final visibleRowsToken = _visibleRows.map((row) => row.name).toList()
       ..sort();
     final syncToken = Object.hash(
       template?.id,
       widget.eightChars,
       widget.gender,
-      vm.templates.length,
+      runtime.templates.length,
       Object.hashAll(visibleRowsToken),
       _showColumnHeaderRow,
       _showRowTitleColumn,
@@ -323,7 +334,7 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     }
     _lastTemplateSyncToken = syncToken;
 
-    _templates = vm.templates;
+    _templates = runtime.templates;
     _currentTemplate = template;
     if (template == null) {
       setState(() {});
@@ -366,21 +377,20 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   Future<void> _openSettings() async {
     _setDesktopControlsExpanded(false);
     final templateId = _currentTemplate?.id;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => FourZhuEditPage(
-          collectionId: widget.collectionId,
-          initialTemplateId: templateId,
-        ),
-      ),
+    await _editorLauncher?.openEditor(
+      collectionId: widget.collectionId,
+      initialTemplateId: templateId,
     );
     await _reloadEditorState(reinitialize: false);
   }
 
   Future<void> _switchTheme(String templateId) async {
-    final vm = _editorViewModel;
-    if (vm == null || _currentTemplate?.id == templateId) return;
-    await vm.selectTemplate(templateId, source: 'host_theme_switcher');
+    final runtime = _hostRuntime;
+    if (runtime == null || _currentTemplate?.id == templateId) return;
+    await runtime.selectTemplate(
+      templateId,
+      source: 'host_theme_switcher',
+    );
   }
 
   FourZhuHostDeviceClass _classifyDevice(BuildContext context) {
@@ -536,8 +546,8 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     );
   }
 
-  void _toggleRow(RowType rowType, bool isSelected) {
-    final nextRows = Set<RowType>.from(_visibleRows);
+  void _toggleRow(common_layout.RowType rowType, bool isSelected) {
+    final nextRows = Set<common_layout.RowType>.from(_visibleRows);
     if (isSelected) {
       nextRows.add(rowType);
     } else {
@@ -574,8 +584,8 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
 
   @override
   void dispose() {
-    _editorViewModel?.removeListener(_handleEditorVmChanged);
-    _editorViewModel?.dispose();
+    _hostRuntime?.removeListener(_handleEditorVmChanged);
+    _hostRuntime?.dispose();
     _ownedDatabase?.close();
     _themeNotifier.dispose();
     _cardPayloadNotifier.dispose();
@@ -656,9 +666,9 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
                 cardPayloadNotifier: _cardPayloadNotifier,
                 paddingNotifier: _paddingNotifier,
                 rowStrategyMapper: _editorViewModel?.rowStrategyMapper ??
-                    const <RowType, RowComputationStrategy>{},
+                    const <common_layout.RowType, RowComputationStrategy>{},
                 pillarStrategyMapper: _editorViewModel?.pillarStrategyMapper ??
-                    const <PillarType, PillarComputationStrategy>{},
+                    const <common_layout.PillarType, PillarComputationStrategy>{},
                 gender: widget.gender,
                 showGrip: false,
               ),
@@ -1041,12 +1051,13 @@ class _HostControlsPanel extends StatelessWidget {
 
   final String currentTemplateId;
   final List<FourZhuCardThemeOption> themeOptions;
-  final List<RowType> toggleableRows;
-  final Set<RowType> visibleRows;
+  final List<common_layout.RowType> toggleableRows;
+  final Set<common_layout.RowType> visibleRows;
   final bool showColumnHeaderRow;
   final bool showRowTitleColumn;
   final ValueChanged<String> onThemeSelected;
-  final void Function(RowType rowType, bool isSelected) onRowToggled;
+  final void Function(common_layout.RowType rowType, bool isSelected)
+      onRowToggled;
   final ValueChanged<bool> onToggleHeaderRow;
   final ValueChanged<bool> onToggleRowTitleColumn;
 
