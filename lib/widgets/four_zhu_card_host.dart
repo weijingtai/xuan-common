@@ -5,6 +5,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:persistence_core/persistence_core.dart';
 import 'package:provider/provider.dart';
+import 'package:xuan_four_zhu_card/models/drag_payloads.dart'
+    as card_payloads;
+import 'package:xuan_four_zhu_card/features/four_zhu_card/widgets/editable_fourzhu_card/models/theme_color_mode.dart'
+    as card_color_mode;
+import 'package:xuan_four_zhu_card/themes/editable_four_zhu_card_theme.dart'
+    as card_theme;
 import 'package:xuan_four_zhu_host/xuan_four_zhu_host.dart' as host_pkg;
 import 'package:xuan_four_zhu_templates/xuan_four_zhu_templates.dart'
     as template_pkg;
@@ -16,6 +22,7 @@ import '../database/daos/card_template_skill_usage_dao.dart';
 import '../enums/enum_gender.dart';
 import '../enums/layout_template_enums.dart' as common_layout;
 import '../features/four_zhu_card/widgets/editable_fourzhu_card/editable_fourzhu_card_impl.dart';
+import '../features/four_zhu_card_host/four_zhu_card_compat.dart';
 import '../features/four_zhu_card_host/common_four_zhu_host_editor_launcher.dart';
 import '../features/four_zhu_card_host/common_four_zhu_host_runtime.dart';
 import '../features/four_zhu_card_host/four_zhu_card_host_resolver.dart';
@@ -23,9 +30,9 @@ import '../features/shared_card_template/market/market_gateway.dart';
 import '../models/eight_chars.dart';
 import '../models/drag_payloads.dart';
 import '../models/layout_template.dart';
+import '../models/row_strategy.dart';
 import '../models/text_style_config.dart';
 import '../themes/editable_four_zhu_card_theme.dart';
-import '../models/row_strategy.dart';
 import 'settings_capsules/precision_settings_capsule.dart';
 import 'settings_capsules/shared_settings_components.dart';
 import 'zi_strategy_settings_capsule.dart';
@@ -89,9 +96,15 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   AuthScopeProvider? _authScopeProvider;
   late final ValueNotifier<EditableFourZhuCardTheme> _themeNotifier;
   late final ValueNotifier<CardPayload> _cardPayloadNotifier;
+  late final ValueNotifier<card_theme.EditableFourZhuCardTheme>
+      _cardThemeNotifier;
+  late final ValueNotifier<card_payloads.CardPayload>
+      _cardPayloadBridgeNotifier;
   late final ValueNotifier<EdgeInsets> _paddingNotifier;
   late final ValueNotifier<Brightness> _brightnessNotifier;
   late final ValueNotifier<ColorPreviewMode> _colorPreviewModeNotifier;
+  late final ValueNotifier<card_color_mode.TextColorMode>
+      _cardColorPreviewModeNotifier;
 
   LayoutTemplate? _currentTemplate;
   List<LayoutTemplate> _templates = const [];
@@ -117,6 +130,9 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     super.initState();
     _themeNotifier = ValueNotifier(
       EditableCardThemeBuilder.createDefaultTheme(),
+    );
+    _cardThemeNotifier = ValueNotifier(
+      FourZhuCardCompat.toCardTheme(_themeNotifier.value),
     );
     _cardPayloadNotifier = ValueNotifier(
       FourZhuCardHostResolver.resolve(
@@ -179,15 +195,26 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
         gender: widget.gender,
       ).payload,
     );
+    _cardPayloadBridgeNotifier = ValueNotifier(
+      FourZhuCardCompat.toCardPayload(_cardPayloadNotifier.value),
+    );
     _paddingNotifier = ValueNotifier(const EdgeInsets.all(12));
     _brightnessNotifier = ValueNotifier(Brightness.light);
     _colorPreviewModeNotifier = ValueNotifier(ColorPreviewMode.colorful);
+    _cardColorPreviewModeNotifier = ValueNotifier(
+      FourZhuCardCompat.toCardColorPreviewMode(
+        _colorPreviewModeNotifier.value,
+      ),
+    );
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _brightnessNotifier.value = Theme.of(context).brightness;
+    _cardColorPreviewModeNotifier.value = FourZhuCardCompat.toCardColorPreviewMode(
+      _colorPreviewModeNotifier.value,
+    );
     _ensureHostRuntime();
   }
 
@@ -338,8 +365,14 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
       displayHeaderRow: _showColumnHeaderRow,
       displayRowTitleColumn: _showRowTitleColumn,
     );
+    _cardThemeNotifier.value = FourZhuCardCompat.toCardTheme(
+      _themeNotifier.value,
+    );
     _paddingNotifier.value = resolved.padding;
     _cardPayloadNotifier.value = resolved.payload;
+    _cardPayloadBridgeNotifier.value = FourZhuCardCompat.toCardPayload(
+      _cardPayloadNotifier.value,
+    );
     _toggleableRows = resolved.toggleableRows;
     setState(() {});
   }
@@ -534,6 +567,9 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     _themeNotifier.value = _themeNotifier.value.copyWith(
       displayHeaderRow: isSelected,
     );
+    _cardThemeNotifier.value = FourZhuCardCompat.toCardTheme(
+      _themeNotifier.value,
+    );
     setState(() {
       _showColumnHeaderRow = isSelected;
       _hasInitializedTitleVisibility = true;
@@ -544,6 +580,9 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   void _toggleRowTitleColumn(bool isSelected) {
     _themeNotifier.value = _themeNotifier.value.copyWith(
       displayRowTitleColumn: isSelected,
+    );
+    _cardThemeNotifier.value = FourZhuCardCompat.toCardTheme(
+      _themeNotifier.value,
     );
     setState(() {
       _showRowTitleColumn = isSelected;
@@ -559,9 +598,12 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     _ownedDatabase?.close();
     _themeNotifier.dispose();
     _cardPayloadNotifier.dispose();
+    _cardThemeNotifier.dispose();
+    _cardPayloadBridgeNotifier.dispose();
     _paddingNotifier.dispose();
     _brightnessNotifier.dispose();
     _colorPreviewModeNotifier.dispose();
+    _cardColorPreviewModeNotifier.dispose();
     super.dispose();
   }
 
