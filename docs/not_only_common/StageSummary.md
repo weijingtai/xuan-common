@@ -6,6 +6,7 @@
 - `xuan-four-zhu-editor` 已建立独立 bridge package，先承接 editor 公开入口与最小 compat 导出（`d8780bd`）。
 - `xuan-four-zhu-editor` 已进一步整理为 `pages / viewmodels / widgets` 分层公开入口，并补充 editor entrypoints contract（`cc4f84f`）。
 - `xuan-four-zhu-editor` 已将 `FourZhuEditPage`、editor workspace 升级为本地 facade widget，并把 `FourZhuEditorViewModel` 收敛为精简公共导出（`7e932aa`）。
+- `xuan-four-zhu-editor` 已新增 `EditorSidebar` 本地 facade 入口，并接入 editor barrel export / entrypoints contract（`643a115`）。
 - `xuan-template-marketplace` 已建立独立 marketplace core package，先承接 marketplace metadata / gateway / install contracts，不引入具体 Four Zhu 逻辑（`0b39fbb`）。
 - `xuan-common` 依赖统一收拢：resolver 由新 host facade 代理，新增 runtime/editor adapter (`7a0b59b`、`d254815`)，并引入 host/card packages (`20b6f45`)。
 - `xuan-common` 的 `FourZhuCardHost` 现在通过 `CommonFourZhuHostRuntime` 和 `CommonFourZhuHostEditorLauncher` 驱动 runtime/editor 行为，确保 host 壳只暴露 facade 级契约。
@@ -13,6 +14,7 @@
 - `xuan-common` 的 `FourZhuCardHost` 已去掉对 shared capsule/settings 组件的直接 import，改成宿主本地 UI 构件和本地 adapter（`60492f8`）。
 - `xuan-common` 的 `four_zhu_add_palette` 入口已切到 `xuan-four-zhu-card` facade；`EditableFourZhuCardV4` 仅保留为未完成实验文件，并明确禁止接入任何运行路径（`ce17e87`）。
 - `xuan-common` 里 `cell_style_config.dart`、`pillar_style_config.dart` 已切到 `xuan-four-zhu-card` facade，继续缩小旧 style model 真实现残留（`33ee5ea`）。
+- `xuan-common` 里 `four_zhu_card.dart`、`theme_color_mode.dart` 已切到 `xuan-four-zhu-card` facade，进一步收敛旧 theme/export 真实现（`3a4a600`）。
 - `xuan-four-zhu-card` 已本地化 `style_resolver.dart` 与 `gan_zhi_gua_colors.dart`，主渲染实现不再直接依赖 `common/utils/style_resolver.dart`（`55d1e9b`）。
 - 目前各 repo `dart analyze` 通过，`xuan-qizhengsiyu` 保持用户接受的未提交状态（`beauty_view_page.dart` 未动）。
 
