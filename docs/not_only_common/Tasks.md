@@ -29,7 +29,7 @@
 - [x] `xuan-four-zhu-card`
 - [x] `xuan-four-zhu-host`
 - [x] `xuan-four-zhu-templates`
-- [ ] `xuan-four-zhu-editor`
+- [x] `xuan-four-zhu-editor`
 
 ### 2.2 每个 package 建立最小结构
 
@@ -45,7 +45,7 @@
 - [x] `xuan-four-zhu-templates`：`lib/`
 - [x] `xuan-four-zhu-templates`：package 主导出文件
 - [x] `xuan-four-zhu-templates`：说明 package 依赖方向
-- [ ] `xuan-four-zhu-editor`：最小结构
+- [x] `xuan-four-zhu-editor`：最小结构
 
 ---
 
