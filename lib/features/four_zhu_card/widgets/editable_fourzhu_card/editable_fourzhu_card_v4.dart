@@ -17,6 +17,11 @@ import 'internal/card_size_manager.dart';
 ///
 /// V4 版本的四柱卡片,完全基于 size_calculator 系统重写。
 ///
+/// 注意：
+/// - 当前文件仍未完成迁移收口
+/// - 禁止接入任何运行路径或新的宿主/编辑器集成
+/// - 仅保留为历史实验实现，直到后续专门迁移阶段再处理
+///
 /// 主要改进:
 /// - 移除了旧的 CardLayoutModel/MeasurementContext 系统
 /// - 统一使用 CardMetricsCalculator + CardMetricsSnapshot
