@@ -146,6 +146,7 @@
 
 ## 5. Editor 迁移
 
+- [x] 建立 `xuan-four-zhu-editor` 的 pages / viewmodels / widgets 公开入口
 - [ ] 迁移 `FourZhuEditPage`
 - [ ] 迁移 `FourZhuEditorViewModel`
 - [ ] 迁移 editor workspace
@@ -165,6 +166,7 @@
 
 - [x] 将旧路径改为 re-export 或薄 adapter
 - [x] 禁止继续在 facade 中新增真实实现
+- [x] `four_zhu_add_palette` 已切到 facade/compat bridge
 - [ ] 标记所有迁移完成后的旧入口状态
 
 验收：

@@ -4,11 +4,13 @@
 - `xuan-four-zhu-templates` 已独立并被 `common` 通过 re-export 依赖，新包经过 `flutter pub get` 与 `dart analyze`。
 - `xuan-four-zhu-host` 初具 resolver/contracts，新增 runtime/editor contracts，并继续补齐 runtime overrides、bootstrap helper、template->card mapper（`b3d7d21`、`a94b666`）。
 - `xuan-four-zhu-editor` 已建立独立 bridge package，先承接 editor 公开入口与最小 compat 导出（`d8780bd`）。
+- `xuan-four-zhu-editor` 已进一步整理为 `pages / viewmodels / widgets` 分层公开入口，并补充 editor entrypoints contract（`cc4f84f`）。
 - `xuan-template-marketplace` 已建立独立 marketplace core package，先承接 marketplace metadata / gateway / install contracts，不引入具体 Four Zhu 逻辑（`0b39fbb`）。
 - `xuan-common` 依赖统一收拢：resolver 由新 host facade 代理，新增 runtime/editor adapter (`7a0b59b`、`d254815`)，并引入 host/card packages (`20b6f45`)。
 - `xuan-common` 的 `FourZhuCardHost` 现在通过 `CommonFourZhuHostRuntime` 和 `CommonFourZhuHostEditorLauncher` 驱动 runtime/editor 行为，确保 host 壳只暴露 facade 级契约。
 - `xuan-common` 的 `FourZhuCardHost` 已经切换为 `xuan-four-zhu-card` 的 `EditableFourZhuCardV3` render，并收紧 notifier/render adapter 桥接（`5261224`、`d0cda9c`）。
 - `xuan-common` 的 `FourZhuCardHost` 已去掉对 shared capsule/settings 组件的直接 import，改成宿主本地 UI 构件和本地 adapter（`60492f8`）。
+- `xuan-common` 的 `four_zhu_add_palette` 入口已切到 `xuan-four-zhu-card` facade；`EditableFourZhuCardV4` 仅保留为未完成实验文件，并明确禁止接入任何运行路径（`ce17e87`）。
 - `xuan-four-zhu-card` 已本地化 `style_resolver.dart` 与 `gan_zhi_gua_colors.dart`，主渲染实现不再直接依赖 `common/utils/style_resolver.dart`（`55d1e9b`）。
 - 目前各 repo `dart analyze` 通过，`xuan-qizhengsiyu` 保持用户接受的未提交状态（`beauty_view_page.dart` 未动）。
 
