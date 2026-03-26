@@ -31,10 +31,8 @@ import '../models/eight_chars.dart';
 import '../models/drag_payloads.dart';
 import '../models/layout_template.dart';
 import '../themes/editable_four_zhu_card_theme.dart';
-import 'settings_capsules/precision_settings_capsule.dart';
-import 'settings_capsules/shared_settings_components.dart';
-import 'zi_strategy_settings_capsule.dart';
-import 'jieqi_entry_settings_capsule.dart';
+import 'four_zhu_card_host_capsule_adapters.dart';
+import 'four_zhu_card_host_components.dart';
 
 enum FourZhuHostDeviceClass { phone, tablet, desktop }
 
@@ -80,7 +78,7 @@ class FourZhuCardHost extends StatefulWidget {
 class _FourZhuCardHostState extends State<FourZhuCardHost> {
   static const double _phoneBreakpoint = 600;
   static const double _tabletBreakpoint = 1024;
-  static const CapsuleColorScheme _capsuleColors = CapsuleColorScheme(
+  static const FourZhuHostColorScheme _capsuleColors = FourZhuHostColorScheme(
     woodDark: Color(0xFF2A1B15),
     goldLeaf: Color(0xFFD4AF37),
     paperLight: Color(0xFFFDFAF2),
@@ -685,9 +683,7 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const ZiStrategySettingsCapsule(
-                        viewMode: JieQiEntryCapsuleMode.tiny,
-                      ),
+                      const FourZhuHostZiStrategyTinyCapsule(),
                       const SizedBox(width: 8),
                       LayoutBuilder(
                         builder: (context, constraints) {
@@ -849,7 +845,7 @@ class _ThemeDock extends StatelessWidget {
   });
 
   final String title;
-  final CapsuleColorScheme colors;
+  final FourZhuHostColorScheme colors;
   final bool showSettingsIcon;
   final VoidCallback? onTap;
   final VoidCallback? onSettingsTap;
@@ -1180,7 +1176,7 @@ class _HostControlsSectionHeader extends StatelessWidget {
           Flexible(
             child: Align(
               alignment: Alignment.centerLeft,
-              child: _HostSummaryTag(
+              child: FourZhuHostSummaryTag(
                 label: summary!,
                 tagColor: _FourZhuCardHostState._capsuleColors.woodDark,
               ),
@@ -1188,46 +1184,6 @@ class _HostControlsSectionHeader extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _HostSummaryTag extends StatelessWidget {
-  const _HostSummaryTag({
-    required this.label,
-    required this.tagColor,
-  });
-
-  final String label;
-  final Color tagColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 6,
-        vertical: 2.5,
-      ),
-      decoration: BoxDecoration(
-        color: tagColor.withValues(alpha: 0.12),
-        border: Border.all(
-          color: tagColor.withValues(alpha: 0.5),
-          width: 0.6,
-        ),
-        borderRadius: BorderRadius.circular(3),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: tagColor,
-          fontSize: 11.5,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.4,
-          height: 1.1,
-        ),
-      ),
     );
   }
 }
@@ -1247,17 +1203,12 @@ class _ThemeOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsOptionCard(
+    return FourZhuHostOptionCard(
       title: title,
-      subtitle: '',
       selected: selected,
       onTap: onTap,
+      colors: _FourZhuCardHostState._capsuleColors,
       showLeadingIndicator: showLeadingIndicator,
-      vermilion: _FourZhuCardHostState._capsuleColors.vermilion,
-      inkText: _FourZhuCardHostState._capsuleColors.inkText,
-      paperLight: _FourZhuCardHostState._capsuleColors.paperLight,
-      woodDark: _FourZhuCardHostState._capsuleColors.woodDark,
-      goldLeaf: _FourZhuCardHostState._capsuleColors.goldLeaf,
     );
   }
 }
