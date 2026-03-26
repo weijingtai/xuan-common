@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:xuan_four_zhu_templates/xuan_four_zhu_templates.dart'
+    as template_pkg;
 
 import '../../enums/enum_gender.dart';
 import '../../enums/enum_jia_zi.dart';
@@ -60,8 +62,9 @@ class FourZhuCardHostResolver {
 
   static Set<RowType> collectToggleableRows(LayoutTemplate template) {
     return template.rowConfigs
-        .where((config) => config.isVisible && isRuntimeToggleable(config.type))
-        .map((config) => config.type)
+        .where((config) =>
+            config.isVisible && isRuntimeToggleable(_mapRowType(config.type)))
+        .map((config) => _mapRowType(config.type))
         .toSet();
   }
 
@@ -114,7 +117,7 @@ class FourZhuCardHostResolver {
 
     final currentBorder = nextTheme.card.border;
     final targetColor = _parseColor(cardStyle.dividerColorHex);
-    final targetEnabled = cardStyle.dividerType != BorderType.none;
+    final targetEnabled = _mapBorderType(cardStyle.dividerType) != BorderType.none;
     if (currentBorder == null ||
         currentBorder.width != cardStyle.dividerThickness ||
         currentBorder.lightColor != targetColor ||
@@ -160,8 +163,10 @@ class FourZhuCardHostResolver {
     );
     var mapperChanged = false;
     for (final config in template.rowConfigs) {
-      if (mapper[config.type] != config.textStyleConfig) {
-        mapper[config.type] = config.textStyleConfig;
+      final rowType = _mapRowType(config.type);
+      final textStyleConfig = TextStyleConfig.fromJson(config.textStyleConfig.toJson());
+      if (mapper[rowType] != textStyleConfig) {
+        mapper[rowType] = textStyleConfig;
         mapperChanged = true;
       }
     }
@@ -188,12 +193,10 @@ class FourZhuCardHostResolver {
     final newRowOrder = <String>[];
     for (final config in template.rowConfigs) {
       if (!config.isVisible) continue;
-      if (isRuntimeToggleable(config.type) &&
-          !effectiveVisibleRows.contains(config.type)) {
+      final type = _mapRowType(config.type);
+      if (isRuntimeToggleable(type) && !effectiveVisibleRows.contains(type)) {
         continue;
       }
-
-      final type = config.type;
       if (type == RowType.separator) {
         final uuid = _uuid.v4();
         newRowMap[uuid] = RowSeparatorPayload(uuid: uuid);
@@ -240,10 +243,11 @@ class FourZhuCardHostResolver {
     final newPillarOrder = <String>[];
     for (final group in template.chartGroups) {
       for (final type in group.pillarOrder) {
-        var uuid = pillarTypeToUuidMap[type];
+        final pillarType = _mapPillarType(type);
+        var uuid = pillarTypeToUuidMap[pillarType];
         if (uuid == null) {
           uuid = _uuid.v4();
-          newPillarMap[uuid] = _createPillarPayload(type, uuid);
+          newPillarMap[uuid] = _createPillarPayload(pillarType, uuid);
         }
         newPillarOrder.add(uuid);
       }
@@ -455,5 +459,26 @@ class FourZhuCardHostResolver {
       case RowType.separator:
         return '分隔';
     }
+  }
+
+  static RowType _mapRowType(template_pkg.RowType type) {
+    return RowType.values.firstWhere(
+      (element) => element.name == type.name,
+      orElse: () => RowType.heavenlyStem,
+    );
+  }
+
+  static PillarType _mapPillarType(template_pkg.PillarType type) {
+    return PillarType.values.firstWhere(
+      (element) => element.name == type.name,
+      orElse: () => PillarType.year,
+    );
+  }
+
+  static BorderType _mapBorderType(template_pkg.BorderType type) {
+    return BorderType.values.firstWhere(
+      (element) => element.name == type.name,
+      orElse: () => BorderType.solid,
+    );
   }
 }
