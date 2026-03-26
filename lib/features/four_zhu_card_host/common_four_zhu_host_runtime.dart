@@ -1,3 +1,4 @@
+import 'package:persistence_core/persistence_core.dart';
 import 'package:xuan_four_zhu_card/enums/enum_gender.dart' as card_gender;
 import 'package:xuan_four_zhu_card/enums/enum_jia_zi.dart' as card_jiazi;
 import 'package:xuan_four_zhu_card/enums.dart' as card_enums;
@@ -6,17 +7,78 @@ import 'package:xuan_four_zhu_card/models/row_strategy.dart' as card_strategy;
 import 'package:xuan_four_zhu_host/xuan_four_zhu_host.dart' as host_pkg;
 import 'package:xuan_four_zhu_templates/models/layout_template.dart';
 
+import '../../database/app_database.dart';
+import '../../database/daos/card_template_meta_dao.dart';
+import '../../database/daos/card_template_setting_dao.dart';
+import '../../database/daos/card_template_skill_usage_dao.dart';
+import '../../database/daos/market_template_installs_dao.dart';
+import '../../datasource/layout_template_local_data_source.dart';
+import '../../domain/usecases/layout_templates/delete_template_use_case.dart';
+import '../../domain/usecases/layout_templates/get_all_templates_use_case.dart';
+import '../../domain/usecases/layout_templates/get_template_by_id_use_case.dart';
+import '../../domain/usecases/layout_templates/save_template_use_case.dart';
 import '../../enums/enum_gender.dart';
 import '../../enums/enum_jia_zi.dart';
 import '../../enums/layout_template_enums.dart';
+import '../../features/shared_card_template/market/market_gateway.dart';
+import '../../features/shared_card_template/usecase/install_market_template_usecase.dart';
 import '../../models/pillar_content.dart';
 import '../../models/row_strategy.dart';
+import '../../repositories/layout_template_repository_impl.dart';
 import '../../viewmodels/four_zhu_editor_view_model.dart';
 
 class CommonFourZhuHostRuntime implements host_pkg.FourZhuHostRuntime {
   CommonFourZhuHostRuntime(this.viewModel);
 
+  factory CommonFourZhuHostRuntime.create({
+    required AppDatabase database,
+    required AuthScopeProvider authScopeProvider,
+    required CardTemplateMetaDao cardTemplateMetaDao,
+    required CardTemplateSettingDao cardTemplateSettingDao,
+    required CardTemplateSkillUsageDao cardTemplateSkillUsageDao,
+    MarketGateway? marketGateway,
+    OutboxStore? outboxStore,
+    SyncLogger? logger,
+  }) {
+    final localDataSource = LayoutTemplateLocalDataSource(
+      database,
+      outboxStore: outboxStore,
+      logger: logger,
+    );
+    final repository = LayoutTemplateRepositoryImpl(
+      localDataSource,
+      authScopeProvider: authScopeProvider,
+    );
+    final installMarketTemplateUseCase = marketGateway == null
+        ? null
+        : InstallMarketTemplateUseCase(
+            marketGateway: marketGateway,
+            localDataSource: localDataSource,
+            marketTemplateInstallsDao: MarketTemplateInstallsDao(database),
+            authScopeProvider: authScopeProvider,
+          );
+
+    return CommonFourZhuHostRuntime(
+      FourZhuEditorViewModel(
+        getAllTemplatesUseCase: GetAllTemplatesUseCase(repository),
+        getTemplateByIdUseCase: GetTemplateByIdUseCase(repository),
+        saveTemplateUseCase: SaveTemplateUseCase(repository),
+        deleteTemplateUseCase: DeleteTemplateUseCase(repository),
+        installMarketTemplateUseCase: installMarketTemplateUseCase,
+        cardTemplateMetaDao: cardTemplateMetaDao,
+        cardTemplateSettingDao: cardTemplateSettingDao,
+        cardTemplateSkillUsageDao: cardTemplateSkillUsageDao,
+      ),
+    );
+  }
+
   final FourZhuEditorViewModel viewModel;
+
+  Map<RowType, RowComputationStrategy> get commonRowStrategyMapper =>
+      viewModel.rowStrategyMapper;
+
+  Map<PillarType, PillarComputationStrategy> get commonPillarStrategyMapper =>
+      viewModel.pillarStrategyMapper;
 
   @override
   List<LayoutTemplate> get templates => viewModel.templates;

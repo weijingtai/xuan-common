@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:persistence_core/persistence_core.dart';
 import 'package:provider/provider.dart';
+import 'package:xuan_four_zhu_host/xuan_four_zhu_host.dart' as host_pkg;
 import 'package:xuan_four_zhu_templates/xuan_four_zhu_templates.dart'
     as template_pkg;
 
@@ -12,12 +13,6 @@ import '../database/app_database.dart';
 import '../database/daos/card_template_meta_dao.dart';
 import '../database/daos/card_template_setting_dao.dart';
 import '../database/daos/card_template_skill_usage_dao.dart';
-import '../database/daos/market_template_installs_dao.dart';
-import '../datasource/layout_template_local_data_source.dart';
-import '../domain/usecases/layout_templates/delete_template_use_case.dart';
-import '../domain/usecases/layout_templates/get_all_templates_use_case.dart';
-import '../domain/usecases/layout_templates/get_template_by_id_use_case.dart';
-import '../domain/usecases/layout_templates/save_template_use_case.dart';
 import '../enums/enum_gender.dart';
 import '../enums/layout_template_enums.dart' as common_layout;
 import '../features/four_zhu_card/widgets/editable_fourzhu_card/editable_fourzhu_card_impl.dart';
@@ -25,14 +20,11 @@ import '../features/four_zhu_card_host/common_four_zhu_host_editor_launcher.dart
 import '../features/four_zhu_card_host/common_four_zhu_host_runtime.dart';
 import '../features/four_zhu_card_host/four_zhu_card_host_resolver.dart';
 import '../features/shared_card_template/market/market_gateway.dart';
-import '../features/shared_card_template/usecase/install_market_template_usecase.dart';
 import '../models/eight_chars.dart';
 import '../models/drag_payloads.dart';
 import '../models/layout_template.dart';
 import '../models/text_style_config.dart';
-import '../repositories/layout_template_repository_impl.dart';
 import '../themes/editable_four_zhu_card_theme.dart';
-import '../viewmodels/four_zhu_editor_view_model.dart';
 import '../models/row_strategy.dart';
 import 'settings_capsules/precision_settings_capsule.dart';
 import 'settings_capsules/shared_settings_components.dart';
@@ -91,9 +83,8 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     inkText: Color(0xFF333333),
   );
 
-  FourZhuEditorViewModel? _editorViewModel;
   CommonFourZhuHostRuntime? _hostRuntime;
-  CommonFourZhuHostEditorLauncher? _editorLauncher;
+  host_pkg.FourZhuHostEditorLauncher? _editorLauncher;
   AppDatabase? _ownedDatabase;
   AuthScopeProvider? _authScopeProvider;
   late final ValueNotifier<EditableFourZhuCardTheme> _themeNotifier;
@@ -223,37 +214,16 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
     final database = _resolveDatabase();
     _authScopeProvider ??=
         _tryRead<AuthScopeProvider>() ?? const _FallbackAuthScopeProvider();
-    final localDataSource = LayoutTemplateLocalDataSource(
-      database,
-      outboxStore: _tryRead<OutboxStore>(),
-      logger: _tryRead<SyncLogger>(),
-    );
-    final repository = LayoutTemplateRepositoryImpl(
-      localDataSource,
+    final runtime = CommonFourZhuHostRuntime.create(
+      database: database,
       authScopeProvider: _authScopeProvider!,
-    );
-    final marketGateway = _tryRead<MarketGateway>();
-    final installMarketTemplateUseCase = marketGateway == null
-        ? null
-        : InstallMarketTemplateUseCase(
-            marketGateway: marketGateway,
-            localDataSource: localDataSource,
-            marketTemplateInstallsDao: MarketTemplateInstallsDao(database),
-            authScopeProvider: _authScopeProvider!,
-          );
-
-    final vm = FourZhuEditorViewModel(
-      getAllTemplatesUseCase: GetAllTemplatesUseCase(repository),
-      getTemplateByIdUseCase: GetTemplateByIdUseCase(repository),
-      saveTemplateUseCase: SaveTemplateUseCase(repository),
-      deleteTemplateUseCase: DeleteTemplateUseCase(repository),
-      installMarketTemplateUseCase: installMarketTemplateUseCase,
       cardTemplateMetaDao: CardTemplateMetaDao(database),
       cardTemplateSettingDao: CardTemplateSettingDao(database),
       cardTemplateSkillUsageDao: CardTemplateSkillUsageDao(database),
+      marketGateway: _tryRead<MarketGateway>(),
+      outboxStore: _tryRead<OutboxStore>(),
+      logger: _tryRead<SyncLogger>(),
     );
-    _editorViewModel = vm;
-    final runtime = CommonFourZhuHostRuntime(vm);
     runtime.addListener(_handleEditorVmChanged);
     _hostRuntime = runtime;
     _editorLauncher ??= CommonFourZhuHostEditorLauncher(context);
@@ -665,9 +635,10 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
                 themeNotifier: _themeNotifier,
                 cardPayloadNotifier: _cardPayloadNotifier,
                 paddingNotifier: _paddingNotifier,
-                rowStrategyMapper: _editorViewModel?.rowStrategyMapper ??
+                rowStrategyMapper: _hostRuntime?.commonRowStrategyMapper ??
                     const <common_layout.RowType, RowComputationStrategy>{},
-                pillarStrategyMapper: _editorViewModel?.pillarStrategyMapper ??
+                pillarStrategyMapper:
+                    _hostRuntime?.commonPillarStrategyMapper ??
                     const <common_layout.PillarType, PillarComputationStrategy>{},
                 gender: widget.gender,
                 showGrip: false,
