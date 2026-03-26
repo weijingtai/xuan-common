@@ -1,10 +1,19 @@
-# 第一阶段成果总结
+# 阶段性成果总结
 
 - `xuan-four-zhu-card` 本地化了 style/theme、枚举、row/column 模型与 render bridge，first commit 4f08bad。
 - `xuan-four-zhu-templates` 已独立并被 `common` 通过 re-export 依赖，新包经过 `flutter pub get` 与 `dart analyze`。
-- `xuan-four-zhu-host` 初具 resolver/contracts，新增 runtime/editor contracts（`b3d7d21`）。
+- `xuan-four-zhu-host` 初具 resolver/contracts，新增 runtime/editor contracts，并继续补齐 runtime overrides、bootstrap helper、template->card mapper（`b3d7d21`、`a94b666`）。
 - `xuan-common` 依赖统一收拢：resolver 由新 host facade 代理，新增 runtime/editor adapter (`7a0b59b`、`d254815`)，并引入 host/card packages (`20b6f45`)。
 - `xuan-common` 的 `FourZhuCardHost` 现在通过 `CommonFourZhuHostRuntime` 和 `CommonFourZhuHostEditorLauncher` 驱动 runtime/editor 行为，确保 host 壳只暴露 facade 级契约。
+- `xuan-common` 的 `FourZhuCardHost` 已经切换为 `xuan-four-zhu-card` 的 `EditableFourZhuCardV3` render，并收紧 notifier/render adapter 桥接（`5261224`、`d0cda9c`）。
+- `xuan-four-zhu-card` 已本地化 `style_resolver.dart` 与 `gan_zhi_gua_colors.dart`，主渲染实现不再直接依赖 `common/utils/style_resolver.dart`（`55d1e9b`）。
 - 目前各 repo `dart analyze` 通过，`xuan-qizhengsiyu` 保持用户接受的未提交状态（`beauty_view_page.dart` 未动）。
 
-下一步：将 `FourZhuCardHost` widget 从直接使用 `FourZhuEditorViewModel`/`FourZhuEditPage` 的膨胀入口转向刚建好的 runtime/editor adapter 组合，以完成 host 层的真正瘦身。
+## 当前未完成项
+
+- `xuan-four-zhu-editor` 还没有独立 package，`FourZhuEditPage`、`FourZhuEditorViewModel` 和 editor workspace 仍主要留在 `xuan-common`。
+- `FourZhuCardHost` widget 壳本身还没有迁出 `xuan-common`，当前只是 resolver/runtime/editor/render 依赖已经被分层。
+- `common` 侧旧 render 导出兼容入口还没有系统化标注完成状态，仍需继续压薄。
+- `host` 中非四柱专属的 capsule/settings UI 依赖还没有彻底清理。
+- `LayoutTemplate Marketplace` 仍未开始 package 化，当前只完成了 template domain 的拆分。
+- `qizhengsiyu` 还没有改成直接面向 `xuan-four-zhu-host` / `xuan-four-zhu-card` 依赖，当前更多是通过 `xuan-common` 的兼容宿主接入。
