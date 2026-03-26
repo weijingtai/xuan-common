@@ -147,9 +147,9 @@
 ## 5. Editor 迁移
 
 - [x] 建立 `xuan-four-zhu-editor` 的 pages / viewmodels / widgets 公开入口
-- [ ] 迁移 `FourZhuEditPage`
-- [ ] 迁移 `FourZhuEditorViewModel`
-- [ ] 迁移 editor workspace
+- [x] `FourZhuEditPage` 已有本地 facade widget
+- [x] `FourZhuEditorViewModel` 已有精简公共导出
+- [x] editor workspace 已有本地 facade widget
 - [ ] 迁移 editor sidebar / style editor 面板
 - [ ] 保留平台模板能力的临时接入
 
