@@ -62,6 +62,10 @@ dependencies:
   flutter_screenutil: ^5.9.3
   flutter_map_cancellable_tile_provider: ^3.1.1
   flex_color_picker: ^3.7.2
+  xuan_four_zhu_card:
+    path: ../xuan-four-zhu-card
+  xuan_four_zhu_host:
+    path: ../xuan-four-zhu-host
   xuan_four_zhu_templates:
     path: ../xuan-four-zhu-templates
 

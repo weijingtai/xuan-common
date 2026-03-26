@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:persistence_core/persistence_core.dart';
 import 'package:provider/provider.dart';
+import 'package:xuan_four_zhu_templates/xuan_four_zhu_templates.dart'
+    as template_pkg;
 
 import '../database/app_database.dart';
 import '../database/daos/card_template_meta_dao.dart';
@@ -109,7 +111,7 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
   bool _isBusy = false;
   bool _isDesktopControlsExpanded = false;
   bool _isHovered = false;
-  Object? _lastTemplateSyncToken = null;
+  Object? _lastTemplateSyncToken;
   final OverlayPortalController _desktopControlsOverlayController =
       OverlayPortalController();
   final GlobalKey _desktopControlsAnchorKey = GlobalKey();
@@ -126,8 +128,8 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
           id: '__bootstrap__',
           name: 'bootstrap',
           collectionId: widget.collectionId,
-          cardStyle: const CardStyle(
-            dividerType: BorderType.none,
+          cardStyle: const template_pkg.CardStyle(
+            dividerType: template_pkg.BorderType.none,
             dividerColorHex: '#FF000000',
             dividerThickness: 1,
             globalFontFamily: 'System',
@@ -136,42 +138,43 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
             contentPadding: EdgeInsets.all(12),
           ),
           chartGroups: [
-            ChartGroup(
+            template_pkg.ChartGroup(
               id: '__bootstrap__',
               title: '四柱',
               pillarOrder: const [
-                PillarType.rowTitleColumn,
-                PillarType.year,
-                PillarType.month,
-                PillarType.day,
-                PillarType.hour,
+                template_pkg.PillarType.rowTitleColumn,
+                template_pkg.PillarType.year,
+                template_pkg.PillarType.month,
+                template_pkg.PillarType.day,
+                template_pkg.PillarType.hour,
               ],
             ),
           ],
           rowConfigs: [
-            RowConfig(
-              type: RowType.columnHeaderRow,
+            template_pkg.RowConfig(
+              type: template_pkg.RowType.columnHeaderRow,
               isVisible: true,
               isTitleVisible: false,
-              textStyleConfig: TextStyleConfig.defaultConfig,
+              textStyleConfig: template_pkg.TextStyleConfig.defaultConfig,
             ),
-            RowConfig(
-              type: RowType.tenGod,
+            template_pkg.RowConfig(
+              type: template_pkg.RowType.tenGod,
               isVisible: true,
               isTitleVisible: true,
-              textStyleConfig: TextStyleConfig.defaultTenGodsConfig,
+              textStyleConfig:
+                  template_pkg.TextStyleConfig.defaultTenGodsConfig,
             ),
-            RowConfig(
-              type: RowType.heavenlyStem,
+            template_pkg.RowConfig(
+              type: template_pkg.RowType.heavenlyStem,
               isVisible: true,
               isTitleVisible: true,
-              textStyleConfig: TextStyleConfig.defaultGanConfig,
+              textStyleConfig: template_pkg.TextStyleConfig.defaultGanConfig,
             ),
-            RowConfig(
-              type: RowType.earthlyBranch,
+            template_pkg.RowConfig(
+              type: template_pkg.RowType.earthlyBranch,
               isVisible: true,
               isTitleVisible: true,
-              textStyleConfig: TextStyleConfig.defaultZhiConfig,
+              textStyleConfig: template_pkg.TextStyleConfig.defaultZhiConfig,
             ),
           ],
           updatedAt: DateTime.fromMillisecondsSinceEpoch(0),

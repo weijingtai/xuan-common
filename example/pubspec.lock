@@ -1533,6 +1533,20 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.6.1"
+  xuan_four_zhu_card:
+    dependency: transitive
+    description:
+      path: "../../xuan-four-zhu-card"
+      relative: true
+    source: path
+    version: "0.1.0"
+  xuan_four_zhu_host:
+    dependency: transitive
+    description:
+      path: "../../xuan-four-zhu-host"
+      relative: true
+    source: path
+    version: "0.1.0"
   xuan_four_zhu_templates:
     dependency: transitive
     description:
