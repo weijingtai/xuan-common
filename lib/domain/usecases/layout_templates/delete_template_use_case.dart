@@ -1,14 +1,1 @@
-import '../../../repositories/layout_template_repository.dart';
-
-class DeleteTemplateUseCase {
-  const DeleteTemplateUseCase(this._repository);
-
-  final LayoutTemplateRepository _repository;
-
-  Future<void> call({
-    required String collectionId,
-    required String templateId,
-  }) {
-    return _repository.deleteTemplate(collectionId, templateId);
-  }
-}
+export 'package:xuan_four_zhu_templates/domain/usecases/layout_templates/delete_template_use_case.dart';
