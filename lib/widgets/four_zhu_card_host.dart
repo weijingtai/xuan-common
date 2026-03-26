@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:persistence_core/persistence_core.dart';
 import 'package:provider/provider.dart';
+import 'package:xuan_four_zhu_card/widgets/editable_fourzhu_card.dart';
 import 'package:xuan_four_zhu_card/models/drag_payloads.dart'
     as card_payloads;
 import 'package:xuan_four_zhu_card/features/four_zhu_card/widgets/editable_fourzhu_card/models/theme_color_mode.dart'
@@ -21,7 +22,6 @@ import '../database/daos/card_template_setting_dao.dart';
 import '../database/daos/card_template_skill_usage_dao.dart';
 import '../enums/enum_gender.dart';
 import '../enums/layout_template_enums.dart' as common_layout;
-import '../features/four_zhu_card/widgets/editable_fourzhu_card/editable_fourzhu_card_impl.dart';
 import '../features/four_zhu_card_host/four_zhu_card_compat.dart';
 import '../features/four_zhu_card_host/common_four_zhu_host_editor_launcher.dart';
 import '../features/four_zhu_card_host/common_four_zhu_host_runtime.dart';
@@ -30,7 +30,6 @@ import '../features/shared_card_template/market/market_gateway.dart';
 import '../models/eight_chars.dart';
 import '../models/drag_payloads.dart';
 import '../models/layout_template.dart';
-import '../models/row_strategy.dart';
 import '../models/text_style_config.dart';
 import '../themes/editable_four_zhu_card_theme.dart';
 import 'settings_capsules/precision_settings_capsule.dart';
@@ -671,18 +670,17 @@ class _FourZhuCardHostState extends State<FourZhuCardHost> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               EditableFourZhuCardV3(
-                dayGanZhi: widget.eightChars.day,
+                dayGanZhi: FourZhuCardCompat.toCardJiaZi(widget.eightChars.day),
                 brightnessNotifier: _brightnessNotifier,
-                colorPreviewModeNotifier: _colorPreviewModeNotifier,
-                themeNotifier: _themeNotifier,
-                cardPayloadNotifier: _cardPayloadNotifier,
+                colorPreviewModeNotifier: _cardColorPreviewModeNotifier,
+                themeNotifier: _cardThemeNotifier,
+                cardPayloadNotifier: _cardPayloadBridgeNotifier,
                 paddingNotifier: _paddingNotifier,
-                rowStrategyMapper: _hostRuntime?.commonRowStrategyMapper ??
-                    const <common_layout.RowType, RowComputationStrategy>{},
+                rowStrategyMapper:
+                    _hostRuntime?.rowStrategyMapper ?? const {},
                 pillarStrategyMapper:
-                    _hostRuntime?.commonPillarStrategyMapper ??
-                    const <common_layout.PillarType, PillarComputationStrategy>{},
-                gender: widget.gender,
+                    _hostRuntime?.pillarStrategyMapper ?? const {},
+                gender: FourZhuCardCompat.toCardGender(widget.gender),
                 showGrip: false,
               ),
               const SizedBox(height: 12),
