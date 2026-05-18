@@ -36,19 +36,52 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
   e2e-test:
-    name: Playwright E2E Tests
-    needs: [lint, security]
+    name: E2E Tests
     runs-on: ubuntu-latest
+    needs: [lint, security]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Build Flutter Web
+        run: |
+          cd example
+          flutter build web
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-      - name: Install dependencies
-        run: npm install
+          node-version: '20'
+
+      - name: Install E2E Dependencies
+        run: |
+          cd test/e2e
+          npm install
+
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
-      - name: Run Playwright tests
-        run: npx playwright test
+        run: |
+          cd test/e2e
+          npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: |
+          cd test/e2e
+          npm test
+
+      - name: Notify GitNexus
+        if: always()
+        run: |
+          curl -X POST http://192.168.0.165:4747/api/analyze -d '{"path": "/gitea-repos/xuan/xuan-common.git"}'
+      
+      - name: ZenTao Feedback on Failure
+        if: failure()
+        run: |
+          echo "Triggering zentao-cli to create bug..."
+          # Placeholder for zentao-cli command since specific ID needs sync
+          # zentao bug create --title "CI Failure in xuan-common" --product 1
