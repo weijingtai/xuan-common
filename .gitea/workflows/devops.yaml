@@ -2,12 +2,6 @@ name: xuan-common Flash DevOps
 on: [push, pull_request]
 
 jobs:
-  ping:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Ping
-        run: echo "Pipeline Initialized"
-
   lint:
     name: Lint Code Base
     runs-on: ubuntu-latest
@@ -17,8 +11,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Run Super-Linter
-        uses: github/super-linter/slim@v5
+        uses: super-linter/super-linter/slim@v5
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
           VALIDATE_DART: true
