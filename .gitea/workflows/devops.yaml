@@ -9,9 +9,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
       
-      - name: Install dependencies
+      - name: Install dependencies (jq)
         run: |
-          sudo apt-get update && sudo apt-get install -y jq
+          apt-get update && apt-get install -y jq
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -41,10 +41,10 @@ jobs:
 
       - name: Install Trivy
         run: |
-          # 放弃官方安装脚本，改用更直接、兼容性更好的二进制下载方式
-          wget https://github.com/aquasecurity/trivy/releases/download/v0.48.3/trivy_0.48.3_Linux-64bit.tar.gz
-          tar -zxvf trivy_0.48.3_Linux-64bit.tar.gz
-          sudo mv trivy /usr/local/bin/
+          # 切换到经过验证的稳定版本 v0.51.1，并移除 sudo
+          wget https://github.com/aquasecurity/trivy/releases/download/v0.51.1/trivy_0.51.1_Linux-64bit.tar.gz
+          tar -zxvf trivy_0.51.1_Linux-64bit.tar.gz
+          mv trivy /usr/local/bin/
 
       - name: Scan Repository
         run: |
