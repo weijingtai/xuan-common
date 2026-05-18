@@ -4,7 +4,8 @@ on: [push, pull_request]
 jobs:
   lint:
     name: Lint Code Base
-    runs-on: ubuntu-latest
+    # 使用 alpine 标签映射到轻量镜像
+    runs-on: linux
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -21,23 +22,31 @@ jobs:
           VALIDATE_YAML: true
 
   security:
-    name: Security Scan
-    runs-on: ubuntu-latest
+    name: Security Scan (Lightweight)
+    # 直接在官方轻量镜像中运行，不使用复杂的 Action 插件
+    runs-on: linux
+    container:
+      image: aquasec/trivy:latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+      - name: Scan Repository
+        run: |
+          trivy fs --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed .
+      - name: Generate Report
+        if: always()
+        run: |
+          trivy fs --format json --output trivy-report.json .
+      - name: Upload Security Report
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          scan-type: 'fs'
-          ignore-unfixed: true
-          format: 'table'
-          exit-code: '1'
-          severity: 'CRITICAL,HIGH'
+          name: security-report
+          path: trivy-report.json
 
   e2e-test:
     name: E2E Tests
-    runs-on: ubuntu-latest
+    runs-on: linux
     needs: [lint, security]
     steps:
       - name: Checkout Code
@@ -74,14 +83,14 @@ jobs:
           cd test/e2e
           npm test
 
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: test/e2e/playwright-report/
+
       - name: Notify GitNexus
         if: always()
         run: |
           curl -X POST http://192.168.0.165:4747/api/analyze -d '{"path": "/gitea-repos/xuan/xuan-common.git"}'
-      
-      - name: ZenTao Feedback on Failure
-        if: failure()
-        run: |
-          echo "Triggering zentao-cli to create bug..."
-          # Placeholder for zentao-cli command since specific ID needs sync
-          # zentao bug create --title "CI Failure in xuan-common" --product 1
