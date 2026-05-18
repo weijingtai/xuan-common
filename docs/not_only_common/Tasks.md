@@ -151,7 +151,7 @@
 - [x] `FourZhuEditorViewModel` 已有精简公共导出
 - [x] editor workspace 已有本地 facade widget
 - [x] editor sidebar 已有本地 facade 入口
-- [ ] 迁移 style editor 面板
+- [x] style editor 主面板已具备本地 facade 入口
 - [ ] 保留平台模板能力的临时接入
 
 验收：
