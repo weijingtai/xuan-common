@@ -28,3 +28,4 @@
 - Group related code, assets, and localization updates into the same commit; exclude generated `build/` artifacts.
 - PRs should describe the problem, summarize the solution, link issues, and include before/after screenshots or screen recordings for UI changes.
 - Document manual verification steps (e.g., `flutter run -d chrome`, platform toggles) so reviewers can reproduce validation quickly.
+\n# DevOps Verification - 2026-05-18
