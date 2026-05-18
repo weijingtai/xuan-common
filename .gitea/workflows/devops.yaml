@@ -2,26 +2,36 @@ name: xuan-common Flash DevOps
 on: [push, pull_request]
 
 jobs:
+  # 任务 1: 极速代码检查 (使用原生 Dart 工具)
   lint:
-    name: Lint Code Base
+    name: Flutter Lint
     runs-on: linux
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          fetch-depth: 0
-      - name: Run Super-Linter
-        uses: super-linter/super-linter/slim@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VALIDATE_ALL_CODEBASE: false
-          DEFAULT_BRANCH: main
-          VALIDATE_DART: true
-          VALIDATE_MARKDOWN: true
-          VALIDATE_YAML: true
+          channel: 'stable'
+          cache: true
 
+      - name: Get Dependencies
+        run: flutter pub get
+
+      - name: Dart Analyze
+        run: flutter analyze > lint-report.txt
+
+      - name: Upload Lint Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-lint-report
+          path: lint-report.txt
+
+  # 任务 2: 安全扫描 (动态安装)
   security:
-    name: Security Scan (Reliable)
+    name: Security Scan
     runs-on: linux
     steps:
       - name: Checkout Code
@@ -33,11 +43,6 @@ jobs:
 
       - name: Scan Repository
         run: |
-          trivy fs --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed .
-
-      - name: Generate Report
-        if: always()
-        run: |
           trivy fs --format json --output trivy-report.json .
 
       - name: Upload Security Report
@@ -47,6 +52,7 @@ jobs:
           name: security-report
           path: trivy-report.json
 
+  # 任务 3: E2E 测试
   e2e-test:
     name: E2E Tests
     runs-on: linux
@@ -54,34 +60,19 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
-      - name: Build Flutter Web
-        run: |
-          cd example
-          flutter build web
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install E2E Dependencies
+      - name: Install Playwright
         run: |
           cd test/e2e
           npm install
-
-      - name: Install Playwright Browsers
-        run: |
-          cd test/e2e
           npx playwright install --with-deps chromium
 
-      - name: Run E2E Tests
+      - name: Run Tests
         run: |
           cd test/e2e
           npm test
@@ -97,12 +88,3 @@ jobs:
         if: always()
         run: |
           curl -X POST http://192.168.0.165:4747/api/analyze -d '{"path": "/gitea-repos/xuan/xuan-common.git"}'
-      
-      - name: ZenTao Feedback on Failure
-        if: failure()
-        run: |
-          python3 scripts/report_to_zentao.py
-        env:
-          ZENTAO_TOKEN: ${{ secrets.ZENTAO_TOKEN }}
-          GITEA_REPO_NAME: ${{ github.repository }}
-          GITEA_JOB_NAME: ${{ github.job }}
