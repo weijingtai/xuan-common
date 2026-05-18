@@ -4,7 +4,6 @@ on: [push, pull_request]
 jobs:
   lint:
     name: Lint Code Base
-    # 使用 alpine 标签映射到轻量镜像
     runs-on: linux
     steps:
       - name: Checkout Code
@@ -22,21 +21,25 @@ jobs:
           VALIDATE_YAML: true
 
   security:
-    name: Security Scan (Lightweight)
-    # 直接在官方轻量镜像中运行，不使用复杂的 Action 插件
+    name: Security Scan (Reliable)
     runs-on: linux
-    container:
-      image: aquasec/trivy:latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.48.3
+
       - name: Scan Repository
         run: |
           trivy fs --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed .
+
       - name: Generate Report
         if: always()
         run: |
           trivy fs --format json --output trivy-report.json .
+
       - name: Upload Security Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -94,3 +97,12 @@ jobs:
         if: always()
         run: |
           curl -X POST http://192.168.0.165:4747/api/analyze -d '{"path": "/gitea-repos/xuan/xuan-common.git"}'
+      
+      - name: ZenTao Feedback on Failure
+        if: failure()
+        run: |
+          python3 scripts/report_to_zentao.py
+        env:
+          ZENTAO_TOKEN: ${{ secrets.ZENTAO_TOKEN }}
+          GITEA_REPO_NAME: ${{ github.repository }}
+          GITEA_JOB_NAME: ${{ github.job }}

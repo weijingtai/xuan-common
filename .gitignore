@@ -51,3 +51,4 @@ app.*.map.json
 # Chrome profile
 .chrome-profile/
 example/.chrome-profile/
+.superpowers/
