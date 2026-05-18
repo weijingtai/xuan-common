@@ -5,25 +5,12 @@ jobs:
   lint:
     name: lint
     runs-on: linux
+    container:
+      image: xuan-devops:v1
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
       
-      - name: Install dependencies (jq)
-        run: |
-          apt-get update && apt-get install -y jq
-
-      - name: Fix Git Ownership
-        run: |
-          # 解决 fatal: detected dubious ownership 报错
-          git config --global --add safe.directory "*"
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
       - name: Get Dependencies
         run: flutter pub get
 
@@ -40,16 +27,11 @@ jobs:
   sec:
     name: sec
     runs-on: linux
+    container:
+      image: xuan-devops:v1
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Install Trivy
-        run: |
-          # 切换到经过验证的商业级稳定版本 v0.49.1，此版本 100% 存在二进制包
-          wget https://github.com/aquasecurity/trivy/releases/download/v0.49.1/trivy_0.49.1_Linux-64bit.tar.gz
-          tar -zxvf trivy_0.49.1_Linux-64bit.tar.gz
-          mv trivy /usr/local/bin/
 
       - name: Scan Repository
         run: |
@@ -70,17 +52,14 @@ jobs:
   e2e:
     name: e2e
     runs-on: linux
+    container:
+      image: xuan-devops:v1
     needs: [lint, sec]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Playwright
+      - name: Install Playwright Dependencies
         run: |
           cd test/e2e
           npm install
