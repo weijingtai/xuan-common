@@ -1,10 +1,9 @@
-name: xuan-common Flash DevOps
+name: devops
 on: [push, pull_request]
 
 jobs:
-  # 任务 1: 极速代码检查 (使用原生 Dart 工具)
   lint:
-    name: Flutter Lint
+    name: lint
     runs-on: linux
     steps:
       - name: Checkout Code
@@ -29,9 +28,8 @@ jobs:
           name: flutter-lint-report
           path: lint-report.txt
 
-  # 任务 2: 安全扫描 (动态安装)
-  security:
-    name: Security Scan
+  sec:
+    name: sec
     runs-on: linux
     steps:
       - name: Checkout Code
@@ -43,6 +41,11 @@ jobs:
 
       - name: Scan Repository
         run: |
+          trivy fs --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed .
+
+      - name: Generate Report
+        if: always()
+        run: |
           trivy fs --format json --output trivy-report.json .
 
       - name: Upload Security Report
@@ -52,11 +55,10 @@ jobs:
           name: security-report
           path: trivy-report.json
 
-  # 任务 3: E2E 测试
-  e2e-test:
-    name: E2E Tests
+  e2e:
+    name: e2e
     runs-on: linux
-    needs: [lint, security]
+    needs: [lint, sec]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
