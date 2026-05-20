@@ -6,11 +6,46 @@ jobs:
     name: lint
     runs-on: linux
     container:
-      image: xuan-devops:v1
+      image: 192.168.0.165:15000/xuan-devops:v1
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
       
+      - name: Resolve Internal Dependencies
+        shell: python
+        run: |
+          import yaml, os, sys
+          try:
+              with open('pubspec.yaml', 'r') as f:
+                  pubspec = yaml.safe_load(f)
+              deps = {**(pubspec.get('dependencies', {}) or {}), **(pubspec.get('dev_dependencies', {}) or {})}
+              overrides = {}
+              base_url = os.environ.get('GITEA_BASE_URL', 'http://192.168.0.165:3000')
+              owner = os.environ.get('GITEA_OWNER', 'wjt')
+              for pkg, spec in deps.items():
+                  is_xuan = pkg.startswith('xuan_') or (isinstance(spec, dict) and 'git' in spec and 'weijingtai' in spec['git'].get('url', ''))
+                  is_path = isinstance(spec, dict) and 'path' in spec
+                  if is_xuan or is_path:
+                      repo = pkg.replace('_', '-')
+                      if pkg == 'persistence_core': repo, path = 'xuan-storage', 'core'
+                      elif pkg == 'persistence_drift': repo, path = 'xuan-storage', 'drift'
+                      else: path = spec.get('git', {}).get('path') if isinstance(spec, dict) and 'git' in spec else None
+                      entry = {'git': {'url': f"{base_url}/{owner}/{repo}.git"}}
+                      if path: entry['git']['path'] = path
+                      overrides[pkg] = entry
+              if overrides:
+                  out = {'dependency_overrides': overrides}
+                  if os.path.exists('pubspec_overrides.yaml'):
+                      with open('pubspec_overrides.yaml', 'r') as f:
+                          existing = yaml.safe_load(f) or {}
+                          existing.setdefault('dependency_overrides', {}).update(overrides)
+                          out = existing
+                  with open('pubspec_overrides.yaml', 'w') as f:
+                      yaml.dump(out, f)
+                  print(f"Redirected {len(overrides)} deps to {base_url}")
+          except Exception as e:
+              print(f"Warning: Dependency resolution failed: {e}")
+
       - name: Get Dependencies
         run: flutter pub get
 
@@ -28,7 +63,7 @@ jobs:
     name: sec
     runs-on: linux
     container:
-      image: xuan-devops:v1
+      image: 192.168.0.165:15000/xuan-devops:v1
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -53,7 +88,7 @@ jobs:
     name: e2e
     runs-on: linux
     container:
-      image: xuan-devops:v1
+      image: 192.168.0.165:15000/xuan-devops:v1
     needs: [lint, sec]
     steps:
       - name: Checkout Code
