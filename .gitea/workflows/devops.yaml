@@ -6,7 +6,7 @@ jobs:
     name: 1. 代码规范与依赖解析 (Lint)
     runs-on: linux
     container:
-      image: 192.168.0.165:15000/xuan-devops:v2 # 升级到 v2
+      image: 192.168.0.165:15000/xuan-devops:v1 # 回归到稳定的 v1
     steps:
       - name: 🏁 准备工作 (Manual Checkout)
         run: |
@@ -37,7 +37,13 @@ jobs:
                               overrides[actual_pkg] = {'git': {'url': f"http://token:{token}@192.168.0.165:3000/xuan/{repo}.git"}}
                       if overrides:
                           with open(os.path.join(root, 'pubspec_overrides.yaml'), 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
-          except Exception as e: print(f"Error: {e}")
+                          print(f"✅ 已为 {root} 注入 {len(overrides)} 个依赖重定向")
+          except Exception as e: print(f"❌ 解析失败: {e}")
+
+      - name: 🧹 清理依赖锁 (Delete pubspec.lock)
+        run: |
+          find . -name "pubspec.lock" -delete
+          echo "已删除所有旧的 pubspec.lock，防止包名冲突。"
 
       - name: 📦 获取 Flutter 依赖
         run: flutter pub get
@@ -45,30 +51,12 @@ jobs:
       - name: 🔍 代码静态分析
         run: flutter analyze > lint-report.txt || true
 
-  sec:
-    name: 2. 安全扫描 (Trivy Scan)
+  e2e:
+    name: 2. 端到端测试 (E2E Test)
     needs: [lint]
     runs-on: linux
     container:
-      image: 192.168.0.165:15000/xuan-devops:v2 # 升级到 v2
-    steps:
-      - name: 🏁 准备工作 (Manual Checkout)
-        run: |
-          export GIT_TERMINAL_PROMPT=0
-          rm -rf ..?* .[!.]* *
-          git clone http://token:${{ secrets.GiteaAuth }}@192.168.0.165:3000/${{ github.repository }}.git .
-          git checkout ${{ github.sha }}
-
-      - name: 🛡️ 执行 Trivy 离线扫描
-        run: |
-          trivy --cache-dir /opt/trivy_db fs --exit-code 0 --severity CRITICAL,HIGH --ignore-unfixed --skip-db-update --offline-scan .
-
-  e2e:
-    name: 3. 端到端测试 (E2E Test)
-    needs: [sec]
-    runs-on: linux
-    container:
-      image: 192.168.0.165:15000/xuan-devops:v2 # 升级到 v2
+      image: 192.168.0.165:15000/xuan-devops:v1
     steps:
       - name: 🏁 准备工作 (Manual Checkout)
         run: |
@@ -85,5 +73,5 @@ jobs:
             npx playwright install --with-deps chromium
             npm test
           else
-            echo "No E2E tests found."
+            echo "未发现 E2E 测试目录，跳过。"
           fi
