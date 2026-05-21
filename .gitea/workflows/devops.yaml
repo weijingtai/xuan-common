@@ -6,11 +6,12 @@ jobs:
     name: 1. 代码规范与依赖解析 (Lint)
     runs-on: linux
     container:
-      image: 192.168.0.165:15000/xuan-devops:v1
+      image: 192.168.0.165:15000/xuan-devops:v2 # 升级到 v2
     steps:
       - name: 🏁 准备工作 (Manual Checkout)
         run: |
           export GIT_TERMINAL_PROMPT=0
+          rm -rf ..?* .[!.]* *
           git clone http://token:${{ secrets.GiteaAuth }}@192.168.0.165:3000/${{ github.repository }}.git .
           git checkout ${{ github.sha }}
       
@@ -49,7 +50,7 @@ jobs:
     needs: [lint]
     runs-on: linux
     container:
-      image: 192.168.0.165:15000/xuan-devops:v1
+      image: 192.168.0.165:15000/xuan-devops:v2 # 升级到 v2
     steps:
       - name: 🏁 准备工作 (Manual Checkout)
         run: |
@@ -60,7 +61,6 @@ jobs:
 
       - name: 🛡️ 执行 Trivy 离线扫描
         run: |
-          # 明确指向镜像内预制的数据库目录 /opt/trivy_db
           trivy --cache-dir /opt/trivy_db fs --exit-code 0 --severity CRITICAL,HIGH --ignore-unfixed --skip-db-update --offline-scan .
 
   e2e:
@@ -68,7 +68,7 @@ jobs:
     needs: [sec]
     runs-on: linux
     container:
-      image: 192.168.0.165:15000/xuan-devops:v1
+      image: 192.168.0.165:15000/xuan-devops:v2 # 升级到 v2
     steps:
       - name: 🏁 准备工作 (Manual Checkout)
         run: |
