@@ -10,39 +10,34 @@ jobs:
     steps:
       - name: Manual Checkout
         run: |
-          echo "Repository is: ${{ github.repository }}"
-          echo "SHA is: ${{ github.sha }}"
           git clone http://xuan:wjt19951215@192.168.0.165:3000/${{ github.repository }}.git .
           git checkout ${{ github.sha }}
       
-      - name: Resolve Internal Dependencies
+      - name: Resolve Remaining Internal Dependencies
         shell: python3
         run: |
-          import yaml, os, sys, urllib.request, json
+          import yaml, os, sys
           try:
-              print("--- Universal Ecosystem Resolver ---")
+              if not os.path.exists('pubspec.yaml'): exit(0)
+              with open('pubspec.yaml', 'r') as f: pubspec = yaml.safe_load(f)
+              deps = {**(pubspec.get('dependencies', {}) or {}), **(pubspec.get('dev_dependencies', {}) or {})}
+              overrides = {}
               base_url = "http://192.168.0.165:3000"
               owner = "xuan"
-              auth_header = "Basic eHVhbjp3anQxOTk1MTIxNQ=="
-              repo_url = f"{base_url}/api/v1/users/{owner}/repos"
-              req = urllib.request.Request(repo_url)
-              req.add_header('Authorization', auth_header)
-              with urllib.request.urlopen(req) as r: repos = json.load(r)
-              all_repo_names = [repo['name'] for repo in repos]
-              overrides = {}
-              for repo in all_repo_names:
-                  gitea_git_url = f"{base_url}/{owner}/{repo}.git"
-                  pkg_a = repo.replace('-', '_')
-                  pkg_b = repo.replace('xuan-', '').replace('-', '_')
-                  for pkg in [pkg_a, pkg_b]: overrides[pkg] = {'git': {'url': gitea_git_url}}
-              storage_url = f"{base_url}/{owner}/xuan-storage.git"
-              overrides['persistence_core'] = {'git': {'url': storage_url, 'path': 'core'}}
-              overrides['persistence_drift'] = {'git': {'url': storage_url, 'path': 'drift'}}
+              for pkg, spec in deps.items():
+                  # 仅当依然是相对路径或指向 github 时才进行覆盖
+                  is_path = isinstance(spec, dict) and 'path' in spec
+                  is_github = isinstance(spec, dict) and 'git' in spec and 'github.com' in spec['git'].get('url', '')
+                  if is_path or is_github:
+                      repo = pkg.replace('_', '-')
+                      if not repo.startswith('xuan-') and repo != 'common': repo = f"xuan-{repo}"
+                      if repo == 'common': repo = 'xuan-common'
+                      overrides[pkg] = {'git': {'url': f"{base_url}/{owner}/{repo}.git"}}
               if overrides:
                   with open('pubspec_overrides.yaml', 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
-                  print(f"Generated {len(overrides)} rules.")
+                  print(f"Added safety overrides for {list(overrides.keys())}")
           except Exception as e:
-              print(f"Error: {e}")
+              print(f"Safety resolver warning: {e}")
 
       - name: Get Dependencies
         run: flutter pub get
