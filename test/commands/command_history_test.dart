@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:common/commands/commands.dart';
-import 'package:common/enums/layout_template_enums.dart';
-import 'package:common/models/layout_template.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 
 void main() {
   group('CommandHistory', () {

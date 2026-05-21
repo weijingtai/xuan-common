@@ -1,5 +1,5 @@
 import 'package:common/enums/enum_gender.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/models/drag_payloads.dart';
 import 'package:common/themes/editable_four_zhu_card_theme.dart';
 import 'package:common/widgets/editable_fourzhu_card/size_calculator/enhanced_calculator.dart';

@@ -1,5 +1,5 @@
 import 'package:common/enums.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/models/pillar_data.dart';
 import 'package:common/widgets/vertical_pillar_card.dart';
 import 'package:flutter/material.dart';

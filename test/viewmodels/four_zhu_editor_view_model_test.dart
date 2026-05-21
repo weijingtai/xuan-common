@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:drift/native.dart';
@@ -15,11 +15,11 @@ import 'package:common/domain/usecases/layout_templates/delete_template_use_case
 import 'package:common/domain/usecases/layout_templates/get_all_templates_use_case.dart';
 import 'package:common/domain/usecases/layout_templates/get_template_by_id_use_case.dart';
 import 'package:common/domain/usecases/layout_templates/save_template_use_case.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/features/shared_card_template/market/market_dtos.dart';
 import 'package:common/features/shared_card_template/market/market_gateway.dart';
 import 'package:common/features/shared_card_template/usecase/install_market_template_usecase.dart';
-import 'package:common/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
 import 'package:common/models/layout_template_dto.dart';
 import 'package:common/repositories/layout_template_repository_impl.dart';
 import 'package:common/viewmodels/four_zhu_editor_view_model.dart';

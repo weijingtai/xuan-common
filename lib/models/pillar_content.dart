@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/enums/enum_jia_zi.dart';
 import 'package:json_annotation/json_annotation.dart';
 

@@ -1,4 +1,4 @@
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../viewmodels/four_zhu_editor_view_model.dart';

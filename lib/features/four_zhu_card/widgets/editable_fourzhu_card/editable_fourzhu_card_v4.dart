@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/models/drag_payloads.dart';
 import 'package:common/models/row_strategy.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'package:common/themes/editable_four_zhu_card_theme.dart';
 import 'package:provider/provider.dart';
 import '../../../../viewmodels/four_zhu_editor_view_model.dart';

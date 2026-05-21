@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/models/drag_payloads.dart';
 import 'package:common/themes/editable_four_zhu_card_theme.dart';
 import 'metrics.dart';

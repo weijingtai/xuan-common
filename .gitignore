@@ -52,3 +52,7 @@ app.*.map.json
 .chrome-profile/
 example/.chrome-profile/
 .superpowers/
+
+# Gitea & CI Overrides (Local Only)
+.gitea/
+pubspec_overrides.yaml

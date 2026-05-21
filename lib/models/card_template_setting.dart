@@ -1,4 +1,4 @@
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'text_style_config.dart';

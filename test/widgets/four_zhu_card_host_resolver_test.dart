@@ -1,10 +1,10 @@
 import 'package:common/enums/enum_gender.dart';
 import 'package:common/enums/enum_jia_zi.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/features/four_zhu_card_host/four_zhu_card_host_resolver.dart';
 import 'package:common/models/eight_chars.dart';
-import 'package:common/models/layout_template.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

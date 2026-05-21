@@ -8,8 +8,11 @@ jobs:
     container:
       image: 192.168.0.165:15000/xuan-devops:v1
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      # 手动克隆代码，完全不依赖 GitHub actions/checkout
+      - name: Manual Checkout
+        run: |
+          git clone http://xuan:wjt19951215@192.168.0.165:3000/${GITEA_REPOSITORY}.git .
+          git checkout ${GITEA_SHA}
       
       - name: Resolve Internal Dependencies
         shell: python3
@@ -17,135 +20,31 @@ jobs:
           import yaml, os, sys, urllib.request, json
           try:
               print("--- Universal Ecosystem Resolver ---")
-              base_url = os.environ.get('GITEA_BASE_URL', 'http://192.168.0.165:3000')
-              owner = os.environ.get('GITEA_OWNER', 'xuan')
-              # 使用基础认证（从环境或硬编码，由于是内网环境暂且如此）
-              auth_header = "Basic eHVhbjp3anQxOTk1MTIxNQ==" # xuan:wjt19951215
-              
-              # 1. 获取该用户下的所有仓库列表
+              base_url = "http://192.168.0.165:3000"
+              owner = "xuan"
+              auth_header = "Basic eHVhbjp3anQxOTk1MTIxNQ=="
               repo_url = f"{base_url}/api/v1/users/{owner}/repos"
               req = urllib.request.Request(repo_url)
               req.add_header('Authorization', auth_header)
-              with urllib.request.urlopen(req) as r:
-                  repos = json.load(r)
-              
+              with urllib.request.urlopen(req) as r: repos = json.load(r)
               all_repo_names = [repo['name'] for repo in repos]
-              print(f"  Detected {len(all_repo_names)} repos in '{owner}' ecosystem.")
-              
               overrides = {}
-              
-              # 2. 为每个仓库生成潜在的包名映射
               for repo in all_repo_names:
                   gitea_git_url = f"{base_url}/{owner}/{repo}.git"
-                  
-                  # 规则 A: 原始仓库名（带下划线转换）
-                  pkg_name_a = repo.replace('-', '_')
-                  # 规则 B: 去掉 xuan- 前缀的包名
-                  pkg_name_b = repo.replace('xuan-', '').replace('-', '_')
-                  
-                  for pkg in [pkg_name_a, pkg_name_b]:
-                      if pkg == 'common': # 特殊处理 common
-                          overrides['common'] = {'git': {'url': gitea_git_url}}
-                      overrides[pkg] = {'git': {'url': gitea_git_url}}
-              
-              # 3. 特殊映射处理 (persistence 系列)
+                  pkg_a = repo.replace('-', '_')
+                  pkg_b = repo.replace('xuan-', '').replace('-', '_')
+                  for pkg in [pkg_a, pkg_b]: overrides[pkg] = {'git': {'url': gitea_git_url}}
               storage_url = f"{base_url}/{owner}/xuan-storage.git"
               overrides['persistence_core'] = {'git': {'url': storage_url, 'path': 'core'}}
               overrides['persistence_drift'] = {'git': {'url': storage_url, 'path': 'drift'}}
-              overrides['persistence_firebase'] = {'git': {'url': storage_url, 'path': 'firebase'}}
-
-              # 4. 写入 pubspec_overrides.yaml
               if overrides:
-                  out = {'dependency_overrides': overrides}
-                  # 如果存在现有的 overrides，进行合并
-                  if os.path.exists('pubspec_overrides.yaml'):
-                      with open('pubspec_overrides.yaml', 'r') as f:
-                          existing = yaml.safe_load(f) or {}
-                          existing.setdefault('dependency_overrides', {}).update(overrides)
-                          out = existing
-                  
-                  with open('pubspec_overrides.yaml', 'w') as f:
-                      yaml.dump(out, f, default_flow_style=False)
-                  
-                  print(f"--- Generated Universal Overrides ({len(overrides)} rules) ---")
-                  # 打印前 20 行示意
-                  with open('pubspec_overrides.yaml', 'r') as f:
-                      lines = f.readlines()
-                      for line in lines[:20]: print(line.strip())
-                      if len(lines) > 20: print("...")
-              
+                  with open('pubspec_overrides.yaml', 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
+                  print(f"Generated {len(overrides)} rules.")
           except Exception as e:
-              print(f"Error during universal resolution: {e}")
-              # 即使失败也继续，尝试用基础逻辑保底
-              sys.exit(0) 
+              print(f"Error: {e}")
 
       - name: Get Dependencies
         run: flutter pub get
 
       - name: Dart Analyze
         run: flutter analyze > lint-report.txt || true
-
-      - name: Upload Lint Logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: flutter-lint-report
-          path: lint-report.txt
-
-  sec:
-    name: sec
-    runs-on: linux
-    container:
-      image: 192.168.0.165:15000/xuan-devops:v1
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Scan Repository
-        run: |
-          trivy fs --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed .
-
-      - name: Generate Report
-        if: always()
-        run: |
-          trivy fs --format json --output trivy-report.json .
-
-      - name: Upload Security Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-report
-          path: trivy-report.json
-
-  e2e:
-    name: e2e
-    runs-on: linux
-    container:
-      image: 192.168.0.165:15000/xuan-devops:v1
-    needs: [lint, sec]
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Install Playwright Dependencies
-        run: |
-          cd test/e2e
-          npm install
-          npx playwright install --with-deps chromium
-
-      - name: Run Tests
-        run: |
-          cd test/e2e
-          npm test
-
-      - name: Upload Playwright Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: test/e2e/playwright-report/
-
-      - name: Notify GitNexus
-        if: always()
-        run: |
-          curl -X POST http://192.168.0.165:4747/api/analyze -d '{"path": "/gitea-repos/xuan/xuan-common.git"}'

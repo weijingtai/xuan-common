@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/models/drag_payloads.dart';
 import 'calculator.dart';
 import 'enhanced_snapshot.dart';

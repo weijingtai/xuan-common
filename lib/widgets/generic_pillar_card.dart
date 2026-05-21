@@ -8,8 +8,8 @@ import 'package:common/utils/constant_values_utils.dart';
 import 'package:common/widgets/card_row.dart';
 import 'package:common/widgets/card_row_widget.dart';
 import 'eight_chars_card.dart';
-import 'package:common/models/layout_template.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 
 class GenericPillarCard extends StatefulWidget {
   final String? title;

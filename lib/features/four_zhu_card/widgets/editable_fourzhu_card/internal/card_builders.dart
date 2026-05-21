@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:common/models/drag_payloads.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'package:common/themes/editable_four_zhu_card_theme.dart';
 import '../../../../../enums/layout_template_enums.dart';
 import '../widgets/ghost_pillar_widget.dart';

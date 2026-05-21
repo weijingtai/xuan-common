@@ -1,5 +1,5 @@
 import 'package:common/enums.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/models/pillar_content.dart';
 import 'package:common/models/row_strategy.dart';
 import 'package:common/utils/constant_values_utils.dart';

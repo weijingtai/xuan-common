@@ -1,6 +1,6 @@
 import 'package:common/commands/editor_command.dart';
-import 'package:common/enums/layout_template_enums.dart';
-import 'package:common/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
 
 /// 更新模板名称命令
 class UpdateTemplateNameCommand extends EditorCommand {

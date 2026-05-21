@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:common/models/pillar_data.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'package:common/themes/editable_four_zhu_card_theme.dart';
 import 'package:common/models/pillar_content.dart'; // Changed from relative import
 import 'models/cell_style_config.dart';
@@ -18,7 +18,7 @@ import 'dart:math' as math;
 import 'package:common/enums.dart';
 import 'package:common/enums/enum_di_zhi.dart';
 import 'package:common/enums/enum_tian_gan.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/models/drag_payloads.dart';
 import 'package:common/models/row_data.dart';
 import 'package:common/models/row_strategy.dart';

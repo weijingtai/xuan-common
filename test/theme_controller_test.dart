@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 
 import 'package:common/themes/editable_four_zhu_card_theme.dart';
 import 'package:common/viewmodels/editable_four_zhu_theme_controller.dart';
-import 'package:common/models/layout_template.dart';
-import 'package:common/enums/layout_template_enums.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'package:common/widgets/editable_fourzhu_card/models/pillar_style_config.dart';
 
 /// 主题控制器单元测试：验证字体回退顺序与参数非负校验

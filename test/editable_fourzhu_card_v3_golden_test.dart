@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:common/widgets/editable_fourzhu_card/editable_fourzhu_card_impl.dart';
 import 'package:common/widgets/editable_fourzhu_card/card_grid_painter.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/enums/enum_gender.dart';
 import 'package:common/models/drag_payloads.dart';
 import 'package:common/models/pillar_content.dart';
@@ -12,7 +12,7 @@ import 'package:common/enums/enum_jia_zi.dart';
 import 'package:common/models/pillar_content.dart' as model;
 import 'package:common/models/row_strategy.dart';
 import 'package:common/themes/editable_four_zhu_card_theme.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'test_editable_fourzhu_card_defaults.dart';
 
 /// Builds a minimal `PillarContent` instance for a four pillars chart.

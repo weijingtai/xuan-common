@@ -4,9 +4,9 @@ import 'package:common/domain/usecases/layout_templates/delete_template_use_case
 import 'package:common/domain/usecases/layout_templates/get_all_templates_use_case.dart';
 import 'package:common/domain/usecases/layout_templates/get_template_by_id_use_case.dart';
 import 'package:common/domain/usecases/layout_templates/save_template_use_case.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/features/four_zhu_card/widgets/editable_fourzhu_card/models/base_style_config.dart';
-import 'package:common/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
 import 'package:common/repositories/layout_template_repository.dart';
 import 'package:common/viewmodels/four_zhu_editor_view_model.dart';
 import 'package:drift/native.dart';

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:common/features/shared_card_template/market/market_dtos.dart';
-import 'package:common/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

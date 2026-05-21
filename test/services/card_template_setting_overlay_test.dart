@@ -1,6 +1,6 @@
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 import 'package:common/models/card_template_setting.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'package:common/services/card_template_setting_overlay.dart';
 import 'package:common/themes/editable_four_zhu_card_theme.dart';
 import 'package:flutter_test/flutter_test.dart';

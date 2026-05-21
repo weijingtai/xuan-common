@@ -6,10 +6,10 @@ import 'package:drift/native.dart';
 
 import 'package:common/database/app_database.dart';
 import 'package:common/datasource/layout_template_local_data_source.dart';
-import 'package:common/enums/layout_template_enums.dart';
-import 'package:common/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
 import 'package:common/models/layout_template_dto.dart';
-import 'package:common/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
 import 'package:persistence_core/persistence_core.dart';
 
 void main() {

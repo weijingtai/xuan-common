@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:common/utils/style_resolver.dart';
-import 'package:common/models/layout_template.dart';
-import 'package:common/models/text_style_config.dart';
-import 'package:common/enums/layout_template_enums.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/models/text_style_config.dart';
+import 'package:xuan_four_zhu_templates/enums/layout_template_enums.dart';
 
 /// Tests for DefaultStyleResolver and DefaultLayoutMetricsResolver
 /// Focus: Text style priority and row height precedence.

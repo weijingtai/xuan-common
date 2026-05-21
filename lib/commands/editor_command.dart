@@ -1,4 +1,4 @@
-import 'package:common/models/layout_template.dart';
+import 'package:xuan_four_zhu_templates/models/layout_template.dart';
 
 /// Command接口 - 所有编辑器操作命令的基类
 ///
