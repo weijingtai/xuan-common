@@ -10,13 +10,17 @@ jobs:
     steps:
       - name: Manual Checkout
         run: |
-          git clone http://xuan:wjt19951215@192.168.0.165:3000/${{ github.repository }}.git .
+          # 使用 Gitea Secret 进行安全克隆
+          # 请确保在仓库设置中添加了 GITEA_AUTH 密钥，格式为 "username:password"
+          git clone http://${{ secrets.GITEA_AUTH }}@192.168.0.165:3000/${{ github.repository }}.git .
           git checkout ${{ github.sha }}
       
       - name: Resolve Remaining Internal Dependencies
         shell: python3
+        env:
+          GITEA_AUTH: ${{ secrets.GITEA_AUTH }}
         run: |
-          import yaml, os, sys
+          import yaml, os, sys, base64
           try:
               if not os.path.exists('pubspec.yaml'): exit(0)
               with open('pubspec.yaml', 'r') as f: pubspec = yaml.safe_load(f)
@@ -24,18 +28,25 @@ jobs:
               overrides = {}
               base_url = "http://192.168.0.165:3000"
               owner = "xuan"
+              
+              # 从环境变量读取 Secret 并生成 Auth Header
+              gitea_auth = os.environ.get('GITEA_AUTH', 'xuan:wjt19951215') # 保底使用旧凭证
+              auth_bytes = gitea_auth.encode('ascii')
+              base64_auth = base64.b64encode(auth_bytes).decode('ascii')
+              
               for pkg, spec in deps.items():
-                  # 仅当依然是相对路径或指向 github 时才进行覆盖
                   is_path = isinstance(spec, dict) and 'path' in spec
                   is_github = isinstance(spec, dict) and 'git' in spec and 'github.com' in spec['git'].get('url', '')
                   if is_path or is_github:
                       repo = pkg.replace('_', '-')
                       if not repo.startswith('xuan-') and repo != 'common': repo = f"xuan-{repo}"
                       if repo == 'common': repo = 'xuan-common'
-                      overrides[pkg] = {'git': {'url': f"{base_url}/{owner}/{repo}.git"}}
+                      # 在 override 中也注入凭证，确保 pub get 成功
+                      overrides[pkg] = {'git': {'url': f"http://{gitea_auth}@192.168.0.165:3000/{owner}/{repo}.git"}}
+              
               if overrides:
                   with open('pubspec_overrides.yaml', 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
-                  print(f"Added safety overrides for {list(overrides.keys())}")
+                  print(f"Added secure safety overrides for {list(overrides.keys())}")
           except Exception as e:
               print(f"Safety resolver warning: {e}")
 
