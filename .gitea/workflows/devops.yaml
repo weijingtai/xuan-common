@@ -10,43 +10,54 @@ jobs:
     steps:
       - name: Manual Checkout
         run: |
-          # 强制非交互模式，防止认证失败时卡死
           export GIT_TERMINAL_PROMPT=0
-          echo "Checking out ${{ github.repository }} using Token..."
-          # 使用 token:TOKEN_STRING 格式进行 Gitea 认证
           git clone http://token:${{ secrets.GiteaAuth }}@192.168.0.165:3000/${{ github.repository }}.git .
           git checkout ${{ github.sha }}
       
-      - name: Resolve Remaining Internal Dependencies
+      - name: Resolve All Internal Dependencies
         shell: python3
         env:
           GITEA_TOKEN: ${{ secrets.GiteaAuth }}
         run: |
           import yaml, os, sys
           try:
-              if not os.path.exists('pubspec.yaml'): exit(0)
-              with open('pubspec.yaml', 'r') as f: pubspec = yaml.safe_load(f)
-              deps = {**(pubspec.get('dependencies', {}) or {}), **(pubspec.get('dev_dependencies', {}) or {})}
-              overrides = {}
               base_url = "http://192.168.0.165:3000"
               owner = "xuan"
               token = os.environ.get('GITEA_TOKEN')
               
-              for pkg, spec in deps.items():
-                  is_path = isinstance(spec, dict) and 'path' in spec
-                  is_github = isinstance(spec, dict) and 'git' in spec and 'github.com' in spec['git'].get('url', '')
-                  if is_path or is_github:
-                      repo = pkg.replace('_', '-')
-                      if not repo.startswith('xuan-') and repo != 'common': repo = f"xuan-{repo}"
-                      if repo == 'common': repo = 'xuan-common'
-                      # 在 override 中注入 token 认证，确保下游 pub get 成功
-                      overrides[pkg] = {'git': {'url': f"http://token:{token}@192.168.0.165:3000/{owner}/{repo}.git"}}
-              
-              if overrides:
-                  with open('pubspec_overrides.yaml', 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
-                  print(f"Added secure token overrides for {list(overrides.keys())}")
+              # 递归寻找所有项目目录（包含 example）
+              for root, dirs, files in os.walk("."):
+                  if 'pubspec.yaml' in files:
+                      target_dir = root
+                      pubspec_path = os.path.join(root, 'pubspec.yaml')
+                      overrides_path = os.path.join(root, 'pubspec_overrides.yaml')
+                      
+                      with open(pubspec_path, 'r') as f: pubspec = yaml.safe_load(f)
+                      deps = {**(pubspec.get('dependencies', {}) or {}), **(pubspec.get('dev_dependencies', {}) or {})}
+                      overrides = {}
+                      
+                      for pkg, spec in deps.items():
+                          is_path = isinstance(spec, dict) and 'path' in spec
+                          is_github = isinstance(spec, dict) and 'git' in spec and 'github.com' in spec['git'].get('url', '')
+                          # 特殊处理：如果已经手动改了名字叫 common 的
+                          is_old_common = (pkg == 'common')
+                          
+                          if is_path or is_github or is_old_common:
+                              repo = pkg.replace('_', '-')
+                              if repo == 'common': repo = 'xuan-common'
+                              if not repo.startswith('xuan-'): repo = f"xuan-{repo}"
+                              
+                              # 映射后的包名（强制使用 xuan_ 前缀）
+                              actual_pkg = pkg
+                              if pkg == 'common': actual_pkg = 'xuan_common'
+                              
+                              overrides[actual_pkg] = {'git': {'url': f"http://token:{token}@192.168.0.165:3000/{owner}/{repo}.git"}}
+                      
+                      if overrides:
+                          with open(overrides_path, 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
+                          print(f"Added recursive overrides for {target_dir}: {list(overrides.keys())}")
           except Exception as e:
-              print(f"Safety resolver warning: {e}")
+              print(f"Recursive resolver warning: {e}")
 
       - name: Get Dependencies
         run: flutter pub get

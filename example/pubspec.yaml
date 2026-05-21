@@ -22,9 +22,9 @@ environment:
   sdk: ">=3.8.0 <4.0.0"
 
 dependency_overrides:
-  common:
+  xuan_common:
     git:
-      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-common.git
+      url: http://xuan:wjt19951215@192.168.0.165:3000/xuan/xuan-common.git
       ref: main
   account:
     git:
@@ -50,9 +50,9 @@ dependencies:
   flutter:
     sdk: flutter
 # Use the local common package to render demo pages
-  common:
+  xuan_common:
     git:
-      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-common.git
+      url: http://xuan:wjt19951215@192.168.0.165:3000/xuan/xuan-common.git
       ref: main
   account:
     git:
