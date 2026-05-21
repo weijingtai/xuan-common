@@ -21,46 +21,80 @@ jobs:
         run: |
           import yaml, os, sys
           try:
-              base_url = "http://192.168.0.165:3000"
-              owner = "xuan"
               token = os.environ.get('GITEA_TOKEN')
-              
-              # 递归寻找所有项目目录（包含 example）
               for root, dirs, files in os.walk("."):
                   if 'pubspec.yaml' in files:
-                      target_dir = root
                       pubspec_path = os.path.join(root, 'pubspec.yaml')
-                      overrides_path = os.path.join(root, 'pubspec_overrides.yaml')
-                      
                       with open(pubspec_path, 'r') as f: pubspec = yaml.safe_load(f)
                       deps = {**(pubspec.get('dependencies', {}) or {}), **(pubspec.get('dev_dependencies', {}) or {})}
                       overrides = {}
-                      
                       for pkg, spec in deps.items():
-                          is_path = isinstance(spec, dict) and 'path' in spec
-                          is_github = isinstance(spec, dict) and 'git' in spec and 'github.com' in spec['git'].get('url', '')
-                          # 特殊处理：如果已经手动改了名字叫 common 的
-                          is_old_common = (pkg == 'common')
-                          
-                          if is_path or is_github or is_old_common:
+                          if isinstance(spec, dict) and ('path' in spec or 'github.com' in spec.get('git', {}).get('url', '')) or pkg == 'common':
                               repo = pkg.replace('_', '-')
                               if repo == 'common': repo = 'xuan-common'
                               if not repo.startswith('xuan-'): repo = f"xuan-{repo}"
-                              
-                              # 映射后的包名（强制使用 xuan_ 前缀）
-                              actual_pkg = pkg
-                              if pkg == 'common': actual_pkg = 'xuan_common'
-                              
-                              overrides[actual_pkg] = {'git': {'url': f"http://token:{token}@192.168.0.165:3000/{owner}/{repo}.git"}}
-                      
+                              actual_pkg = 'xuan_common' if pkg == 'common' else pkg
+                              overrides[actual_pkg] = {'git': {'url': f"http://token:{token}@192.168.0.165:3000/xuan/{repo}.git"}}
                       if overrides:
-                          with open(overrides_path, 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
-                          print(f"Added recursive overrides for {target_dir}: {list(overrides.keys())}")
-          except Exception as e:
-              print(f"Recursive resolver warning: {e}")
+                          with open(os.path.join(root, 'pubspec_overrides.yaml'), 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
+          except Exception as e: print(f"Error: {e}")
 
       - name: Get Dependencies
         run: flutter pub get
 
       - name: Dart Analyze
         run: flutter analyze > lint-report.txt || true
+
+  sec:
+    name: sec
+    runs-on: linux
+    container:
+      image: 192.168.0.165:15000/xuan-devops:v1
+    steps:
+      - name: Manual Checkout
+        run: |
+          export GIT_TERMINAL_PROMPT=0
+          git clone http://token:${{ secrets.GiteaAuth }}@192.168.0.165:3000/${{ github.repository }}.git .
+          git checkout ${{ github.sha }}
+
+      - name: Scan Repository (Trivy Offline)
+        run: |
+          # 使用 --skip-db-update 确保在内网环境下不尝试连接外网下载漏洞库
+          trivy fs --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed --skip-db-update --offline-scan .
+
+      - name: Generate Security Report
+        if: always()
+        run: |
+          trivy fs --format json --output trivy-report.json --skip-db-update --offline-scan .
+
+  e2e:
+    name: e2e
+    runs-on: linux
+    container:
+      image: 192.168.0.165:15000/xuan-devops:v1
+    needs: [lint]
+    steps:
+      - name: Manual Checkout
+        run: |
+          export GIT_TERMINAL_PROMPT=0
+          git clone http://token:${{ secrets.GiteaAuth }}@192.168.0.165:3000/${{ github.repository }}.git .
+          git checkout ${{ github.sha }}
+
+      - name: Install Playwright Dependencies
+        run: |
+          if [ -d "test/e2e" ]; then
+            cd test/e2e
+            npm install
+            # 注意：这里可能会卡住，因为需要拉取 chromium
+            # 建议未来将浏览器也打入基础镜像
+            npx playwright install --with-deps chromium
+          else
+            echo "No E2E tests found."
+          fi
+
+      - name: Run E2E Tests
+        run: |
+          if [ -d "test/e2e" ]; then
+            cd test/e2e
+            npm test
+          fi
