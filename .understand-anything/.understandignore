@@ -1,0 +1,47 @@
+# .understandignore — patterns for files/dirs to exclude from analysis
+# Syntax: same as .gitignore
+
+# --- Generated Dart code (build_runner, drift, json_serializable) ---
+*.g.dart
+*.freezed.dart
+*.config.dart
+*.gen.dart
+*.mocks.dart
+*.pb.dart
+*.pbenum.dart
+*.pbjson.dart
+*.pbserver.dart
+
+# --- Example / sandbox project ---
+example/
+
+# --- HTML design mockups ---
+html_desgin_template/
+
+# --- Logs ---
+*.log
+clean_analyze.log
+full_analyze.log
+
+# --- Flutter / platform artifacts ---
+.dart_tool/
+.android/
+.ios/
+.superpowers/
+.gitea/
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+pubspec_overrides.yaml
+pubspec.lock
+build/
+
+# --- Assets (binary) ---
+assets/colors/*.pb
+assets/dataset/
+fonts/
+
+# --- IDE / OS ---
+.DS_Store
+.idea/
+.vscode/
