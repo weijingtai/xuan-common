@@ -23,24 +23,41 @@ environment:
 
 dependency_overrides:
   common:
-    path: ..
+    git:
+      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-common.git
+      ref: main
   account:
-    path: ../../xuan-account
+    git:
+      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-account.git
+      ref: main
   persistence_core:
-    path: ../../xuan-storage/core
+    git:
+      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-storage.git
+      ref: main
+      path: core
   persistence_drift:
-    path: ../../xuan-storage/drift
+    git:
+      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-storage.git
+      ref: main
+      path: drift
   persistence_firebase:
-    path: ../../xuan-storage/firebase
+    git:
+      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-storage.git
+      ref: main
+      path: firebase
 
 dependencies:
   flutter:
     sdk: flutter
 # Use the local common package to render demo pages
   common:
-    path: ..
+    git:
+      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-common.git
+      ref: main
   account:
-    path: ../../xuan-account
+    git:
+      url: http://xuan:***@192.168.0.165:3000/xuan/xuan-account.git
+      ref: main
   persistence_core:
     git:
       url: https://github.com/weijingtai/xuan-storage.git
