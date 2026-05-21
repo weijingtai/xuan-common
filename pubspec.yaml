@@ -63,11 +63,26 @@ dependencies:
   flutter_map_cancellable_tile_provider: ^3.1.1
   flex_color_picker: ^3.7.2
   xuan_four_zhu_card:
-    path: ../xuan-four-zhu-card
+
+    git:
+
+      url: http://xuan:wjt19951215@192.168.0.165:3000/xuan/xuan-four-zhu-card.git
+
+      ref: main
   xuan_four_zhu_host:
-    path: ../xuan-four-zhu-host
+
+    git:
+
+      url: http://xuan:wjt19951215@192.168.0.165:3000/xuan/xuan-four-zhu-host.git
+
+      ref: main
   xuan_four_zhu_templates:
-    path: ../xuan-four-zhu-templates
+
+    git:
+
+      url: http://xuan:wjt19951215@192.168.0.165:3000/xuan/xuan-four-zhu-templates.git
+
+      ref: main
 
   drift: ^2.30.1
   drift_flutter: ^0.2.8
@@ -84,8 +99,6 @@ dependencies:
 
 #  drift_native: ^2.10.0
 #  dropdown_button2: ^2.3.9
-
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -152,8 +165,6 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
-
-
   # This section identifies your Flutter project as a module meant for
   # embedding in a native host app.  These identifiers should _not_ ordinarily
   # be changed after generation - they are used to ensure that the tooling can
