@@ -31,7 +31,7 @@
     ],
     "description": "玄学数术应用的共用 Flutter 基础模块 —— 数据库 (Drift)、天文历法 (Swiss Ephemeris / Tyme)、AI 集成、布局/模板编辑系统,被四大术数子模块共用",
     "analyzedAt": "2026-05-21T11:56:43Z",
-    "gitCommitHash": "86415270860dd77a780e9823ed0c537a56f286aa"
+    "gitCommitHash": "f5c8e9821f2e903fe00ecc0c9da571fff3b4af72"
   },
   "nodes": [
     {

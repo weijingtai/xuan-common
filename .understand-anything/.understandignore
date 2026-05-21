@@ -1,6 +1,9 @@
 # .understandignore — patterns for files/dirs to exclude from analysis
 # Syntax: same as .gitignore
 
+# --- Understand Anything generated artifacts ---
+.understand-anything/
+
 # --- Generated Dart code (build_runner, drift, json_serializable) ---
 *.g.dart
 *.freezed.dart
