@@ -3,18 +3,18 @@ on: [push, pull_request]
 
 jobs:
   lint:
-    name: lint
+    name: 1. 代码规范与依赖解析 (Lint)
     runs-on: linux
     container:
       image: 192.168.0.165:15000/xuan-devops:v1
     steps:
-      - name: Manual Checkout
+      - name: 🏁 准备工作 (Manual Checkout)
         run: |
           export GIT_TERMINAL_PROMPT=0
           git clone http://token:${{ secrets.GiteaAuth }}@192.168.0.165:3000/${{ github.repository }}.git .
           git checkout ${{ github.sha }}
       
-      - name: Resolve All Internal Dependencies
+      - name: 🔗 解析内网依赖 (Recursive Resolve)
         shell: python3
         env:
           GITEA_TOKEN: ${{ secrets.GiteaAuth }}
@@ -24,8 +24,7 @@ jobs:
               token = os.environ.get('GITEA_TOKEN')
               for root, dirs, files in os.walk("."):
                   if 'pubspec.yaml' in files:
-                      pubspec_path = os.path.join(root, 'pubspec.yaml')
-                      with open(pubspec_path, 'r') as f: pubspec = yaml.safe_load(f)
+                      with open(os.path.join(root, 'pubspec.yaml'), 'r') as f: pubspec = yaml.safe_load(f)
                       deps = {**(pubspec.get('dependencies', {}) or {}), **(pubspec.get('dev_dependencies', {}) or {})}
                       overrides = {}
                       for pkg, spec in deps.items():
@@ -39,62 +38,52 @@ jobs:
                           with open(os.path.join(root, 'pubspec_overrides.yaml'), 'w') as f: yaml.dump({'dependency_overrides': overrides}, f)
           except Exception as e: print(f"Error: {e}")
 
-      - name: Get Dependencies
+      - name: 📦 获取 Flutter 依赖
         run: flutter pub get
 
-      - name: Dart Analyze
+      - name: 🔍 代码静态分析
         run: flutter analyze > lint-report.txt || true
 
   sec:
-    name: sec
+    name: 2. 安全扫描 (Trivy Scan)
+    needs: [lint]
     runs-on: linux
     container:
       image: 192.168.0.165:15000/xuan-devops:v1
     steps:
-      - name: Manual Checkout
+      - name: 🏁 准备工作 (Manual Checkout)
         run: |
           export GIT_TERMINAL_PROMPT=0
+          rm -rf ..?* .[!.]* *
           git clone http://token:${{ secrets.GiteaAuth }}@192.168.0.165:3000/${{ github.repository }}.git .
           git checkout ${{ github.sha }}
 
-      - name: Scan Repository (Trivy Offline)
+      - name: 🛡️ 执行 Trivy 离线扫描
         run: |
-          # 使用 --skip-db-update 确保在内网环境下不尝试连接外网下载漏洞库
-          trivy fs --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed --skip-db-update --offline-scan .
-
-      - name: Generate Security Report
-        if: always()
-        run: |
-          trivy fs --format json --output trivy-report.json --skip-db-update --offline-scan .
+          # 明确指向镜像内预制的数据库目录 /opt/trivy_db
+          trivy --cache-dir /opt/trivy_db fs --exit-code 0 --severity CRITICAL,HIGH --ignore-unfixed --skip-db-update --offline-scan .
 
   e2e:
-    name: e2e
+    name: 3. 端到端测试 (E2E Test)
+    needs: [sec]
     runs-on: linux
     container:
       image: 192.168.0.165:15000/xuan-devops:v1
-    needs: [lint]
     steps:
-      - name: Manual Checkout
+      - name: 🏁 准备工作 (Manual Checkout)
         run: |
           export GIT_TERMINAL_PROMPT=0
+          rm -rf ..?* .[!.]* *
           git clone http://token:${{ secrets.GiteaAuth }}@192.168.0.165:3000/${{ github.repository }}.git .
           git checkout ${{ github.sha }}
 
-      - name: Install Playwright Dependencies
+      - name: 🎭 运行 Playwright (如果存在)
         run: |
           if [ -d "test/e2e" ]; then
             cd test/e2e
             npm install
-            # 注意：这里可能会卡住，因为需要拉取 chromium
-            # 建议未来将浏览器也打入基础镜像
             npx playwright install --with-deps chromium
+            npm test
           else
             echo "No E2E tests found."
-          fi
-
-      - name: Run E2E Tests
-        run: |
-          if [ -d "test/e2e" ]; then
-            cd test/e2e
-            npm test
           fi
