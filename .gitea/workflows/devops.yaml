@@ -8,9 +8,11 @@ jobs:
     container:
       image: 192.168.0.165:15000/xuan-devops:v1
     steps:
-      # 手动克隆代码，完全不依赖 GitHub actions/checkout
       - name: Manual Checkout
         run: |
+          # 修复: Gitea Actions 中，仓库全名在 GITEA_REPOSITORY 中，如 xuan/xuan-common
+          # 我们需要确保它是完整的 URL
+          echo "Checking out ${GITEA_REPOSITORY}..."
           git clone http://xuan:wjt19951215@192.168.0.165:3000/${GITEA_REPOSITORY}.git .
           git checkout ${GITEA_SHA}
       
