@@ -14,37 +14,70 @@ jobs:
       - name: Resolve Internal Dependencies
         shell: python3
         run: |
-          import yaml, os, sys
+          import yaml, os, sys, urllib.request, json
           try:
-              with open('pubspec.yaml', 'r') as f:
-                  pubspec = yaml.safe_load(f)
-              deps = {**(pubspec.get('dependencies', {}) or {}), **(pubspec.get('dev_dependencies', {}) or {})}
-              overrides = {}
+              print("--- Universal Ecosystem Resolver ---")
               base_url = os.environ.get('GITEA_BASE_URL', 'http://192.168.0.165:3000')
-              owner = os.environ.get('GITEA_OWNER', 'wjt')
-              for pkg, spec in deps.items():
-                  is_xuan = pkg.startswith('xuan_') or (isinstance(spec, dict) and 'git' in spec and 'weijingtai' in spec['git'].get('url', ''))
-                  is_path = isinstance(spec, dict) and 'path' in spec
-                  if is_xuan or is_path:
-                      repo = pkg.replace('_', '-')
-                      if pkg == 'persistence_core': repo, path = 'xuan-storage', 'core'
-                      elif pkg == 'persistence_drift': repo, path = 'xuan-storage', 'drift'
-                      else: path = spec.get('git', {}).get('path') if isinstance(spec, dict) and 'git' in spec else None
-                      entry = {'git': {'url': f"{base_url}/{owner}/{repo}.git"}}
-                      if path: entry['git']['path'] = path
-                      overrides[pkg] = entry
+              owner = os.environ.get('GITEA_OWNER', 'xuan')
+              # 使用基础认证（从环境或硬编码，由于是内网环境暂且如此）
+              auth_header = "Basic eHVhbjp3anQxOTk1MTIxNQ==" # xuan:wjt19951215
+              
+              # 1. 获取该用户下的所有仓库列表
+              repo_url = f"{base_url}/api/v1/users/{owner}/repos"
+              req = urllib.request.Request(repo_url)
+              req.add_header('Authorization', auth_header)
+              with urllib.request.urlopen(req) as r:
+                  repos = json.load(r)
+              
+              all_repo_names = [repo['name'] for repo in repos]
+              print(f"  Detected {len(all_repo_names)} repos in '{owner}' ecosystem.")
+              
+              overrides = {}
+              
+              # 2. 为每个仓库生成潜在的包名映射
+              for repo in all_repo_names:
+                  gitea_git_url = f"{base_url}/{owner}/{repo}.git"
+                  
+                  # 规则 A: 原始仓库名（带下划线转换）
+                  pkg_name_a = repo.replace('-', '_')
+                  # 规则 B: 去掉 xuan- 前缀的包名
+                  pkg_name_b = repo.replace('xuan-', '').replace('-', '_')
+                  
+                  for pkg in [pkg_name_a, pkg_name_b]:
+                      if pkg == 'common': # 特殊处理 common
+                          overrides['common'] = {'git': {'url': gitea_git_url}}
+                      overrides[pkg] = {'git': {'url': gitea_git_url}}
+              
+              # 3. 特殊映射处理 (persistence 系列)
+              storage_url = f"{base_url}/{owner}/xuan-storage.git"
+              overrides['persistence_core'] = {'git': {'url': storage_url, 'path': 'core'}}
+              overrides['persistence_drift'] = {'git': {'url': storage_url, 'path': 'drift'}}
+              overrides['persistence_firebase'] = {'git': {'url': storage_url, 'path': 'firebase'}}
+
+              # 4. 写入 pubspec_overrides.yaml
               if overrides:
                   out = {'dependency_overrides': overrides}
+                  # 如果存在现有的 overrides，进行合并
                   if os.path.exists('pubspec_overrides.yaml'):
                       with open('pubspec_overrides.yaml', 'r') as f:
                           existing = yaml.safe_load(f) or {}
                           existing.setdefault('dependency_overrides', {}).update(overrides)
                           out = existing
+                  
                   with open('pubspec_overrides.yaml', 'w') as f:
-                      yaml.dump(out, f)
-                  print(f"Redirected {len(overrides)} deps to {base_url}")
+                      yaml.dump(out, f, default_flow_style=False)
+                  
+                  print(f"--- Generated Universal Overrides ({len(overrides)} rules) ---")
+                  # 打印前 20 行示意
+                  with open('pubspec_overrides.yaml', 'r') as f:
+                      lines = f.readlines()
+                      for line in lines[:20]: print(line.strip())
+                      if len(lines) > 20: print("...")
+              
           except Exception as e:
-              print(f"Warning: Dependency resolution failed: {e}")
+              print(f"Error during universal resolution: {e}")
+              # 即使失败也继续，尝试用基础逻辑保底
+              sys.exit(0) 
 
       - name: Get Dependencies
         run: flutter pub get
