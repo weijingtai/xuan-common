@@ -37,7 +37,7 @@ dependencies:
   tuple: ^2.0.2
   json_serializable: ^6.12.0
   json_annotation: ^4.10.0
-  google_fonts: ^8.0.0
+  google_fonts: ^6.2.1
   auto_size_text: ^3.0.0
   sweph: ^3.2.1+2.10.3
   tyme: ^1.4.1
